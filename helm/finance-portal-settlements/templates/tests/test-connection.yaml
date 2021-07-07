@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "finance-portal-settlements.fullname" . }}-test-connection"
+  labels:
+{{ include "finance-portal-settlements.labels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['{{ include "finance-portal-settlements.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

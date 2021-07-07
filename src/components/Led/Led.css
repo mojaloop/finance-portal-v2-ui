@@ -1,0 +1,35 @@
+.led {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  margin-right: 5px;
+}
+
+.led--red {
+  background-color: #fc2847;
+}
+
+.led--orange {
+  background-color: #ffa343;
+}
+
+.led--yellow {
+  background-color: #fdfc74;
+}
+
+.led--green {
+  background-color: #71dc78;
+}
+
+.led--blue {
+  background-color: #00a4ff;
+}
+
+.led--purple {
+  background-color: #7442c8;
+}
+
+.led--pink {
+  background-color: #fb7efd;
+}

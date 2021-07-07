@@ -1,0 +1,37 @@
+.settlementWindows {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.settlement-windows__filters {
+  margin: 10px 0px;
+}
+
+.settlement-windows__controls {
+  margin: 10px 0px;
+  display: flex;
+  flex-direction: row;
+}
+
+/* SINGLE CONTROLS */
+.settlement-windows__filters__filter-row {
+  display: flex;
+  align-items: center;
+}
+
+.settlement-windows__filters__date-filter {
+  width: 200px;
+  margin: 4px;
+}
+.settlement-windows__filters__date-picker {
+  width: 200px;
+  margin: 4px;
+}
+
+.settlements-windows__modal__row {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+}

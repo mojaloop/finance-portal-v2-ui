@@ -1,0 +1,14 @@
+.data-label--medium {
+  font-size: 16px;
+}
+
+.central-row .data-label--medium {
+  margin: 5px;
+}
+
+#el-modal__confirm_update_participant .el-modal__footer {
+  transform: translateY(27%);
+  width: 650px;
+  margin-left: -20px;
+  border-top: 1px solid #ccc;
+}
