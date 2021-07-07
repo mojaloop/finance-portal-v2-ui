@@ -37,6 +37,9 @@ ingress:
   settlementService:
     name: mojaloop-centralsettlement-service
     portName: 80
+  portalBackend:
+    name: finance-portal
+    portName: 3000
   # note that this ingress expects a SINGLE TLS secret matching the externalHostname is
   # tls is provided
   tls:

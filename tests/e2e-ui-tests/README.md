@@ -37,10 +37,19 @@ References for those unfamiliar with page models:
 
 #### Run tests
 ```sh
-npm run testhtml
+npm run test
+```
+
+##### Run a single test
+```sh
+npm run test -- -t 'name of test'
+```
+E.g., for one of the login tests with this reasonably long name:
+```sh
+npm run test -- -t 'Enter a valid username and password, click the submit and should be transferred to the main page'
 ```
 
 ##### With a different browser
 ```sh
-BROWSER_TCAFE=chromium npm run testhtml
+BROWSER_TCAFE=chromium npm run test
 ```

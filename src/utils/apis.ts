@@ -13,6 +13,16 @@ const services = {
     withCredentials: true,
     baseUrl: '/api/settlement/v2',
   },
+  // HEY YOU.
+  // Yes: you. Are you using the portal backend for your current work? Would it be easy enough to
+  // instead use one of the core services? If so, you should do that. If you are writing new
+  // functionality against the portal backend, stop, portal backend is deprecated and there is a
+  // sinking lid policy on its usage- i.e. usage of the portal backend should monotonically
+  // decrease. Not familiar with that terminology? It means: don't use the portal backend.
+  portalBackendService: {
+    withCredentials: true,
+    baseUrl: '/api/portal-backend',
+  },
 };
 
 type Endpoint = ApiConfig<State>;
@@ -43,62 +53,62 @@ const settlement: Endpoint = {
 };
 
 const settlementsDetailPositions: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { settlementId, detailId }: { settlementId: string; detailId: string }) =>
     `/settlements/${settlementId}/details/${detailId}/positions`,
 };
 
 const settleSettlementWindow: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { settlementWindowId }: { settlementWindowId: string }) =>
     `/settlement-window-commit/${settlementWindowId}`,
 };
 
 const closeSettlementWindow: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   // eslint-disable-next-line
   url: (_: State, { settlementWindowId }: any) => `/settlement-window-close/${settlementWindowId}`,
 };
 
 const dfsps: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: () => '/dfsps',
 };
 
 const previousWindow: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspName }: { dfspName: string }) => `/previous-window/${dfspName}`,
 };
 
 const settlementAccount: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspId }: { dfspId: string }) => `/settlement-account/${dfspId}`,
 };
 
 const position: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspId }: { dfspId: string }) => `/positions/${dfspId}`,
 };
 
 const accounts: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspName }: { dfspName: string }) => `/accounts/${dfspName}`,
 };
 
 const fundsOut: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspName, accountId }: { dfspName: string; accountId: string }) =>
     `/funds-out/${dfspName}/${accountId}`,
 };
 
 const fundsIn: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspName, accountId }: { dfspName: string; accountId: string }) =>
     `/funds-in/${dfspName}/${accountId}`,
 };
 
 const netdebitcap: Endpoint = {
-  service: services.settlementService,
+  service: services.portalBackendService,
   url: (_: State, { dfspName }: { dfspName: string }) => `/netdebitcap/${dfspName}`,
 };
 

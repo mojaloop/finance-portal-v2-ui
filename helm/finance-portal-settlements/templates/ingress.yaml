@@ -34,5 +34,9 @@ spec:
             backend:
               serviceName: {{ .Values.ingress.settlementService.name }}
               servicePort: {{ .Values.ingress.settlementService.portName }}
+          - path: /api/portal-backend(/|$)(.*)
+            backend:
+              serviceName: {{ .Values.ingress.portalBackend.name }}
+              servicePort: {{ .Values.ingress.portalBackend.portName }}
 
 {{- end }}

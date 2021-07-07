@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// TODO:
+// - Implement a `/token` or `/cookie` backend call to allow the portal to check whether its
+//     current creds are still valid, in order to decide what to render.
 /**
- * This function makes a call to the settlement API to see if the request carries a valid cookie
+ * This function makes a call to the portal backend to see if the request carries a valid cookie
  *
  * @returns {boolean}
  */
@@ -9,7 +12,7 @@ export default async function checkTokenCookie() {
   try {
     const response = await axios({
       method: 'GET',
-      url: '/api/login/userInfo',
+      url: '/api/portal-backend/dfsps',
       validateStatus: (code) => (code > 199 && code < 300) || code === 401,
       withCredentials: true,
     });
@@ -19,7 +22,7 @@ export default async function checkTokenCookie() {
       return false;
     }
 
-    return response.data;
+    return true;
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);

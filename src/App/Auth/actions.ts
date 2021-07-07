@@ -24,4 +24,4 @@ export const requestLogin = createAction(REQUEST_LOGIN);
 export const setLoginSucceeded = createAction(SET_LOGIN_SUCCEDED);
 export const setLoginFailed = createAction<string | undefined>(SET_LOGIN_FAILED);
 export const logout = createAction(LOGOUT);
-export const setIsTokenValid = createAction<object>(SET_IS_TOKEN_VALID);
+export const setIsTokenValid = createAction<boolean>(SET_IS_TOKEN_VALID);

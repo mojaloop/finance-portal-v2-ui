@@ -60,7 +60,7 @@ export default createReducer(initialState, (builder) =>
       username: initialState.username,
       password: initialState.password,
     }))
-    .addCase(setIsTokenValid, (state: AuthState, action: PayloadAction<object>) => ({
+    .addCase(setIsTokenValid, (state: AuthState, action: PayloadAction<boolean>) => ({
       ...state,
       isTokenValid: action.payload,
     })),
