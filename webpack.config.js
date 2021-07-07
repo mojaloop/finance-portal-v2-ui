@@ -43,7 +43,14 @@ module.exports = {
         target: 'http://localhost:3007',
         secure: false,
         pathRewrite: {
-          '^/api/settlement': '/v2',
+          '^/api/settlement': '',
+        },
+      },
+      '/api/portal-backend': {
+        target: 'http://localhost:3002',
+        secure: false,
+        pathRewrite: {
+          '^/api/portal-backend': '',
         },
       },
     },
