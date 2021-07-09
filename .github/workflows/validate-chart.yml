@@ -13,7 +13,7 @@ jobs:
     - name: Install dependencies
       run: nix-env -if integration_test/chart/default.nix
     - name: Run manifest validation
-      run: helm template testname helm/finance-portal-settlements | kubeconform -strict -kubernetes-version 1.17.9
+      run: helm template testname helm/finance-portal-v2-ui | kubeconform -strict -kubernetes-version 1.17.9
 
   smoke_test_deploy:
     needs: manifest_validation
@@ -38,7 +38,7 @@ jobs:
           --image=rancher/k3s:v1.17.9-k3s1 \
           int-test
     - name: Deploy
-      run: helm install int-test ./helm/finance-portal-settlements
+      run: helm install int-test ./helm/finance-portal-v2-ui
     - name: Setup tmate session
       if: ${{ failure() }}
       uses: mxschmitt/action-tmate@v3
