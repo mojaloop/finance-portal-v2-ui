@@ -1,11 +1,11 @@
 {{- if .Values.ingress.enabled }}
-{{- $fullName := include "finance-portal-settlements.fullname" . }}
+{{- $fullName := include "finance-portal-v2-ui.fullname" . }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-{{ include "finance-portal-settlements.labels" . | indent 4 }}
+{{ include "finance-portal-v2-ui.labels" . | indent 4 }}
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
   {{- with .Values.ingress.annotations }}
@@ -24,7 +24,7 @@ spec:
         paths:
           - path: /()(.*)
             backend:
-              serviceName: {{ include "finance-portal-settlements.fullname" . }}
+              serviceName: {{ include "finance-portal-v2-ui.fullname" . }}
               servicePort: http
           - path: /api/login(/|$)(.*)
             backend:
