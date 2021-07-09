@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/modusintegration/finance-portal-settlements
-  tag: v2.0.1
+  repository: ghcr.io/mojaloop/finance-portal-v2-ui
+  tag: v2.0.3
   pullPolicy: IfNotPresent
 
 imagePullCredentials:
