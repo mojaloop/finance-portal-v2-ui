@@ -1,12 +1,12 @@
-# Default values for finance-portal-settlements.
+# Default values for finance-portal-v2-ui.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: ghcr.io/modusintegration/finance-portal-settlements
-  tag: v2.0.1
+  repository: ghcr.io/mojaloop/finance-portal-v2-ui
+  tag: v2.0.3
   pullPolicy: IfNotPresent
 
 imagePullCredentials:

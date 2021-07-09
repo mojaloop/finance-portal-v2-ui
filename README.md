@@ -175,58 +175,45 @@ the same shell instance (normally you can just use the same terminal window).
 
 1. Make relevant application and/or image and/or chart changes.
 2. Create a PR containing your changes and assign it to the relevant reviewers.
-3. Once the PR is merged, [create a new release](https://github.com/modusintegration/finance-portal-settlements/releases/new)
+3. Once the PR is merged, [create a new release](https://github.com/mojaloop/finance-portal-v2-ui/releases/new)
     with the title `vX.Y.Z`. See [previous
-    releases](https://github.com/modusintegration/finance-portal-settlements/releases) for
+    releases](https://github.com/mojaloop/finance-portal-v2-ui/releases) for
     examples.
-4. Wait for the [CI job](https://github.com/modusintegration/finance-portal-settlements/actions)
+4. Wait for the [CI job](https://github.com/mojaloop/finance-portal-v2-ui/actions)
    triggered by the PR to complete.
 
 ### Use The Chart
 
-1. Follow the steps here to create a personal access token:
-   https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token.
-   Your token will need `repo` scope. This token should be kept secure. Store it in your shell
-   (don't export it), we'll use it in a moment:
+1. Add the portal settlements repo:
     ```sh
-    # Replace with your actual token
-    YOUR_TOKEN="a8d625710d96b38dc7c2f93756c8d0e602908df4"
+    helm repo add portal https://raw.githubusercontent.com/mojaloop/finance-portal-v2-ui/repo
     ```
-2. Enable SSO for your token (if the token screen is still visible, you can click the _Enable SSO_
-   button on that screen):
-   https://docs.github.com/en/github/authenticating-to-github/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on.
-3. Add the portal settlements repo:
+2. Check it worked:
     ```sh
-    # replace with your actual GH user name
-    YOUR_GH_USER_NAME="my user name"
-    helm repo add --username="$YOUR_GH_USER_NAME" --password="$YOUR_TOKEN" portal https://raw.githubusercontent.com/modusintegration/finance-portal-settlements/repo
-    ```
-4. Check it worked:
-    ```sh
-    helm search repo portal/finance-portal-settlements
+    helm search repo portal/finance-portal-v2-ui
     ```
 
 Now, in `Chart.yaml` or `requirements.yaml`:
 ```yaml
 dependencies:
-- name: finance-portal-settlements
+- name: finance-portal-v2-ui
   version: v1.0.0 # replace as necessary
-  repository: https://raw.githubusercontent.com/modusintegration/finance-portal-settlements/repo
-  condition: finance-portal-settlements.enabled
+  repository: https://raw.githubusercontent.com/mojaloop/finance-portal-v2-ui/repo
+  condition: finance-portal-v2-ui.enabled
 ```
 
 ## Release a New Version
 
 1. Make relevant application and/or image changes. Be sure to update the version in `package.json`.
 2. Create a PR containing your changes and assign it to the relevant reviewers.
-3. Once the PR is merged, [create a new release](https://github.com/modusintegration/finance-portal-settlements/releases/new)
+3. Once the PR is merged, [create a new release](https://github.com/mojaloop/finance-portal-v2-ui/releases/new)
     with the title `vX.Y.Z`. See [previous
-    releases](https://github.com/modusintegration/finance-portal-settlements/releases) for
+    releases](https://github.com/mojaloop/finance-portal-v2-ui/releases) for
     examples.
-4. Wait for the [CI job](https://github.com/modusintegration/finance-portal-settlements/actions)
+4. Wait for the [CI job](https://github.com/mojaloop/finance-portal-v2-ui/actions)
    triggered by the PR to complete.
 
-The new image will be available at ghcr.io/modusintegration/finance-portal-settlements.
+The new image will be available at ghcr.io/mojaloop/finance-portal-v2-ui.
 
 To use the image, you'll need to follow these steps:
 
@@ -245,7 +232,7 @@ To use the image, you'll need to follow these steps:
     ```
 3. Pull the image:
     ```sh
-    docker pull ghcr.io/modusintegration/finance-portal-settlements
+    docker pull ghcr.io/mojaloop/finance-portal-v2-ui
     ```
 
 To deploy an image from a private repo in a private Kubernetes cluster:
