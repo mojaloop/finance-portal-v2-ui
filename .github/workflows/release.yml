@@ -23,6 +23,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         charts_dir: helm
         charts_url: ./
-        branch: helm
+        branch: helm-repo
         linting: off
         chart_version: ${{ env.app_release_version }}
