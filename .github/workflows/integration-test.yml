@@ -6,16 +6,13 @@ jobs:
   manifest_check:
     runs-on: ubuntu-latest
     steps:
-    # Setup
     - uses: actions/checkout@v2.3.4
     - uses: cachix/install-nix-action@v13
       with:
         nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/8e4fe32876ca15e3d5eb3ecd3ca0b224417f5f17.tar.gz
     - name: Install dependencies in environment
       run: nix-env -if integration_test/default.nix
-
-    # Tests
-    - name: Smoke test integration test manifest
+    - name: Validate integration test manifest
       run: kustomize build integration_test | kubeconform -strict -kubernetes-version 1.17.9
 
   integration_test:
@@ -44,7 +41,7 @@ jobs:
           int-test
 
     - name: Deploy
-      run: kustomize build integration_test/ | 
+      run: kustomize build integration_test/ | kubectl apply -f -
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
