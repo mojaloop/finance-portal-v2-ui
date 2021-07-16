@@ -28,4 +28,5 @@ in
   nixpkgs.kubeconform
   nixpkgs.kubernetes-helm
   k3d
+  nixpkgs.skaffold
 ]
