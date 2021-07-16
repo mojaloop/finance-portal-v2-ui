@@ -4,5 +4,6 @@ metadata:
   name: mojaloop-kustomize
 deploy:
   kustomize:
+    statusCheckDeadlineSeconds: 600
     paths:
     - integration_test
