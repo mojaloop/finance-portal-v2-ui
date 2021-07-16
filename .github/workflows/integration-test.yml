@@ -41,7 +41,7 @@ jobs:
           int-test
 
     - name: Deploy
-      run: kustomize build integration_test/ | kubectl apply -f -
+      run: skaffold deploy
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
