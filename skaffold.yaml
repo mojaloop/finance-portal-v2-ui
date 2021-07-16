@@ -3,7 +3,7 @@ kind: Config
 metadata:
   name: mojaloop-kustomize
 deploy:
+  statusCheckDeadlineSeconds: 600
   kustomize:
-    statusCheckDeadlineSeconds: 600
     paths:
     - integration_test
