@@ -43,6 +43,16 @@ jobs:
     - name: Deploy
       run: skaffold run
 
+    - name: Wait for kube api server to process and create all resources
+      # This is because the wait step that follows this one does this:
+      # 1. retrieve list of pods
+      # 2. wait for list of pods
+      # Unfortunately, the list of pods might not be complete at step (1), as all pods may not yet
+      # be created, meaning the list of pods waited on in step (2) is not complete. We therefore
+      # wait some time here to allow that to finish before we retrieve the list of pods to wait on.
+      # 30s should be more than enough.
+      run: sleep 30s
+
     - name: Wait for deployment readiness
       # Skaffold is supposed to do this, but for whatever reason, does not. At the time of writing,
       # investigating this was not a priority.
