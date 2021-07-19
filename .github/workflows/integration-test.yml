@@ -43,6 +43,11 @@ jobs:
     - name: Deploy
       run: skaffold deploy
 
+    - name: Wait for deployment readiness
+      # Skaffold is supposed to do this, but for whatever reason, does not. At the time of writing,
+      # investigating this was not a priority.
+      run: timeout 480 kubectl wait --for=condition=Ready pod --all --timeout=480s
+
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
       run: docker ps
