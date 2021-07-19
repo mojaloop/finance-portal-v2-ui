@@ -1,6 +1,3 @@
 resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=156ccee5faab9c4734281e622d754ab3be021978
-
-# patchesStrategicMerge:
-# # - github.com/kubernetes-sigs/kustomize/examples/wordpress/patch.yaml
-# - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/patch-portal-backend-mysql-env.yaml?ref=9ce965d291d40ec839abfe77770f01b337e680e1
+- shared/manifests/portal-frontend
