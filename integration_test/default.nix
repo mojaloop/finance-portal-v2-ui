@@ -21,40 +21,22 @@ let
     dontFixup = true;
   };
 
-  skaffold = nixpkgs.buildGoModule rec {
-    pname = "skaffold";
+  skaffold = nixpkgs.stdenv.mkDerivation rec {
     version = "1.28.0";
-
-    src = nixpkgs.fetchFromGitHub {
-      owner = "GoogleContainerTools";
-      repo = "skaffold";
-      rev = "v${version}";
-      sha256 = "007jq7c160m1vggib6sq1fr5m77bv9gccq8cfn8rh6sj7h57rpf4";
+    pname = "skaffold";
+    src = builtins.fetchurl {
+      url = "https://github.com/GoogleContainerTools/skaffold/releases/download/v1.28.0/skaffold-linux-amd64";
+      sha256 = "1aiggw0b8655mzzf57xv079vzgfj4k3xwlr7l48y2pvbzy46f0mg";
     };
-
-    vendorSha256 = "0ggq6vz8na7sm37fb3xdgq161p82sfa13iz088y7whl1ip1n1wa8";
-
-    subPackages = ["cmd/skaffold"];
-
-    buildFlagsArray = let t = "github.com/GoogleContainerTools/skaffold/pkg/skaffold"; in  ''
-      -ldflags=
-        -s -w
-        -X ${t}/version.version=v${version}
-        -X ${t}/version.gitCommit=${src.rev}
-        -X ${t}/version.buildDate=unknown
-    '';
-
-    nativeBuildInputs = [ nixpkgs.installShellFiles ];
-
-    postInstall = ''
-      installShellCompletion --cmd skaffold \
-        --bash <($out/bin/skaffold completion bash) \
-        --zsh <($out/bin/skaffold completion zsh)
-    '';
+    dontUnpack = true;
+    installPhase = ''
+      mkdir -p $out/bin
+      cp $src $out/bin/skaffold
+      chmod +x $out/bin/skaffold
+      '';
   };
 
 in
-
 
 [
   nixpkgs.kubeconform
