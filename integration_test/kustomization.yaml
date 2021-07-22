@@ -2,3 +2,34 @@ resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=d345b30808cfa597a8d8cdede6170348938b0730
 - manifests/portal-frontend
 - github.com/partiallyordered/voodoo-doll/kubernetes?ref=6ab9060db695aeabd58d31b4c50ac9c6418f1bb9
+- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.3
+- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.3
+
+configMapGenerator:
+- name: oauth-app-credentials
+  literals: &oauth_creds
+  - AUTH_SERVER_CLIENTKEY=fv0xZxstzo2_qVcqMRFpLI43xm8mZZ
+  - AUTH_SERVER_CLIENTSECRET=CJvf1mQxQdLqWLYuNvAicRd6iBMQo5
+- name: wso2is-populate
+  literals:
+  - WSO2_HOST=https://wso2is:9443
+- name: portal-backend
+  behavior: merge
+  literals: *oauth_creds
+
+patches:
+- patch: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: wso2is-populate
+    spec:
+      template:
+        spec:
+          containers:
+          - name: job
+            envFrom:
+            - configMapRef:
+                name: oauth-app-credentials
+            - configMapRef:
+                name: wso2is-populate

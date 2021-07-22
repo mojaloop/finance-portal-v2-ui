@@ -58,6 +58,11 @@ jobs:
       # investigating this was not a priority.
       run: timeout 480 kubectl wait --for=condition=Ready pod --all --timeout=480s
 
+    - name: Wait for populate to complete
+      # This normally happens about a minute after wso2is comes up, but sometimes takes a bit
+      # longer. We wait for the entire duration of the workflow job- why not..?
+      run: time kubectl wait --timeout=600s --for=condition=complete jobs/wso2is-populate
+
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
       run: docker ps
