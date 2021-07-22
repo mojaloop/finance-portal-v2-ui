@@ -1,3 +1,4 @@
 resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=d345b30808cfa597a8d8cdede6170348938b0730
 - shared/manifests/portal-frontend
+- github.com/partiallyordered/voodoo-doll/kubernetes?ref=6ab9060db695aeabd58d31b4c50ac9c6418f1bb9
