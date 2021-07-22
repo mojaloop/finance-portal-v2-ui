@@ -2,8 +2,8 @@ resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=d345b30808cfa597a8d8cdede6170348938b0730
 - manifests/portal-frontend
 - github.com/partiallyordered/voodoo-doll/kubernetes?ref=6ab9060db695aeabd58d31b4c50ac9c6418f1bb9
-- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.3
-- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.3
+- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.4
+- github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.4
 
 configMapGenerator:
 - name: oauth-app-credentials
@@ -28,6 +28,7 @@ patches:
         spec:
           containers:
           - name: job
+            image: ghcr.io/mojaloop/wso2is-populate:v2.0.4
             envFrom:
             - configMapRef:
                 name: oauth-app-credentials
