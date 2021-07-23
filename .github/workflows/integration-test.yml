@@ -37,7 +37,7 @@ jobs:
           --k3s-server-arg "--kube-proxy-arg=conntrack-max-per-core=0" \
           --k3s-agent-arg "--kube-proxy-arg=conntrack-max-per-core=0" \
           --k3s-server-arg "--disable=traefik" \ # deploy our own for increased portability across k8s distributions
-          # the rest of these k3s server args conserve resources.. for WSO2.. sigh..
+          \ # the rest of these k3s server args conserve resources.. for WSO2.. sigh..
           --k3s-server-arg "--disable=metrics-server" \
           --k3s-server-arg "--disable=servicelb" \
           --k3s-server-arg "--disable-cloud-controller" \
