@@ -1,0 +1,7 @@
+integration_test
+node_modules
+dist
+helm
+scripts
+.git
+.github
