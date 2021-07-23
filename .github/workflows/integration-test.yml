@@ -71,12 +71,28 @@ jobs:
       # longer. We wait for the entire duration of the workflow job- why not..?
       run: time kubectl wait --timeout=600s --for=condition=complete jobs/wso2is-populate
 
-    - name: Port-forward portal frontend
+    - name: Port-forward the portal frontend ingress
       # We only port-forward portal frontend because we don't want to encourage or accidentally
       # develop dependencies on other services for our tests, if we can avoid it.
       # Port-forwarding might prove problematic in future; if it proves unreliable. In this case,
       # we could bundle the integration tests in a container and deploy them to the cluster.
-      run: kubectl port-forward --address 0.0.0.0 svc/portal-frontend 3000:80 &
+      run: kubectl port-forward -n ingress-nginx --address 0.0.0.0 svc/ingress-nginx-controller 3000:80 &
+
+    - name: Install test dependencies
+      run: |-
+        cd integration_test/tests
+        npm ci
+
+    - name: Run tests
+      run: |-
+        cd integration_test/tests
+        npm run test:headless -- -t 'Enter a valid username and password, click the submit and should be transferred to the main page'
+
+    - name: Archive test report
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-report
+        path: integration_test/tests/reports/report.html
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
