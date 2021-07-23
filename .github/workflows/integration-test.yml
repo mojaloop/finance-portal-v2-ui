@@ -16,6 +16,7 @@ jobs:
       run: kustomize build integration_test | kubeconform -strict -kubernetes-version 1.17.9
 
   integration_test:
+    timeout-minutes: 40
     needs: manifest_check
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +63,13 @@ jobs:
       # This normally happens about a minute after wso2is comes up, but sometimes takes a bit
       # longer. We wait for the entire duration of the workflow job- why not..?
       run: time kubectl wait --timeout=600s --for=condition=complete jobs/wso2is-populate
+
+    - name: Port-forward portal frontend
+      # We only port-forward portal frontend because we don't want to encourage or accidentally
+      # develop dependencies on other services for our tests, if we can avoid it.
+      # Port-forwarding might prove problematic in future; if it proves unreliable. In this case,
+      # we could bundle the integration tests in a container and deploy them to the cluster.
+      run: kubectl port-forward --address 0.0.0.0 svc/portal-frontend 3000:80 &
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
