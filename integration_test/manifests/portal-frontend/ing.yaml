@@ -14,7 +14,7 @@ spec:
           servicePort: http
       - path: /api/login(/|$)(.*)
         backend:
-          serviceName: finance-portal
+          serviceName: portal-backend
           servicePort: 3000
       - path: /api/settlement(/|$)(.*)
         backend:
@@ -22,5 +22,5 @@ spec:
           servicePort: 80
       - path: /api/portal-backend(/|$)(.*)
         backend:
-          serviceName: finance-portal
+          serviceName: portal-backend
           servicePort: 3000
