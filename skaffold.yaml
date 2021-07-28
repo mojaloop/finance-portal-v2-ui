@@ -1,0 +1,14 @@
+apiVersion: skaffold/v2beta19
+kind: Config
+metadata:
+  name: mojaloop-kustomize
+build:
+  artifacts:
+  - image: ghcr.io/mojaloop/finance-portal-v2-ui
+    docker:
+      dockerfile: Dockerfile
+deploy:
+  statusCheckDeadlineSeconds: 600
+  kustomize:
+    paths:
+    - integration_test
