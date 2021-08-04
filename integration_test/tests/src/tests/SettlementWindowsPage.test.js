@@ -1,39 +1,46 @@
-const { Role } = require('testcafe');
+import { Selector, Role } from 'testcafe';
+
 const settlementWindowsPage = require('../page-objects/pages/SettlementWindowsPage');
-const userData = require('../data/user-data');
 const loginPage = require('../page-objects/pages/LoginPage');
+const config = require('../../config');
 
-const regularUser = Role(`${userData.urls.FINANCE_PORTAL_V2.BASE_URL.QA}`, async (t) => {
-    await t
-            .typeText(await loginPage.getUserName(),'mfpadmin')
-            .typeText(await loginPage.getPassword(),'mfpadmin')
-            .click('#login');
-
+const adminUser = Role(config.financePortalEndpoint, async (t) => {
+  await t
+    .typeText(loginPage.userName, config.credentials.admin.username)
+    .typeText(loginPage.password, config.credentials.admin.password)
+    .click(loginPage.submitButton);
 });
 
-fixture.skip `SettlementWindows Feature`
-    .page `${userData.urls.FINANCE_PORTAL_V2.BASE_URL.QA}` // specify the start page  
-    .beforeEach( async (t) => {
-        t.useRole(regularUser);
-    });
+fixture `Settlement windows page`
+  // At the time of writing, it looks like this navigates to /windows. And it appears that this
+  // isn't handled correctly, causing the root page (i.e. login) to load again.
+  // .page `${config.financePortalEndpoint}/windows`
+  .beforeEach( async (t) => {
+    await t
+      .useRole(adminUser)
+      .click(settlementWindowsPage.navBar.settlementWindowsButton);
+  });
 
-    test
-    .meta({
-        ID: '',
-        STORY: 'MMD-440'
-    })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
-    State should be empty and Clear Filters button`, async t => {
+test
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    description: `Selecting Settlement Windows tab in Side Menu, the main settlement page should be
+                  displayed with Date drop-down defaulted to Today, From and To drop-down defaulted
+                  to current date in MM/DD/YYYY HH:MM:SS format, State should be empty and Clear
+                  Filters button`
+  })('Settlementwindow filter defaults as expected', async t => {
 
-        //Call Mojaloop Settlement API to get the current window details
+      // Call Mojaloop Settlement API to get the current window details
 
-        // Check that the latest window ID that displays on the page is the same
-        await t
-                .expect(settlementWindowsPage._date.exists).ok()
-                .expect(settlementWindowsPage._fromDate.exists).ok()
-                .expect(settlementWindowsPage._toDate.exists).ok()
-                .expect(settlementWindowsPage._state.exists).ok();
+      // Check that the latest window ID that displays on the page is the same
+    console.log(settlementWindowsPage);
+    console.log(await Selector(settlementWindowsPage.date).exists);
+      await t
+        .expect(Selector(settlementWindowsPage.date).exists).ok()
+        .expect(Selector(settlementWindowsPage.toDate).exists).ok()
+        .expect(Selector(settlementWindowsPage.date).exists).ok()
+        .expect(Selector(settlementWindowsPage.state).exists).ok();
     });
 
 test.meta({
@@ -44,7 +51,7 @@ test.meta({
     Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
     State should be empty and Clear Filters button`,
   async (t) => {
-    //Call Mojaloop Settlement API to get the current window details
+    // Call Mojaloop Settlement API to get the current window details
     // Check that the latest window ID that displays on the page is the same
   },
 );

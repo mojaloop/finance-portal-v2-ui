@@ -101,6 +101,10 @@ jobs:
       if: ${{ failure() }}
       run: docker ps
 
+    - name: Print voodoo doll logs
+      if: ${{ always() }}
+      run: kubectl log voodoo-doll
+
     - name: Print resources
       if: ${{ always() }}
       run: kubectl get svc,deploy,sts,pv,pvc,configmap,job,pod -A

@@ -5,10 +5,13 @@
     "jest": true
   },
   "extends": "eslint:recommended",
+  "globals": {
+    "fixture": "readonly"
+  },
   "rules": {
     "indent": [
       "error",
-      4,
+      2,
       { "SwitchCase": 1 }
     ],
     "linebreak-style": [

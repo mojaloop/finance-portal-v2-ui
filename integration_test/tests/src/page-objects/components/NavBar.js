@@ -1,11 +1,6 @@
-import { Selector } from "testcafe";
-
-class NavBar {
-    constructor () {
-        this._navBarLink = Selector(".layout__navbar__home__link").withAttribute("role","button");
-        this._userIcon = Selector('#layout__navbar__user__icon');
-        this._userNameTooltip = Selector('#layout__navbar__user__name .el-tooltip');
-    };
-}
-
-module.exports = NavBar;
+module.exports = {
+  container: 'div.side-menu',
+  settlementWindowsButton: 'div.mb-element.el-menu > .el-menu__section:nth-child(1) .el-menu__item:nth-child(1)',
+  settlementsButton: 'div.mb-element.el-menu > .el-menu__section:nth-child(1) .el-menu__item:nth-child(2)',
+  dfspFinancialPositionsButton: 'div.mb-element.el-menu > .el-menu__section:nth-child(2) .el-menu__item:nth-child(1)',
+};

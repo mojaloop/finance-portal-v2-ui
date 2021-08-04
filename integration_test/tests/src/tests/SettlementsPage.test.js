@@ -1,7 +1,7 @@
 const settlementsPage = require('../page-objects/pages/SettlementWindowsPage');
-const userData = require('../data/user-data');
+const config = require('../../config');
 
-fixture.skip `Settlements Feature`.page`${userData.urls.FINANCE_PORTAL_V2.BASE_URL.QA}`; // specify the start page
+fixture.skip `Settlements Feature`.page`${config.financePortalEndpoint}`; // specify the start page
 
 test.meta({
   ID: '',

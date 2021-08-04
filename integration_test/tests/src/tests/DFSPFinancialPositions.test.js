@@ -1,6 +1,6 @@
-const config = require('../../config');
-
 import { Selector } from 'testcafe';
+
+const config = require('../../config');
 
 fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`.beforeEach(async (t) => {
   `Login and browse to "DFSP Financial Positions" page, and press "Update" button.`;
@@ -9,6 +9,7 @@ fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`.bef
     .typeText('#login__input-password', config.credentials.admin.password)
     .click('#login__btn-submit')
     .click(Selector('#root div').withText('DFSP Financial Positions').nth(6))
+    // TODO: dependence on "testfsp2"
     .click('#btn__update_testfsp2')
     .click(Selector('#select__action div').withText('Select Action...'));
 });
@@ -16,9 +17,9 @@ fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`.bef
 test.meta({
   ID: 'MMD-T26',
   STORY: 'MMD-376',
+  description: 'Allow funds to add on payerfsp so that the transfers will not be blocked due to insufficient liquidity',
 })(
-  `Add funds on payerfsp account - positive number. 
-    Allow funds to add on payerfsp so that the transfers will not be blocked due to insufficient liquidity.`,
+  'Add funds on payerfsp account - positive number',
   async (t) => {
     await t
       .click(Selector('#select__action div').withText('Add / Withdraw Funds').nth(6))
@@ -35,7 +36,7 @@ test.meta({
   ID: 'MMD-T28',
   STORY: 'MMD-376',
 })(
-  `Add Funds - "0". 
+  `Add Funds - "0".
   Add "0" funds is not acceptable.`,
   async (t) => {
     await t
@@ -51,7 +52,7 @@ test.meta({
   ID: 'MMD-T29',
   STORY: 'MMD-376',
 })(
-  `Add Funds - Negative number. 
+  `Add Funds - Negative number.
   Supplying negative value to add funds input results in negative sign being ignored.`,
   async (t) => {
     await t
@@ -67,7 +68,7 @@ test.meta({
   ID: 'MMD-T27',
   STORY: 'MMD-414',
 })(
-  `Withdraw funds - Negative number. 
+  `Withdraw funds - Negative number.
   Amount field should not allow "negative" number to withdraw.`,
   async (t) => {
     await t
@@ -83,7 +84,7 @@ test.meta({
   ID: 'MMD-T30',
   STORY: 'MMD-414',
 })(
-  `Withdraw funds - Positive number. 
+  `Withdraw funds - Positive number.
   Amount field should allow "positive" number to withdraw.`,
   async (t) => {
     await t
@@ -101,7 +102,7 @@ test.meta({
   ID: 'MMD-T31',
   STORY: 'MMD-414',
 })(
-  `Withdraw funds - Higher than the available balance. 
+  `Withdraw funds - Higher than the available balance.
   System should not allow withdraw of higher amount than the balance.`,
   async (t) => {
     await t
