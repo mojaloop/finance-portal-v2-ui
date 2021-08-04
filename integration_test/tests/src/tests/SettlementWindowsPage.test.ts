@@ -1,24 +1,21 @@
-import { Selector, Role } from 'testcafe';
-
-const settlementWindowsPage = require('../page-objects/pages/SettlementWindowsPage');
-const loginPage = require('../page-objects/pages/LoginPage');
-const config = require('../../config');
-
-const adminUser = Role(config.financePortalEndpoint, async (t) => {
-  await t
-    .typeText(loginPage.userName, config.credentials.admin.username)
-    .typeText(loginPage.password, config.credentials.admin.password)
-    .click(loginPage.submitButton);
-});
+import { Selector } from 'testcafe';
+import { waitForReact } from 'testcafe-react-selectors';
+import { SettlementWindowsPage } from '../page-objects/pages/SettlementWindowsPage';
+import { LoginPage } from '../page-objects/pages/LoginPage';
+import { config } from '../../config';
+import { SideMenu } from '../page-objects/components/SideMenu';
 
 fixture `Settlement windows page`
   // At the time of writing, it looks like this navigates to /windows. And it appears that this
   // isn't handled correctly, causing the root page (i.e. login) to load again.
-  // .page `${config.financePortalEndpoint}/windows`
-  .beforeEach( async (t) => {
+  .page `${config.financePortalEndpoint}`
+  .beforeEach(async (t) => {
+    await waitForReact();
     await t
-      .useRole(adminUser)
-      .click(settlementWindowsPage.navBar.settlementWindowsButton);
+      .typeText(LoginPage.userName, config.credentials.admin.username)
+      .typeText(LoginPage.password, config.credentials.admin.password)
+      .click(LoginPage.submitButton)
+      .click(SideMenu.settlementWindowsButton);
   });
 
 test
@@ -34,13 +31,13 @@ test
       // Call Mojaloop Settlement API to get the current window details
 
       // Check that the latest window ID that displays on the page is the same
-    console.log(settlementWindowsPage);
-    console.log(await Selector(settlementWindowsPage.date).exists);
+    console.log(SettlementWindowsPage);
+    console.log(await Selector(SettlementWindowsPage.date).exists);
       await t
-        .expect(Selector(settlementWindowsPage.date).exists).ok()
-        .expect(Selector(settlementWindowsPage.toDate).exists).ok()
-        .expect(Selector(settlementWindowsPage.date).exists).ok()
-        .expect(Selector(settlementWindowsPage.state).exists).ok();
+        .expect(Selector(SettlementWindowsPage.date).exists).ok()
+        .expect(Selector(SettlementWindowsPage.toDate).exists).ok()
+        .expect(Selector(SettlementWindowsPage.date).exists).ok()
+        .expect(Selector(SettlementWindowsPage.state).exists).ok();
     });
 
 test.meta({

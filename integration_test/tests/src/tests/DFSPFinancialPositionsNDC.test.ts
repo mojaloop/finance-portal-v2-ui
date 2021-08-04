@@ -1,6 +1,5 @@
-const config = require('../../config');
-
 import { Selector } from 'testcafe';
+import { config } from '../../config';
 
 fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`;
 

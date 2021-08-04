@@ -8,19 +8,21 @@
  *       Sridevi Miriyala - sridevi.miriyala@modusbox.com                   *
  **************************************************************************/
 
-require('dotenv').config();
-const env = require('env-var');
+import * as dotenv from 'dotenv';
 
-module.exports = {
-    financePortalEndpoint: env.get('FINANCE_PORTAL_ENDPOINT').asString(),
-    credentials: {
-        admin: {
-            username: env.get('ADMIN_USER_NAME').asString(),
-            password: env.get('ADMIN_PASSWORD').asString(),
-        },
-        user: {
-            username: env.get('USER_NAME').asString(),
-            password: env.get('PASSWORD').asString(),
-        },
+dotenv.config();
+
+// TODO: ajv
+export const config = {
+  financePortalEndpoint: process.env.FINANCE_PORTAL_ENDPOINT,
+  credentials: {
+    admin: {
+      username: process.env.ADMIN_USER_NAME,
+      password: process.env.ADMIN_PASSWORD,
     },
+    user: {
+      username: process.env.USER_NAME,
+      password: process.env.PASSWORD,
+    },
+  },
 };
