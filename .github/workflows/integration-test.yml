@@ -1,6 +1,9 @@
 name: Integration test
 
-on: [pull_request]
+on:
+  push:
+    branches:
+    - '**'
 
 jobs:
   manifest_check:
