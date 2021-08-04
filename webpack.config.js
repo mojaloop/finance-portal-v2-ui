@@ -1,9 +1,21 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
 const { DefinePlugin } = require('webpack');
+const TerserPlugin = require("terser-webpack-plugin");
 const path = require('path');
 
 module.exports = {
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          keep_classnames: true,
+          keep_fnames: true,
+        },
+      }),
+    ],
+  },
   entry: './src/index',
   devtool: 'cheap-module-source-map',
   devServer: {
