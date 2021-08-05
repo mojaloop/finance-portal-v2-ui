@@ -6,7 +6,8 @@
   },
   "extends": "eslint:recommended",
   "globals": {
-    "fixture": "readonly"
+    "fixture": "readonly",
+    "test": "readonly"
   },
   "rules": {
     "indent": [

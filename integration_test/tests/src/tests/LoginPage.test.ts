@@ -1,5 +1,5 @@
-import { LoginPage } from '../page-objects/pages/LoginPage.ts';
-import * as config from '../../config';
+import { LoginPage } from '../page-objects/pages/LoginPage';
+import { config } from '../../config';
 import { Selector } from 'testcafe';
 
 fixture`Login Feature`.page`${config.financePortalEndpoint}`; // specify the start page
@@ -38,8 +38,8 @@ test.meta({
   STORY: 'MP-440',
 }).skip('Enter a valid username and an invalid password with spaces, login should fail', async (t) => {
   await t
-    .typeText(LoginPage.userName, config.adminUsername) 
-    .typeText(LoginPage.password, `${config.adminPassword} `) 
+    .typeText(LoginPage.userName, config.credentials.admin.username) 
+    .typeText(LoginPage.password, `${config.credentials.admin.password} `) 
     .click(LoginPage.submitButton);
 
   // TODO: not this:

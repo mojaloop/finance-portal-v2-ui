@@ -1,5 +1,4 @@
-const settlementsPage = require('../page-objects/pages/SettlementWindowsPage');
-const config = require('../../config');
+import { config } from '../../config';
 
 fixture.skip `Settlements Feature`.page`${config.financePortalEndpoint}`; // specify the start page
 
