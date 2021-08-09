@@ -10,6 +10,7 @@
     "test": "readonly"
   },
   "rules": {
+    "max-len": 100,
     "indent": [
       "error",
       2,

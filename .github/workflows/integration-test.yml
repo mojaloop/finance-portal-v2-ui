@@ -98,7 +98,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-report
-        path: integration_test/tests/reports/report.html
+        path: integration_test/tests/report.html
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}

@@ -65,9 +65,9 @@ const settleSettlementWindow: Endpoint = {
 };
 
 const closeSettlementWindow: Endpoint = {
-  service: services.portalBackendService,
+  service: services.settlementService,
   // eslint-disable-next-line
-  url: (_: State, { settlementWindowId }: any) => `/settlement-window-close/${settlementWindowId}`,
+  url: (_: State, { settlementWindowId }: any) => `/settlementWindows/${settlementWindowId}`,
 };
 
 const dfsps: Endpoint = {

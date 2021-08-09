@@ -1,12 +1,12 @@
-import { Selector } from 'testcafe';
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementWindowsPage } from '../page-objects/pages/SettlementWindowsPage';
+import { SettlementWindowsPage, SettlementWindowStatus } from '../page-objects/pages/SettlementWindowsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
-import type { ClientMessage } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
+import { Temporal } from '@js-temporal/polyfill';
+import { ReactSelector } from 'testcafe-react-selectors';
 
 fixture `Settlement windows page`
   // At the time of writing, it looks like this navigates to /windows. And it appears that this
@@ -56,24 +56,59 @@ test
 
     // Check that the latest window ID that displays on the page is the same
     await t
-      .expect(Selector(SettlementWindowsPage.date).exists).ok()
-      .expect(Selector(SettlementWindowsPage.toDate).exists).ok()
-      .expect(Selector(SettlementWindowsPage.date).exists).ok()
-      .expect(Selector(SettlementWindowsPage.state).exists).ok();
+      .expect(SettlementWindowsPage.date.exists).ok()
+      .expect(SettlementWindowsPage.toDate.exists).ok()
+      .expect(SettlementWindowsPage.date.exists).ok()
+      .expect(SettlementWindowsPage.state.exists).ok();
   });
 
 test.meta({
   ID: '',
   STORY: 'MMD-440',
-})(
-  `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
-    State should be empty and Clear Filters button`,
-  async (t) => {
-    // Call Mojaloop Settlement API to get the current window details
-    // Check that the latest window ID that displays on the page is the same
-  },
-);
+})('Expect a single open settlement window', async (t) => {
+  // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
+  // currency, therefore a single window.
+  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
+    state: SettlementWindowStatus.Open,
+  });
+  // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
+  // state that we expect, i.e. by closing all existing windows, then observing the single
+  // remaining open window?
+  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
+});
+
+test.meta({
+  ID: '',
+  STORY: 'MMD-440',
+  description:
+    `Close the single open settlement window, and expect the same window now shows up in a list of
+     closed windows`,
+})('Close settlement window', async (t) => {
+  // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
+  // currency, therefore a single window.
+  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
+    state: SettlementWindowStatus.Open,
+  });
+  // await t.wait(10000);
+  // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
+  // state that we expect, i.e. by closing all existing windows, then observing the single
+  // remaining open window?
+  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
+  const settlementWindowRow = SettlementWindowsPage.resultRows;
+  const settlementWindowId = settlementWindowRow.findReact('ItemCell').nth(1).value;
+  const closeButton = settlementWindowRow.findReact('Button');
+  const { props } = await closeButton.getReact();
+  await t.expect(props.disabled).eql(false);
+  await t.click(closeButton);
+
+  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
+    state: SettlementWindowStatus.Closed,
+  });
+  const closedRows = SettlementWindowsPage.resultRows;
+  await t.expect(closedRows.count).gt(0);
+  const closedRow = closedRows.withProps({ item: { _source: { settlementWindowId } } });
+  await t.expect(closedRow.exists).ok();
+});
 
 test.meta({
   ID: '',

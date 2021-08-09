@@ -134,11 +134,14 @@ export function* SettleSettlementWindowsSaga(): Generator {
 
 function* closeSettlementWindow(action: PayloadAction<SettlementWindow>) {
   try {
-    const response = yield call(apis.closeSettlementWindow.update, {
+    // This is obviously not a create. Obviously, it *should* be an update, but the central
+    // settlement API is a bit funky in this regard.
+    // https://github.com/mojaloop/central-settlement/blob/e3c8cf8fc61543d1ab70880765ced23a9e98cb25/src/interface/swagger.json#L96
+    const response = yield call(apis.closeSettlementWindow.create, {
       settlementWindowId: action.payload.settlementWindowId,
       body: {
-        startDate: new Date(action.payload.createdDate).toISOString(),
-        endDate: new Date().toISOString(),
+        state: 'CLOSED',
+        reason: 'Business operations portal request',
       },
     });
 
