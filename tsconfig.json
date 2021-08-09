@@ -12,6 +12,9 @@
     "jsx": "react",
     "sourceMap": true,
     "declaration": false,
-    "allowJs": true,
-  }
+    "allowJs": true
+  },
+  "exclude": [
+    "./integration_test/"
+  ]
 }
