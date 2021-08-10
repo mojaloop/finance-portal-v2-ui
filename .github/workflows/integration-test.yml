@@ -82,8 +82,8 @@ jobs:
       run: kubectl port-forward -n ingress-nginx --address 0.0.0.0 svc/ingress-nginx-controller 3000:80 &
 
     - name: Install test dependencies
+      working-directory: integration_test/tests
       run: |-
-        cd integration_test/tests
         npm ci
 
     - name: Run tests
@@ -91,7 +91,7 @@ jobs:
       working-directory: integration_test/tests
       run: |-
         cp .env.example.ci .env
-        npm run test:headless
+        npm run test:headless -- -t 'Log in with valid credentials'
 
     - name: Archive test report
       if: ${{ always() }}
@@ -106,18 +106,18 @@ jobs:
 
     - name: Print voodoo doll logs
       if: ${{ always() }}
-      run: kubectl log voodoo-doll
+      run: kubectl logs voodoo-doll
 
     - name: Print resources
       if: ${{ always() }}
       run: kubectl get svc,deploy,sts,pv,pvc,configmap,job,pod -A
 
     - name: Describe resources
-      if: ${{ failure() }}
+      if: ${{ always() }}
       run: kubectl describe svc,deploy,sts,pv,pvc,configmap,job,pod -A
 
     - name: Print secret values
-      if: ${{ failure() }}
+      if: ${{ always() }}
       run: |-
         kubectl get secrets -o json | jq -r '.items[] | { name: .metadata.name, data: .data | map_values(@base64d) }'
 
