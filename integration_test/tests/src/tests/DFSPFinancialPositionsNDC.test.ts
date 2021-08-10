@@ -1,7 +1,7 @@
 import { Selector } from 'testcafe';
 import { config } from '../config';
 
-fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`;
+fixture.skip`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`;
 
 const { admin, user } = config.credentials;
 

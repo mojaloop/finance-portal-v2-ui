@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitThis": true,
+    "strict": true,
+    "lib": ["esnext"],
+    "jsx": "react",
+    "allowJs": false,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "types": ["node"]
+  }
+}

@@ -7,20 +7,7 @@
   "compilerOptions": {
     "typescript": {
       "customCompilerModulePath": "../ts4",
-      "options": {
-        "noImplicitAny": true,
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "noImplicitThis": true,
-        "strict": true,
-        "target": "esnext",
-        "lib": ["lib.esnext.d.ts"],
-        "jsx": "react",
-        "allowJs": false,
-        "inlineSourceMap": true,
-        "inlineSources": true,
-        "types": ["node"]
-      }
+      "configPath": "tsconfig.json"
     }
   }
 }

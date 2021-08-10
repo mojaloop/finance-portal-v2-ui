@@ -88,10 +88,10 @@ jobs:
 
     - name: Run tests
       # TODO: the env file is hard-coded. We should really get the creds in a more sensible fashion
+      working-directory: integration_test/tests
       run: |-
-        cd integration_test/tests
         cp .env.example.ci .env
-        npm run test:headless -- -t 'Enter a valid username and password, click the submit and should be transferred to the main page'
+        npm run test:headless
 
     - name: Archive test report
       if: ${{ always() }}
