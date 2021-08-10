@@ -11,7 +11,7 @@
     "axios": "^0.21.1",
     "dotenv": "^9.0.2",
     "env-var": "^7.0.1",
-    "mojaloop-voodoo-client": "/home/msk/projects/github.com/msk-/voodoo-doll/clients/typescript/dist/",
+    "mojaloop-voodoo-client": "0.2.0",
     "request": "2.88.2",
     "testcafe": "1.15.1",
     "testcafe-react-selectors": "^4.0.0",

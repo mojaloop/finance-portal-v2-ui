@@ -5,8 +5,6 @@ import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
-import { Temporal } from '@js-temporal/polyfill';
-import { ReactSelector } from 'testcafe-react-selectors';
 import * as assert from 'assert';
 
 fixture `Settlement windows page`
