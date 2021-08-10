@@ -1,11 +1,11 @@
 import { Selector } from 'testcafe';
-import { config } from '../../config';
+import { config } from '../config';
 
 fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`;
 
 const { admin, user } = config.credentials;
 
-const loginNavigateToChangeNDC = ({ username, password }) => async (t) =>
+const loginNavigateToChangeNDC = ({ username, password }: { username: string, password: string }) => async (t: TestController) =>
   await t
     .typeText('#login__input-username', username)
     .typeText('#login__input-password', password)

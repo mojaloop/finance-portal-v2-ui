@@ -1,4 +1,4 @@
-import { config } from '../../config';
+import { config } from '../config';
 
 fixture.skip `Settlements Feature`.page`${config.financePortalEndpoint}`; // specify the start page
 

@@ -9,20 +9,27 @@
  **************************************************************************/
 
 import * as dotenv from 'dotenv';
+import * as assert from 'assert';
 
 dotenv.config();
 
+function ensureEnv(e: string): string {
+  const result = process.env[e];
+  assert.notStrictEqual(typeof result, 'undefined', `Required ${e} to be set in the environment`);
+  return result as string;
+}
+
 // TODO: ajv
 export const config = {
-  financePortalEndpoint: process.env.FINANCE_PORTAL_ENDPOINT,
+  financePortalEndpoint: ensureEnv('FINANCE_PORTAL_ENDPOINT'),
   credentials: {
     admin: {
-      username: process.env.ADMIN_USER_NAME,
-      password: process.env.ADMIN_PASSWORD,
+      username: ensureEnv('ADMIN_USER_NAME'),
+      password: ensureEnv('ADMIN_PASSWORD'),
     },
     user: {
-      username: process.env.USER_NAME,
-      password: process.env.PASSWORD,
+      username: ensureEnv('USER_NAME'),
+      password: ensureEnv('PASSWORD'),
     },
   },
 };

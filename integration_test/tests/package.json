@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "E2E tests for Finance Portal",
   "main": "index.js",
+  "//": "We explicitly configure testcafe to compile our tests with our installed version of typescript. We therefore alias typescript to 'ts4' in order to reduce the chance of accidentally using the wrong module.",
   "dependencies": {
     "@js-temporal/polyfill": "^0.2.0",
     "@types/uuid": "^8.3.1",
@@ -17,6 +18,7 @@
     "testcafe-reporter-allure": "1.0.5",
     "testcafe-reporter-allure-expanded": "^1.1.0",
     "testcafe-reporter-html": "^1.4.6",
+    "ts4": "npm:typescript@^4.3.5",
     "uuid": "^3.4.0"
   },
   "scripts": {

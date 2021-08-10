@@ -1,5 +1,5 @@
 import { LoginPage } from '../page-objects/pages/LoginPage';
-import { config } from '../../config';
+import { config } from '../config';
 import { Selector } from 'testcafe';
 
 fixture`Login Feature`.page`${config.financePortalEndpoint}`; // specify the start page

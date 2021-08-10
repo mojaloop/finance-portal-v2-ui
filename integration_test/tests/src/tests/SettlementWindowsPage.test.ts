@@ -1,12 +1,13 @@
 import { waitForReact } from 'testcafe-react-selectors';
 import { SettlementWindowsPage, SettlementWindowStatus } from '../page-objects/pages/SettlementWindowsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
-import { config } from '../../config';
+import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import { Temporal } from '@js-temporal/polyfill';
 import { ReactSelector } from 'testcafe-react-selectors';
+import * as assert from 'assert';
 
 fixture `Settlement windows page`
   // At the time of writing, it looks like this navigates to /windows. And it appears that this
@@ -26,7 +27,7 @@ fixture `Settlement windows page`
       msg_sender: participants[0].name,
       msg_recipient: participants[1].name,
       currency: 'MMK',
-      amount: 10,
+      amount: '10',
       transfer_id: uuidv4(),
     }];
     await cli.completeTransfers(transfers);
@@ -95,7 +96,7 @@ test.meta({
   // remaining open window?
   await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
   const settlementWindowRow = SettlementWindowsPage.resultRows;
-  const settlementWindowId = settlementWindowRow.findReact('ItemCell').nth(1).value;
+  const settlementWindowId = await settlementWindowRow.findReact('ItemCell').nth(1).innerText;
   const closeButton = settlementWindowRow.findReact('Button');
   const { props } = await closeButton.getReact();
   await t.expect(props.disabled).eql(false);
@@ -106,8 +107,14 @@ test.meta({
   });
   const closedRows = SettlementWindowsPage.resultRows;
   await t.expect(closedRows.count).gt(0);
-  const closedRow = closedRows.withProps({ item: { _source: { settlementWindowId } } });
-  await t.expect(closedRow.exists).ok();
+  const length = await closedRows.count;
+  await Promise.any(
+    Array
+      .from({ length })
+      .map((_, i) => closedRows.nth(i).findReact('ItemCell').nth(1).innerText.then((id) => assert.equal(id, settlementWindowId)))
+  ).catch(() => {
+    throw new Error(`Couldn't find closed window with id ${settlementWindowId}`);
+  });
 });
 
 test.meta({

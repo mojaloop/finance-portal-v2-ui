@@ -1,5 +1,5 @@
 import { Selector } from 'testcafe';
-import { config } from '../../config';
+import { config } from '../config';
 
 fixture`DFSPFinancialPositionsFeature`.page`${config.financePortalEndpoint}`.beforeEach(async (t) => {
   `Login and browse to "DFSP Financial Positions" page, and press "Update" button.`;
