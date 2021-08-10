@@ -91,7 +91,7 @@ jobs:
       working-directory: integration_test/tests
       run: |-
         cp .env.example.ci .env
-        npm run test:headless -- -t 'Log in with valid credentials'
+        npm run test:headless
 
     - name: Archive test report
       if: ${{ always() }}
