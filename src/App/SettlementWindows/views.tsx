@@ -120,7 +120,7 @@ const SettlementWindows: FC<ConnectorProps> = ({
           checked={checkedSettlementWindows}
           sortColumn="Window ID"
           sortAsc={false}
-          checkable={(item: SettlementWindow) => item.state === SettlementWindowStatus.Pending}
+          checkable={(item: SettlementWindow) => item.state === SettlementWindowStatus.Closed}
         />
       </>
     );
