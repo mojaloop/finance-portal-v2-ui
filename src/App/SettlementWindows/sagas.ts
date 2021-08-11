@@ -93,7 +93,7 @@ function* settleWindows() {
       body: {
         settlementModel: 'MULTILATERAL_NET', // TODO: this
         reason: 'Business Operations Portal request',
-        settlementWindows: windows.map((w) => w.settlementWindowId),
+        settlementWindows: windows.map((w) => ({ id: w.settlementWindowId })),
       },
     });
 
