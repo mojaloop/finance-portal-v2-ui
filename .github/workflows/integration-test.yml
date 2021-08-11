@@ -91,7 +91,7 @@ jobs:
       working-directory: integration_test/tests
       run: |-
         cp .env.example.ci .env
-        npm run test:headless
+        npm run test:headless -- -t 'Settlementwindow filter defaults as expected'
 
     - name: Archive test report
       if: ${{ always() }}
