@@ -62,7 +62,7 @@ export interface SettlementWindowsState {
   isCloseSettlementWindowPending: boolean;
   isSettleSettlementWindowPending: boolean;
   settleSettlementWindowsError: ErrorMessage;
-  settlingWindowSettlementIds: number[];
+  settlingWindowsSettlementId: number | null;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;

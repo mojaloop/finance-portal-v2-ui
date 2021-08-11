@@ -28,7 +28,7 @@ const initialState: SettlementWindowsState = {
   selectedSettlementWindow: undefined,
   checkedSettlementWindows: [],
   isSettlementWindowModalVisible: false,
-  settlingWindowSettlementIds: [],
+  settlingWindowsSettlementId: null,
   filters: {
     range: DateRanges.Today,
     start: getDateRangeTimestamp(DateRanges.Today, 'start'),
@@ -138,19 +138,19 @@ export default createReducer(initialState, (builder) =>
     }))
     .addCase(settleSettlementWindows, (state: SettlementWindowsState) => ({
       ...state,
-      settlingWindowSettlementIds: initialState.settlingWindowSettlementIds,
+      settlingWindowsSettlementId: initialState.settlingWindowsSettlementId,
       isSettlementWindowModalVisible: true,
       isSettleSettlementWindowPending: true,
       settleSettlementWindowsError: initialState.settlementWindowsError,
     }))
-    .addCase(setSettleSettlementWindowsFinished, (state: SettlementWindowsState, action: PayloadAction<number[]>) => ({
+    .addCase(setSettleSettlementWindowsFinished, (state: SettlementWindowsState, action: PayloadAction<number>) => ({
       ...state,
-      settlingWindowSettlementIds: action.payload,
+      settlingWindowsSettlementId: action.payload,
       isSettleSettlementWindowPending: false,
     }))
     .addCase(setSettleSettlementWindowsError, (state: SettlementWindowsState, action: PayloadAction<string>) => ({
       ...state,
-      settlingWindowSettlementIds: initialState.settlingWindowSettlementIds,
+      settlingWindowsSettlementId: initialState.settlingWindowsSettlementId,
       isSettleSettlementWindowPending: false,
       settleSettlementWindowsError: action.payload,
     }))

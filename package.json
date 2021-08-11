@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "compile": "tsc --noemit",
     "start": "webpack-dev-server",
     "build": "export NODE_ENV=production; webpack --mode production",
     "serve": "serve dist -s -p 3002",

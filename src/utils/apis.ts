@@ -58,10 +58,9 @@ const settlementsDetailPositions: Endpoint = {
     `/settlements/${settlementId}/details/${detailId}/positions`,
 };
 
-const settleSettlementWindow: Endpoint = {
-  service: services.portalBackendService,
-  url: (_: State, { settlementWindowId }: { settlementWindowId: string }) =>
-    `/settlement-window-commit/${settlementWindowId}`,
+const settleSettlementWindows: Endpoint = {
+  service: services.settlementService,
+  url: () => `/settlements`,
 };
 
 const closeSettlementWindow: Endpoint = {
@@ -119,7 +118,7 @@ interface EndpointsMap {
   settlementWindow: Endpoint;
   settlement: Endpoint;
   settlementsDetailPositions: Endpoint;
-  settleSettlementWindow: Endpoint;
+  settleSettlementWindows: Endpoint;
   closeSettlementWindow: Endpoint;
   dfsps: Endpoint;
   previousWindow: Endpoint;
@@ -138,7 +137,7 @@ const endpoints = {
   settlements,
   settlement,
   settlementsDetailPositions,
-  settleSettlementWindow,
+  settleSettlementWindows,
   closeSettlementWindow,
   dfsps,
   previousWindow,

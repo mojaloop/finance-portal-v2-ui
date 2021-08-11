@@ -86,50 +86,29 @@ export function* FetchSettlementWindowsAfterFiltersChangeSaga(): Generator {
   );
 }
 
-function* settleSingleWindow(settlementWindow: SettlementWindow) {
-  const { settlementWindowId } = settlementWindow;
-  const windowResponse = yield call(apis.settlementWindow.read, {
-    settlementWindowId,
-  });
-  const {
-    settlementId,
-    settlement: { participants },
-  } = windowResponse.data;
-
-  const settlementResponse = yield call(apis.settleSettlementWindow.update, {
-    settlementWindowId,
-    body: {
-      endDate: new Date().toISOString(),
-      participants,
-      settlementId,
-      startDate: settlementWindow.createdDate,
-    },
-  });
-
-  if (settlementResponse.status !== 200) {
-    throw new Error('Unable to settle settlement window');
-  }
-
-  return settlementId;
-}
-
-function* settleSettlementWindow() {
+function* settleWindows() {
   try {
-    const settlementWindows = yield select(getCheckedSettlementWindows);
+    const windows: SettlementWindow[] = yield select(getCheckedSettlementWindows);
+    const settlementResponse = yield call(apis.settleSettlementWindows.create, {
+      body: {
+        settlementModel: 'MULTILATERAL_NET', // TODO: this
+        reason: 'Business Operations Portal request',
+        settlementWindows: windows.map((w) => w.settlementWindowId),
+      },
+    });
 
-    const ids = yield all(
-      settlementWindows.map((settlementWindow: SettlementWindow) => call(settleSingleWindow, settlementWindow)),
-    );
-    // @ts-ignore
+    if (settlementResponse.status !== 200) {
+      throw new Error('Unable to settle settlement window');
+    }
 
-    yield put(setSettleSettlementWindowsFinished(ids));
+    yield put(setSettleSettlementWindowsFinished(settlementResponse.id));
   } catch (e) {
     yield put(setSettleSettlementWindowsError(e.message));
   }
 }
 
 export function* SettleSettlementWindowsSaga(): Generator {
-  yield takeLatest(SETTLE_SETTLEMENT_WINDOWS, settleSettlementWindow);
+  yield takeLatest(SETTLE_SETTLEMENT_WINDOWS, settleWindows);
 }
 
 function* closeSettlementWindow(action: PayloadAction<SettlementWindow>) {

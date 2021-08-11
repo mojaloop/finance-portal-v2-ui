@@ -47,7 +47,7 @@ const SettlementWindows: FC<ConnectorProps> = ({
   isCloseSettlementWindowPending,
   isSettleSettlementWindowPending,
   settleSettlementWindowsError,
-  settlingWindowSettlementIds,
+  settlingWindowsSettlementId,
   onDateRangerFilterSelect,
   onDateFilterClearClick,
   onStartDateRangeFilterSelect,
@@ -110,7 +110,7 @@ const SettlementWindows: FC<ConnectorProps> = ({
           <Button
             disabled={!checkedSettlementWindows.length}
             label="Settle Selected Windows"
-            onClick={onSettleButtonClick}
+            onClick={() => onSettleButtonClick(checkedSettlementWindows)}
           />
         </div>
         <DataList
@@ -141,7 +141,7 @@ const SettlementWindows: FC<ConnectorProps> = ({
       {content}
       {isSettlementWindowModalVisible && (
         <SettlementWindowModal
-          ids={settlingWindowSettlementIds}
+          id={settlingWindowsSettlementId}
           onClose={onCloseModalClick}
           isPending={isSettleSettlementWindowPending}
           error={settleSettlementWindowsError}
@@ -244,10 +244,10 @@ interface SettlementWindowModalProps {
   onClose: () => void;
   isPending: boolean;
   error: string | null;
-  ids: number[];
+  id: number | null;
 }
 
-const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ ids, isPending, error, onClose }) => {
+const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ id, isPending, error, onClose }) => {
   const history = useHistory();
   let content = null;
   let title;
@@ -256,7 +256,7 @@ const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ ids, isPending,
     content = <Spinner center />;
   } else if (error) {
     title = 'Failed Settlement Submit';
-    content = <MessageBox kind="danger">There was an error with settling the windows</MessageBox>;
+    content = <MessageBox kind="danger">There was an error settling the windows</MessageBox>;
   } else {
     title = 'Settlement Submitted';
     content = (
@@ -266,7 +266,7 @@ const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ ids, isPending,
             <DataLabel size="s" light>
               Settlement IDs
             </DataLabel>
-            <DataLabel size="m">{ids.map((id) => id.toString()).join(', ')}</DataLabel>
+            <DataLabel size="m">{id || ''}</DataLabel>
           </Column>
         </div>
         <div className="settlements-windows__modal__row">

@@ -85,12 +85,12 @@ module.exports = {
         enforce: 'pre',
         test: /\.(ts|js)x?$/,
         use: 'eslint-loader',
-        exclude: [/node_modules/, /integration_test/],
+        exclude: [/node_modules/, /integration_test/, /tests/],
       },
       {
         test: /\.(ts|js)x?$/,
         use: 'ts-loader',
-        exclude: [/node_modules/, /integration_test/],
+        exclude: [/node_modules/, /integration_test/, /tests/],
       },
       {
         test: /\.css$/i,
