@@ -2,7 +2,7 @@ resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/nginx-ingress-controller?ref=ee2ffcc2588dcefda74ed6b4f2e47a7388f67f4e
 - github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=49fb1e37d817a757ff7d172c29b84f31bfb20cc3
 - manifests/portal-frontend
-- github.com/partiallyordered/voodoo-doll/kubernetes?ref=9cf23085f7ebd6dbaa4a95a21e8d63e15f35502b
+- github.com/partiallyordered/voodoo-doll/kubernetes?ref=dacd3ab92b4b39e8a0df9bc69e946b087ac06b90
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.4
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.4
 

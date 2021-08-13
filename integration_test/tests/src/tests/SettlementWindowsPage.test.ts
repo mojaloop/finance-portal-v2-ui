@@ -7,20 +7,61 @@ import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
 
+const closeOpenSettlementWindow = async (t: TestController): Promise<string> => {
+  // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
+  // currency, therefore a single window.
+  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
+    state: SettlementWindowStatus.Open,
+  });
+  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
+  const settlementWindowRow = SettlementWindowsPage.resultRows;
+  const settlementWindowId = await settlementWindowRow.findReact('ItemCell').nth(1).innerText;
+  const closeButton = settlementWindowRow.findReact('Button');
+  const { props } = await closeButton.getReact();
+  await t.expect(props.disabled).eql(false);
+  await t.click(closeButton);
+  return settlementWindowId;
+}
+
 fixture `Settlement windows page`
   // At the time of writing, it looks like this navigates to /windows. And it appears that this
   // isn't handled correctly, causing the root page (i.e. login) to load again.
   .page `${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const currencies: protocol.Currency[] = ['MMK'];
+    const cli = new VoodooClient('ws://localhost:3030/voodoo');
+    await cli.connected();
+
+    const hubAccounts: protocol.HubAccount[] = [
+      {
+        type: "HUB_MULTILATERAL_SETTLEMENT",
+        currency: "MMK",
+      },
+      {
+        type: "HUB_RECONCILIATION",
+        currency: "MMK",
+      },
+    ];
+    await cli.createHubAccounts(hubAccounts);
+
+    // const settlementModel: protocol.SettlementModel = {
+    //   autoPositionReset: true,
+    //   ledgerAccountType: "POSITION",
+    //   settlementAccountType: "SETTLEMENT",
+    //   name: "MMKMLNS",
+    //   requireLiquidityCheck: true,
+    //   settlementDelay: "DEFERRED",
+    //   settlementGranularity: "NET",
+    //   settlementInterchange: "MULTILATERAL",
+    //   currency: "MMK",
+    // };
+    // await cli.createSettlementModel(settlementModel);
+
     const accounts: protocol.AccountInitialization[] = [
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
     ];
-    const cli = new VoodooClient('ws://localhost:3030/voodoo');
-    await cli.connected();
-    await cli.createHubAccounts(currencies);
     const participants = await cli.createParticipants(accounts);
+
     const transfers: protocol.TransferMessage[] = [{
       msg_sender: participants[0].name,
       msg_recipient: participants[1].name,
@@ -85,22 +126,10 @@ test.meta({
     `Close the single open settlement window, and expect the same window now shows up in a list of
      closed windows`,
 })('Close settlement window', async (t) => {
-  // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
-  // currency, therefore a single window.
-  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
-    state: SettlementWindowStatus.Open,
-  });
-  // await t.wait(10000);
   // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
   // state that we expect, i.e. by closing all existing windows, then observing the single
   // remaining open window?
-  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
-  const settlementWindowRow = SettlementWindowsPage.resultRows;
-  const settlementWindowId = await settlementWindowRow.findReact('ItemCell').nth(1).innerText;
-  const closeButton = settlementWindowRow.findReact('Button');
-  const { props } = await closeButton.getReact();
-  await t.expect(props.disabled).eql(false);
-  await t.click(closeButton);
+  const settlementWindowId = await closeOpenSettlementWindow(t);
 
   await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
     state: SettlementWindowStatus.Closed,
