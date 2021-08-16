@@ -52,7 +52,7 @@ fixture `Settlement windows page`
     //   autoPositionReset: true,
     //   ledgerAccountType: "POSITION",
     //   settlementAccountType: "SETTLEMENT",
-    //   name: "MMKMLNS",
+    //   name: "DEFERREDNET",
     //   requireLiquidityCheck: true,
     //   settlementDelay: "DEFERRED",
     //   settlementGranularity: "NET",
