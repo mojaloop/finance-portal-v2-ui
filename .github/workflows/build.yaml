@@ -1,9 +1,13 @@
 name: Publish image
 
 on:
+  # The build will run on all of the following event types. Semver tagged images will be published
+  # for a release. A long sha image will be published for every push.
   release:
     types: [published]
-  pull_request:
+  push:
+    branches:
+    - '**'
 
 jobs:
   main:
@@ -12,23 +16,29 @@ jobs:
     -
       name: Docker meta
       id: docker_meta
-      uses: crazy-max/ghaction-docker-meta@v1
+      uses: docker/metadata-action@v3
       with:
-        images: |
-          ghcr.io/${{ github.repository }}
+        # Except for Dockerhub, which is the default, tags need to have the registry name in
+        # them, e.g. ghcr.io for Github container registry, or gcr.io for Google container
+        # registry.
+        # Note that the generated tags will look like:
+        #   ghcr.io/{owner}/{repo}:version
+        images: ghcr.io/${{ github.repository }}
         # For a release v1.2.3, we'll produce the following image tags
         #   v1.2.3
         #   1.2.3
         #   1.2
         #   latest
-        # Semver pre-release versions are also supported
-        # See also:
-        # https://github.com/crazy-max/ghaction-docker-meta/tree/0a412843f87333854fa03a809b74056b64c6f31a#handle-semver-tag
-        tag-semver: |
-          {{raw}}
-          {{version}}
-          {{major}}.{{minor}}
-        label-custom: |
+        # For non-releases, we'll produce a long sha
+        flavor: |
+          latest=${{ github.event_name == 'release' }}
+        tags: |
+          type=match,pattern=v\d+\.\d+\.\d+,enable=${{ github.event_name == 'release' }}
+          type=match,pattern=v(\d+\.\d+\.\d+),enable=${{ github.event_name == 'release' }},group=1
+          type=match,pattern=v(\d+\.\d+)\.\d+,enable=${{ github.event_name == 'release' }},group=1
+          type=match,pattern=v(\d+)\.\d+\.\d+,group=1,enable=${{ !startsWith(github.ref, 'refs/tags/v0.') && github.event_name == 'release' }}
+          type=sha,event=push,value={{sha}},format=long,enable=${{ github.event_name != 'release' }}
+        labels: |
           org.opencontainers.image.source=https://github.com/${{ github.repository }}/tree/${{ github.sha }}
     -
       name: Set up QEMU
@@ -38,7 +48,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
     -
       name: Login to GitHub Container Registry
-      if: ${{ github.event_name == 'release' }}
+      if: ${{ github.event_name != 'pull_request' }}
       uses: docker/login-action@v1
       with:
         registry: ghcr.io
@@ -49,7 +59,7 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v2.2.1
       with:
-        push: ${{ github.event_name == 'release' }}
+        push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.docker_meta.outputs.tags }}
         labels: ${{ steps.docker_meta.outputs.labels }}
     -

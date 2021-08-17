@@ -1,6 +1,9 @@
 name: Integration test
 
-on: [pull_request]
+on:
+  push:
+    branches:
+    - '**'
 
 jobs:
   manifest_check:
@@ -78,39 +81,50 @@ jobs:
       # we could bundle the integration tests in a container and deploy them to the cluster.
       run: kubectl port-forward -n ingress-nginx --address 0.0.0.0 svc/ingress-nginx-controller 3000:80 &
 
+    - name: Port-forward voodoo-doll
+      # We only port-forward portal frontend because we don't want to encourage or accidentally
+      # develop dependencies on other services for our tests, if we can avoid it.
+      # Port-forwarding might prove problematic in future; if it proves unreliable. In this case,
+      # we could bundle the integration tests in a container and deploy them to the cluster.
+      run: kubectl port-forward --address 0.0.0.0 voodoo-doll 3030 &
+
     - name: Install test dependencies
+      working-directory: integration_test/tests
       run: |-
-        cd integration_test/tests
         npm ci
 
     - name: Run tests
       # TODO: the env file is hard-coded. We should really get the creds in a more sensible fashion
+      working-directory: integration_test/tests
       run: |-
-        cd integration_test/tests
         cp .env.example.ci .env
-        npm run test:headless -- -t 'Enter a valid username and password, click the submit and should be transferred to the main page'
+        npm run test:headless
 
     - name: Archive test report
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: test-report
-        path: integration_test/tests/reports/report.html
+        path: integration_test/tests/report.html
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
       run: docker ps
+
+    - name: Print voodoo doll logs
+      if: ${{ always() }}
+      run: kubectl logs voodoo-doll
 
     - name: Print resources
       if: ${{ always() }}
       run: kubectl get svc,deploy,sts,pv,pvc,configmap,job,pod -A
 
     - name: Describe resources
-      if: ${{ failure() }}
+      if: ${{ always() }}
       run: kubectl describe svc,deploy,sts,pv,pvc,configmap,job,pod -A
 
     - name: Print secret values
-      if: ${{ failure() }}
+      if: ${{ always() }}
       run: |-
         kubectl get secrets -o json | jq -r '.items[] | { name: .metadata.name, data: .data | map_values(@base64d) }'
 

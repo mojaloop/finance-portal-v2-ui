@@ -32,9 +32,6 @@ References for those unfamiliar with page models:
     npm ci
     ```
 
-3.  Ensure credentials in `src/data/user-data.js` are correct. Instructions here:
-    https://github.com/modusintegration/mmd-dev#finance-portal-credentials
-
 #### Run tests
 ```sh
 npm run test

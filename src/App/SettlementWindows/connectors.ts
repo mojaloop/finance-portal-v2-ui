@@ -16,7 +16,7 @@ const stateProps = (state: State) => ({
   isCloseSettlementWindowPending: selectors.getIsCloseSettlementWindowPending(state),
   isSettleSettlementWindowPending: selectors.getIsSettleSettlementWindowPending(state),
   settleSettlementWindowsError: selectors.getSettleSettlementWindowsError(state),
-  settlingWindowSettlementIds: selectors.getSettlingWindowSettlementIds(state),
+  settlingWindowsSettlementId: selectors.getSettlingWindowsSettlementId(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -36,7 +36,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.setSettlementWindowsFilterValue({ filter, value })),
   onClearFiltersClick: () => dispatch(actions.clearSettlementWindowsFilters()),
   onSettlementsWindowsCheck: (items: SettlementWindow[]) => dispatch(actions.checkSettlementWindows(items)),
-  onSettleButtonClick: () => dispatch(actions.settleSettlementWindows()),
+  onSettleButtonClick: (windows: SettlementWindow[]) => dispatch(actions.settleSettlementWindows(windows)),
   onCloseButtonClick: (settlementWindow: SettlementWindow) =>
     dispatch(actions.requestCloseSettlementWindow(settlementWindow)),
   onCloseModalClick: () => dispatch(actions.closeSettlementWindowModal()),

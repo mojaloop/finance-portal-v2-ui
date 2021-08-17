@@ -1,17 +1,26 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
     "lib": ["es6", "dom"],
+    "rootDir": "src",
     "moduleResolution": "node",
     "module": "esnext",
     "target": "esnext",
     "jsx": "react",
     "sourceMap": true,
     "declaration": false,
-    "allowJs": true,
-  }
+    "allowJs": true
+  },
+  "exclude": [
+    "integration_test",
+    "tests",
+    "dist",
+    "node_modules",
+    "webpack.config.js"
+  ]
 }
