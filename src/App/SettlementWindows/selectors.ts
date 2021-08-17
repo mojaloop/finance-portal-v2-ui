@@ -16,5 +16,5 @@ export const getIsSettleSettlementWindowPending = (state: State) =>
   state.subApp.settlementWindows.isSettleSettlementWindowPending;
 export const getSettleSettlementWindowsError = (state: State) =>
   state.subApp.settlementWindows.settleSettlementWindowsError;
-export const getSettlingWindowSettlementIds = (state: State) =>
-  state.subApp.settlementWindows.settlingWindowSettlementIds;
+export const getSettlingWindowsSettlementId = (state: State) =>
+  state.subApp.settlementWindows.settlingWindowsSettlementId;

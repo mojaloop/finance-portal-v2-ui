@@ -8,19 +8,28 @@
  *       Sridevi Miriyala - sridevi.miriyala@modusbox.com                   *
  **************************************************************************/
 
-require('dotenv').config();
-const env = require('env-var');
+import * as dotenv from 'dotenv';
+import * as assert from 'assert';
 
-module.exports = {
-    financePortalEndpoint: env.get('FINANCE_PORTAL_ENDPOINT').asString(),
-    credentials: {
-        admin: {
-            username: env.get('ADMIN_USER_NAME').asString(),
-            password: env.get('ADMIN_PASSWORD').asString(),
-        },
-        user: {
-            username: env.get('USER_NAME').asString(),
-            password: env.get('PASSWORD').asString(),
-        },
+dotenv.config();
+
+function ensureEnv(e: string): string {
+  const result = process.env[e];
+  assert.notStrictEqual(typeof result, 'undefined', `Required ${e} to be set in the environment`);
+  return result as string;
+}
+
+// TODO: ajv
+export const config = {
+  financePortalEndpoint: ensureEnv('FINANCE_PORTAL_ENDPOINT'),
+  credentials: {
+    admin: {
+      username: ensureEnv('ADMIN_USER_NAME'),
+      password: ensureEnv('ADMIN_PASSWORD'),
     },
+    user: {
+      username: ensureEnv('USER_NAME'),
+      password: ensureEnv('PASSWORD'),
+    },
+  },
 };

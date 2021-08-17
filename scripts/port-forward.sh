@@ -3,7 +3,7 @@
 kubectl port-forward -n mojaloop --address 0.0.0.0 deploy/mojaloop-centralledger-service 4001:3001 &
 kubectl port-forward -n mojaloop --address=0.0.0.0 deploy/mojaloop-centralsettlement-service 3007 &
 kubectl port-forward -n mojaloop --address=0.0.0.0 sts/mojaloop-centralledger-mysql 3306 &
-# kubectl port-forward -n mojaloop --address=0.0.0.0 deploy/mojaloop-finance-portal 3002:3000 &
+kubectl port-forward -n mojaloop --address=0.0.0.0 deploy/mojaloop-finance-portal 3002:3000 &
 
 clean_up() {
     pkill -s $$
