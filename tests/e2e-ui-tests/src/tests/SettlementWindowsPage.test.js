@@ -17,123 +17,56 @@ fixture.skip `SettlementWindows Feature`
         t.useRole(regularUser);
     });
 
-    test
+  test
     .meta({
-        ID: '',
-        STORY: 'MMD-440'
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: 'Default Windows landing page'
     })
     (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
     Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
     State should be empty and Clear Filters button`, async t => {
 
-        //Call Mojaloop Settlement API to get the current window details
+        
+    });
 
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: 'Test Windows landing page with Today Date option selected'
+    })(
+      `On the default Settlement Windows page, if Today option for Date is selected then all 
+      the windows that are available for current day should be displayed. This can be a combination of
+      open, closed windows. If there are no windows that were transacted the current day, the current open
+      window should be displayed. 
+      For each window that is displayed, Window ID, State, Open Date, Closed Date should be available. `,
+      async (t) => {
+        //Get the list of wondows for current date.
         // Check that the latest window ID that displays on the page is the same
-        await t
-                .expect(settlementWindowsPage._date.exists).ok()
-                .expect(settlementWindowsPage._fromDate.exists).ok()
-                .expect(settlementWindowsPage._toDate.exists).ok()
-                .expect(settlementWindowsPage._state.exists).ok();
+      },
+    );
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: 'Close Open Window'
+    })(
+    `Once an open window is selected, there should be a button to close the window. Once the window
+    is closed, the status of that window should change from Open to Closed and a new window should appear.
+      `, async t => {
+
+          //Call Mojaloop Settlement API to get the current window details
+
+          // Check that the latest window ID that displays on the page is the same 
     });
 
-test.meta({
-  ID: '',
-  STORY: 'MMD-440',
-})(
-  `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
-    State should be empty and Clear Filters button`,
-  async (t) => {
-    //Call Mojaloop Settlement API to get the current window details
-    // Check that the latest window ID that displays on the page is the same
-  },
-);
-
-test.meta({
-  ID: '',
-  STORY: 'MMD-440',
-})(
-  `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to Past 48 hours.Check that From and To Date should be update
-    to reflect 48 hours. Select state to open. All the corresponding windows should display based
-    on the criteria selected`, async t => {
-
-        //Call Mojaloop Settlement API to get the current window details
-
-        // Check that the latest window ID that displays on the page is the same 
-    });
-
-    test
+  test
     .meta({
-        ID: '',
-        STORY: 'MMD-440'
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: 'Settle Closed Window'
     })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to Past 1 week.Check that From and To Date should be update
-    to reflect 48 hours. Select state to Closed. All the corresponding windows should display based
-    on the criteria selected`, async t => {
+    (``, async t => {
 
-        //Call Mojaloop Settlement API to get the current window details
-
-        // Check that the latest window ID that displays on the page is the same 
+        
     });
-
-    test
-    .meta({
-        ID: '',
-        STORY: 'MMD-440'
-    })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to Past 1 month.Check that From and To Date should be update
-    to reflect 48 hours. Select state to Pending. All the corresponding windows should display based
-    on the criteria selected`, async t => {
-
-        //Call Mojaloop Settlement API to get the window details
-
-        // Check that the latest window ID that displays on the page is the same 
-    });
-
-    test
-    .meta({
-        ID: '',
-        STORY: 'MMD-440'
-    })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Dates to custom range. Check that From and To Date should be update
-    to reflect 48 hours. Select state to Settled. All the corresponding windows should display based
-    on the criteria selected`, async t => {
-
-        //Call Mojaloop Settlement API to get the window details
-
-        // Check that the latest window ID that displays on the page is the same 
-    });
-
-    test
-    .meta({
-        ID: '',
-        STORY: 'MMD-440'
-    })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to custom range. Check that From and To Date should be update
-    to reflect 48 hours. Select state to Aborted. All the corresponding windows should display based
-    on the criteria selected`, async t => {
-
-        //Call Mojaloop Settlement API to get the window details
-
-        // Check that the latest window ID that displays on the page is the same 
-    });
-
-    test
-    .meta({
-        ID: '',
-        STORY: 'MMD-440'
-    })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to custom range. Check that From and To Date should be update
-    to reflect 48 hours. Select state to Aborted. All the corresponding windows should display based
-    on the criteria selected`,
-  async (t) => {
-    //Call Mojaloop Settlement API to get the window details
-    // Check that the latest window ID that displays on the page is the same
-  },
-);
