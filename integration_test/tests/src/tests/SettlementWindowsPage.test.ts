@@ -159,7 +159,7 @@ test
     })
     (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
     Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
-    State should be empty and Clear Filters button`, async t => {
+    State field should be empty and Clear Filters button should be present`, async t => {
 
         
     });
