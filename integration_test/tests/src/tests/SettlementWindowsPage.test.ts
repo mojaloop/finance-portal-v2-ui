@@ -90,7 +90,7 @@ test
   .meta({
     ID: '',
     STORY: 'MMD-440',
-    description: `Selecting Settlement Windows tab in Side Menu, the main settlement page should be
+    Scenario: `Selecting Settlement Windows tab in Side Menu, the main settlement page should be
                   displayed with Date drop-down defaulted to Today, From and To drop-down defaulted
                   to current date in MM/DD/YYYY HH:MM:SS format, State should be empty and Clear
                   Filters button`
@@ -127,7 +127,7 @@ test.meta({
 test.meta({
   ID: '',
   STORY: 'MMD-440',
-  description:
+  Scenario:
     `Close the single open settlement window, and expect the same window now shows up in a list of
      closed windows`,
 })('Close settlement window', async (t) => {
@@ -155,11 +155,11 @@ test
     .meta({
       ID: '',
       STORY: 'MMD-440',
-      Scenario: 'Default Windows landing page'
+      Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+      Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
+      State field should be empty and Clear Filters button should be present`
     })
-    (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
-    State field should be empty and Clear Filters button should be present`, async t => {
+    (`Default Windows landing page`, async t => {
 
         
     });
@@ -167,13 +167,13 @@ test
   test.meta({
       ID: '',
       STORY: 'MMD-440',
-      Scenario: 'Test Windows landing page with Today Date option selected'
-    })(
-      `On the default Settlement Windows page, if Today option for Date is selected and no other filters are active then all 
+      Scenario: `On the default Settlement Windows page, if Today option for Date is selected and no other filters are active then all 
       the windows that are available for current day should be displayed. This can be a combination of
       open, closed windows. If there are no windows that were transacted the current day, the current open
       window should be displayed. 
-      For each window that is displayed, Window ID, State, Open Date, Closed Date should be visible. `,
+      For each window that is displayed, Window ID, State, Open Date, Closed Date should be visible. `
+    })(
+      `Test Windows landing page with Today Date option selected`,
       async (t) => {
         //Get the list of wondows for current date.
         // Check that the latest window ID that displays on the page is the same
@@ -183,11 +183,10 @@ test
   test.meta({
       ID: '',
       STORY: 'MMD-440',
-      Scenario: 'Close Open Window'
+      Scenario: `Once an open window is selected, there should be a button to close the window. Once the window
+      is closed, the status of that window should change from Open to Closed and a new window should appear.`
     })(
-    `Once an open window is selected, there should be a button to close the window. Once the window
-    is closed, the status of that window should change from Open to Closed and a new window should appear.
-      `, async t => {
+    `Close Open Window`, async t => {
 
           //Call Mojaloop Settlement API to get the current window details
 
