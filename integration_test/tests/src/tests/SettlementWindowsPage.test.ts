@@ -158,7 +158,7 @@ test
       Scenario: 'Default Windows landing page'
     })
     (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in MM/DD/YYYY HH:MM:SS format
+    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
     State field should be empty and Clear Filters button should be present`, async t => {
 
         
