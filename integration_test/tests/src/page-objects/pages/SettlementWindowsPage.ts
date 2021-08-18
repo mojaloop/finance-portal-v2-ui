@@ -1,5 +1,6 @@
 import { ReactSelector } from 'testcafe-react-selectors';
 import { Temporal } from '@js-temporal/polyfill';
+import { t } from 'testcafe';
 
 // TODO: get this data from the application? Instead of using this data, use the actual text
 // displayed to the user, as the user would?
@@ -9,6 +10,11 @@ export enum SettlementWindowStatus {
   Pending = 'PENDING_SETTLEMENT',
   Settled = 'SETTLED',
   Aborted = 'ABORTED',
+}
+
+export type SettlementWindowRow = {
+  id: Selector,
+  closeButton: Selector,
 }
 
 const datePickerSelectDate = async (
@@ -56,7 +62,19 @@ export const SettlementWindowsPage = {
   state: ReactSelector('Select').withProps({ placeholder: 'State' }),
   clearFiltersButton: ReactSelector('Button').withProps({ label: 'Clear Filters' }),
 
-  resultRows: ReactSelector('DataList Rows').findReact('RowItem'),
+  async getResultRows(): Promise<SettlementWindowRow[]> {
+    const rows = ReactSelector('DataList Rows').findReact('RowItem');
+    // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
+    // rows.count always returns zero, and this function fails.
+    await t.expect(rows.exists).ok();
+    const length = await rows.count;
+    return Array
+      .from({ length })
+      .map((_, i) => ({
+          closeButton: rows.nth(i).findReact('Button'),
+          id: rows.nth(i).findReact('ItemCell').nth(1),
+      }));
+  },
 
   async selectFiltersCustomDateRange(t: TestController, filters: Filters) {
     // TODO: how does the actual UI present dates? What happens if we run the tests in a different TZ?

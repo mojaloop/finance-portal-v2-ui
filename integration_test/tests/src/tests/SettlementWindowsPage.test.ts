@@ -18,14 +18,13 @@ const closeOpenSettlementWindow = async (t: TestController): Promise<string> => 
   await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
     state: SettlementWindowStatus.Open,
   });
-  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
-  const settlementWindowRow = SettlementWindowsPage.resultRows;
-  const settlementWindowId = await settlementWindowRow.findReact('ItemCell').nth(1).innerText;
-  const closeButton = settlementWindowRow.findReact('Button');
-  const { props } = await closeButton.getReact();
-  await t.expect(props.disabled).eql(false);
+  const rows = await SettlementWindowsPage.getResultRows();
+  await t.expect(rows.length).eql(1, 'Expected exactly one open settlement window');
+  const { id, closeButton } = rows[0];
+  const result = await id.innerText;
+  await t.expect(closeButton.hasAttribute('disabled')).eql(false, 'Expected close button to be enabled');
   await t.click(closeButton);
-  return settlementWindowId;
+  return result;
 }
 
 fixture `Settlement windows page`
@@ -48,19 +47,6 @@ fixture `Settlement windows page`
     ];
     await cli.createHubAccounts(hubAccounts);
 
-    // const settlementModel: protocol.SettlementModel = {
-    //   autoPositionReset: true,
-    //   ledgerAccountType: "POSITION",
-    //   settlementAccountType: "SETTLEMENT",
-    //   name: "DEFERREDNET",
-    //   requireLiquidityCheck: true,
-    //   settlementDelay: "DEFERRED",
-    //   settlementGranularity: "NET",
-    //   settlementInterchange: "MULTILATERAL",
-    //   currency: "MMK",
-    // };
-    // await cli.createSettlementModel(settlementModel);
-
     const accounts: protocol.AccountInitialization[] = [
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
@@ -76,6 +62,7 @@ fixture `Settlement windows page`
     }];
     await cli.completeTransfers(transfers);
     ctx.participants = participants;
+    ctx.cli = cli;
   })
   .beforeEach(async (t) => {
     await waitForReact();
@@ -121,7 +108,8 @@ test.meta({
   // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
   // state that we expect, i.e. by closing all existing windows, then observing the single
   // remaining open window?
-  await t.expect(SettlementWindowsPage.resultRows.count).eql(1);
+  const resultRows = await SettlementWindowsPage.getResultRows();
+  await t.expect(resultRows.length).eql(1, 'Expected exactly one closed settlement window');
 });
 
 test.meta({
@@ -139,16 +127,51 @@ test.meta({
   await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
     state: SettlementWindowStatus.Closed,
   });
-  const closedRows = SettlementWindowsPage.resultRows;
-  await t.expect(closedRows.count).gt(0);
-  const length = await closedRows.count;
+  const closedRows = await SettlementWindowsPage.getResultRows();
+  await t.expect(closedRows.length).gt(0, 'Expected at least one closed settlement window');
   await Promise.any(
-    Array
-      .from({ length })
-      .map((_, i) => closedRows.nth(i).findReact('ItemCell').nth(1).innerText.then((id) => assert.equal(id, settlementWindowId)))
+    closedRows.map((r) => r.id.innerText.then((id) => assert.equal(id, settlementWindowId)))
   ).catch(() => {
     throw new Error(`Couldn't find closed window with id ${settlementWindowId}`);
   });
+});
+
+test.meta({
+  ID: '',
+  STORY: 'MMD-440',
+  description:
+    `Close two settlement windows. Add them to a settlement. Check the settlement exists.`,
+})('Create settlement from two closed windows', async (t) => {
+  // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
+  // state that we expect, i.e. by closing all existing windows, then observing the single
+  // remaining open window?
+  const { cli, participants } = t.fixtureCtx;
+  const closedSettlementWindowId1 = await closeOpenSettlementWindow(t);
+  // Run a transfer so the settlement window can be closed
+  const transfers: protocol.TransferMessage[] = [{
+    msg_sender: participants[0].name,
+    msg_recipient: participants[1].name,
+    currency: 'MMK',
+    amount: '10',
+    transfer_id: uuidv4(),
+  }];
+  await cli.completeTransfers(transfers);
+  const closedSettlementWindowId2 = await closeOpenSettlementWindow(t);
+  const settlementWindowIds = [
+    closedSettlementWindowId1,
+    closedSettlementWindowId2,
+  ];
+
+  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
+    state: SettlementWindowStatus.Closed,
+  });
+  const closedRows = await SettlementWindowsPage.getResultRows();
+  await t.expect(closedRows.length).gt(1, 'Expected at least two closed settlement windows');
+  const closedWindowIds = await Promise.all(closedRows.map((r) => r.id.innerText));
+  assert.equal(
+    closedWindowIds.filter((id) => settlementWindowIds.includes(id)).length,
+    settlementWindowIds.length,
+  );
 });
 
 test
