@@ -169,7 +169,7 @@ test
       STORY: 'MMD-440',
       Scenario: 'Test Windows landing page with Today Date option selected'
     })(
-      `On the default Settlement Windows page, if Today option for Date is selected then all 
+      `On the default Settlement Windows page, if Today option for Date is selected and no other filters are active then all 
       the windows that are available for current day should be displayed. This can be a combination of
       open, closed windows. If there are no windows that were transacted the current day, the current open
       window should be displayed. 
