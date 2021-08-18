@@ -173,7 +173,7 @@ test
       the windows that are available for current day should be displayed. This can be a combination of
       open, closed windows. If there are no windows that were transacted the current day, the current open
       window should be displayed. 
-      For each window that is displayed, Window ID, State, Open Date, Closed Date should be available. `,
+      For each window that is displayed, Window ID, State, Open Date, Closed Date should be visible. `,
       async (t) => {
         //Get the list of wondows for current date.
         // Check that the latest window ID that displays on the page is the same
