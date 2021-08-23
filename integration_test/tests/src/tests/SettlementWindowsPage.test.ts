@@ -1,5 +1,6 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementWindowsPage, SettlementWindowStatus } from '../page-objects/pages/SettlementWindowsPage';
+import { SettlementWindowsPage, SettlementWindowStatus, SettlementWindowsSettlementModal } from '../page-objects/pages/SettlementWindowsPage';
+import { SettlementsPage, SettlementDetailModal } from '../page-objects/pages/SettlementsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
@@ -7,6 +8,7 @@ import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
 import { shim } from 'promise.any';
+import { ReactSelector } from 'testcafe-react-selectors';
 
 // At the time of writing, for some reason, in CI Promise.any is not working with
 // > TypeError: Promise.any is not a function
@@ -66,6 +68,7 @@ fixture `Settlement windows page`
   })
   .beforeEach(async (t) => {
     await waitForReact();
+    // TODO: set things up so there's exactly one open window containing no transfers
     await t
       .typeText(LoginPage.userName, config.credentials.admin.username)
       .typeText(LoginPage.password, config.credentials.admin.password)
@@ -84,7 +87,6 @@ test
   })('Settlementwindow filter defaults as expected', async (t) => {
 
     // Call Mojaloop Settlement API to get the current window details
-    console.log(t.fixtureCtx.participants);
 
     // TODO: this test is a WIP
 
@@ -142,11 +144,8 @@ test.meta({
   description:
     `Close two settlement windows. Add them to a settlement. Check the settlement exists.`,
 })('Create settlement from two closed windows', async (t) => {
-  // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
-  // state that we expect, i.e. by closing all existing windows, then observing the single
-  // remaining open window?
   const { cli, participants } = t.fixtureCtx;
-  // Run a transfer so the settlement window can be closed
+  // Run a transfer to ensure the settlement window can be closed
   const transfers1: protocol.TransferMessage[] = [{
     msg_sender: participants[1].name,
     msg_recipient: participants[0].name,
@@ -158,7 +157,7 @@ test.meta({
   const openWindows1 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows1.length).eql(1, 'Expected only a single open window');
   const closedSettlementWindowId1 = await cli.closeSettlementWindow({
-    id: openWindows1[0].id,
+    id: openWindows1[0].settlementWindowId,
     reason: 'Integration test',
   });
 
@@ -174,7 +173,7 @@ test.meta({
   const openWindows2 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows2.length).eql(1, 'Expected only a single open window');
   const closedSettlementWindowId2 = await cli.closeSettlementWindow({
-    id: openWindows2[0].id,
+    id: openWindows2[0].settlementWindowId,
     reason: 'Integration test',
   });
 
@@ -188,10 +187,32 @@ test.meta({
   });
   const closedRows = await SettlementWindowsPage.getResultRows();
   await t.expect(closedRows.length).gt(1, 'Expected at least two closed settlement windows');
-  const closedWindowIds = await Promise.all(closedRows.map((r) => r.id.innerText));
-  assert.equal(
-    closedWindowIds.filter((id) => settlementWindowIds.includes(id)).length,
-    settlementWindowIds.length,
+  const closedRowsById = Object.fromEntries(
+    await Promise.all(closedRows.map(async (r) => [await r.id.innerText,  r])));
+  await t.expect(
+    settlementWindowIds.map((idNum) => String(idNum)).every((idStr) => idStr in closedRowsById)
+  ).ok('Expected both our closed windows to be in the list of closed windows displayed in the UI');
+
+  // Check our just-closed windows for closure
+  await Promise.all(
+    // Testcafe balks if we don't use async/await syntax here
+    settlementWindowIds.map(async id => await t.click(closedRowsById[id].checkbox))
+  );
+
+  await t.click(SettlementWindowsPage.settleWindowsButton);
+  const settlements = await cli.getSettlements({
+    state: 'PENDING_SETTLEMENT',
+    settlementWindowId: settlementWindowIds[0],
+  });
+
+  await t.expect(settlements.length).eql(1,
+    'Expected our settlement windows to be in exactly one settlement');
+  await t.expect(
+    settlements[0].settlementWindows.map((sw: protocol.SettlementSettlementWindow) => sw.id).sort()
+  ).eql(
+    settlementWindowIds.sort(),
+    `Expect settlement to contain the settlement windows we nominated and only those settlement
+    windows`
   );
 });
 
