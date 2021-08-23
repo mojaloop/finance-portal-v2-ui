@@ -152,17 +152,41 @@ test.meta({
 });
 
 test
-    .meta({
-      ID: '',
-      STORY: 'MMD-440',
-      Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-      Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
-      State field should be empty and Clear Filters button should be present`
-    })
-    (`Default Windows landing page`, async t => {
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
+    State field should be empty and Clear Filters button should be present`
+  })
+  (`Default Windows landing page`, async t => {
 
-        
-    });
+      
+  });
+
+test
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    Date drop-down. The drop down should list values, Today, Past 48 Hours, 1 Week, 1 Month, Custom Range`
+  })
+  (`Drop down menu options for Date filter`, async t => {
+
+      
+  });
+
+test
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    State drop-down. The drop down should list values, Open, Closed, Pending, Settled, Aborted`
+  })
+  (`Drop down menu options for State filter`, async t => {
+
+      
+  });
 
   test.meta({
       ID: '',
@@ -193,12 +217,48 @@ test
   test.meta({
       ID: '',
       STORY: 'MMD-440',
+      Scenario: `If I try to close a window that does not have any transfers, it should give an 
+      error message: Unable to Close Window due to error 3100: "Generic validation error - Window 60 is empty"`
+    })(
+    `Unable to close window without any transfers`, async t => {
+
+          
+    });
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `Regardless of the filters that are chosen, clicking "Clear Filters" button should reset
+      to default values Date - Today, From date with currrent date in YY/MM/DDDD 00:00:00 format and 
+      To date with currrent date in YY/MM/DDDD 23:59:59 format`
+    })(
+    `Clicking Clear Filters button to reset with default options`, async t => {
+
+          
+    });
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
       Scenario: `On the Settlement Windows page, the settle windows button should be grayed out. 
-      If there is a list of closed windows, there should be a checkbox to the left of the window id. 
+      If there is only one closed window, there should be a checkbox to the left of the window id. 
       I should be able to click it, which will enable settle windows button at the top. I should be
       to click it and close the window.`
     })(
     `Settle closed windows individually`, async t => {
+
+          
+    });
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `On the Settlement Windows page, the settle windows button should be grayed out. 
+      If there is a list of closed windows, there should be a checkbox to the left of the window ids. 
+      I should be able to select multiple closed windows, which will enable settle windows button at the top. 
+      I should be to click it and close the windows.`
+    })(
+    `Settle multiple closed windows simultaneously`, async t => {
 
           
     });
