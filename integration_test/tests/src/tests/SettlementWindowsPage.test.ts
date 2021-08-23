@@ -1,6 +1,5 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementWindowsPage, SettlementWindowStatus, SettlementWindowsSettlementModal } from '../page-objects/pages/SettlementWindowsPage';
-import { SettlementsPage, SettlementDetailModal } from '../page-objects/pages/SettlementsPage';
+import { SettlementWindowsPage, SettlementWindowStatus } from '../page-objects/pages/SettlementWindowsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
@@ -8,7 +7,6 @@ import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
 import { shim } from 'promise.any';
-import { ReactSelector } from 'testcafe-react-selectors';
 
 // At the time of writing, for some reason, in CI Promise.any is not working with
 // > TypeError: Promise.any is not a function
