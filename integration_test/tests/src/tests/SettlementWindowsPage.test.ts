@@ -175,8 +175,7 @@ test
     })(
       `Test Windows landing page with Today Date option selected`,
       async (t) => {
-        //Get the list of wondows for current date.
-        // Check that the latest window ID that displays on the page is the same
+        
       },
     );
 
@@ -188,7 +187,18 @@ test
     })(
     `Close Open Window`, async t => {
 
-          //Call Mojaloop Settlement API to get the current window details
+          
+    });
 
-          // Check that the latest window ID that displays on the page is the same 
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `On the Settlement Windows page, the settle windows button should be grayed out. 
+      If there is a list of closed windows, there should be a checkbox to the left of the window id. 
+      I should be able to click it, which will enable settle windows button at the top. I should be
+      to click it and close the window.`
+    })(
+    `Settle closed windows individually`, async t => {
+
+          
     });
