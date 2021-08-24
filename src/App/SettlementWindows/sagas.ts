@@ -91,7 +91,7 @@ function* settleWindows() {
     const windows: SettlementWindow[] = yield select(getCheckedSettlementWindows);
     const settlementResponse = yield call(apis.settleSettlementWindows.create, {
       body: {
-        settlementModel: 'MULTILATERAL_NET', // TODO: this
+        settlementModel: 'DEFERREDNET',
         reason: 'Business Operations Portal request',
         settlementWindows: windows.map((w) => ({ id: w.settlementWindowId })),
       },
