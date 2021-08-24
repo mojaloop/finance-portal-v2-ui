@@ -25,7 +25,6 @@ function getDFSP(): string {
 }
 
 const getId = createIdGenerator(500);
-const getWindowId = createIdGenerator(100);
 const getDetailId = createIdGenerator(2500);
 
 const getTotalValue = createValueGenerator(2000000, 125000);
@@ -37,7 +36,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.Settled,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -48,7 +46,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.Settling,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -59,7 +56,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.Aborted,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -70,7 +66,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.PendingSettlement,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -81,7 +76,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.PsTransfersRecorded,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -92,7 +86,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.PsTransfersReserved,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -103,7 +96,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.PsTransfersCommitted,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -114,7 +106,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.Settled,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -125,7 +116,6 @@ export const settlements: Settlement[] = [
     id: getId(),
     amounts: [-100, 100],
     participants: [12, 13],
-    windowId: getWindowId(),
     state: SettlementStatus.Settled,
     totalValue: getTotalValue(),
     totalVolume: getTotalVolume(),
@@ -140,7 +130,6 @@ export const getSettlementDetails: (settlement: Settlement) => SettlementDetail[
     return {
       id: getDetailId(),
       settlementId: settlement.id,
-      windowId: settlement.windowId,
       dfspId: settlement.participants[index],
       debit: isDebit ? amount : 0,
       credit: !isDebit ? amount : 0,

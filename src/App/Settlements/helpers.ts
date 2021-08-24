@@ -82,7 +82,6 @@ export function buildFiltersParams(filters: SettlementFilters) {
 export function mapApiToModel(item: any): Settlement {
   return {
     id: item.id,
-    windowId: item.settlementWindows[0].id,
     state: item.state,
     /* @ts-ignore */
     participants: item.participants.map((c: any) => c.id),

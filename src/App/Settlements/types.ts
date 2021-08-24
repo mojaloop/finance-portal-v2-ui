@@ -22,7 +22,6 @@ export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Sett
 
 export interface Settlement {
   id: string;
-  windowId: string;
   state: SettlementStatus;
   participants: number[];
   amounts: number[];
@@ -35,7 +34,6 @@ export interface Settlement {
 export interface SettlementDetail {
   id: string;
   settlementId: string;
-  windowId: string;
   dfspId: number;
   debit: number;
   credit: number;
