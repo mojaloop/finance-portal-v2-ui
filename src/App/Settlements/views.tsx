@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Led, Heading, Button, MessageBox, Spinner, DataList, Select, DatePicker } from 'components';
 import withMount from 'hocs';
 import connector, { ConnectorProps } from './connectors';
-import { DateRanges, SettlementStatus, SettlementFilters, FilterValue } from './types';
+import { Settlement, DateRanges, SettlementStatus, SettlementFilters, FilterValue } from './types';
 import * as helpers from './helpers';
 import { dateRanges, settlementStatuses } from './constants';
 
@@ -17,14 +17,6 @@ function renderStatus(state: SettlementStatus) {
     </>
   );
 }
-
-const columns = [
-  { key: 'id', label: 'Settlement ID' },
-  { key: 'state', label: 'State', func: renderStatus, sortable: false, searchable: false },
-  { key: 'totalValue', label: 'Total Value', func: helpers.formatNumber },
-  { key: 'createdDate', label: 'Open Date', func: helpers.formatDate },
-  { key: 'changedDate', label: 'Last Action Date', func: helpers.formatDate },
-];
 
 const Settlements: FC<ConnectorProps> = ({
   settlements,
@@ -47,6 +39,35 @@ const Settlements: FC<ConnectorProps> = ({
   } else if (isSettlementsPending) {
     content = <Spinner center />;
   } else {
+    const columns = [
+      { key: 'id', label: 'Settlement ID' },
+      { key: 'state', label: 'State', func: renderStatus, sortable: false, searchable: false },
+      { key: 'totalValue', label: 'Total Value', func: helpers.formatNumber },
+      { key: 'createdDate', label: 'Open Date', func: helpers.formatDate },
+      { key: 'changedDate', label: 'Last Action Date', func: helpers.formatDate },
+      {
+        key: 'settlementId',
+        label: 'Action',
+        sortable: false,
+        searchable: false,
+        func: (_settlementId: string, item: Settlement) => {
+          if (item.state === SettlementStatus.PendingSettlement) {
+            return (
+              <Button
+                kind="secondary"
+                noFill
+                size="s"
+                label="Finalize"
+                pending={false} // {isFinalizeSettlementPending}
+                onClick={() => {}} // {() => onFinalizeButtonClick(item)}
+              />
+            );
+          }
+          return null;
+        },
+      },
+    ];
+
     content = (
       <>
         <DataList
