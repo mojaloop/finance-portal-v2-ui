@@ -17,6 +17,8 @@ import {
   SET_SETTLEMENT_DETAIL_POSITIONS,
   SET_SETTLEMENT_DETAIL_POSITIONS_ERROR,
   CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL,
+  FINALIZE_SETTLEMENT,
+  FINALIZE_SETTLEMENT_ERROR,
   Settlement,
   SettlementDetail,
   SettlementDetailPosition,
@@ -42,6 +44,9 @@ export const selectSettlement = createAction<Settlement>(SELECT_SETTLEMENT);
 export const setSettlementDetails = createAction<SettlementDetail[]>(SET_SETTLEMENT_DETAILS);
 export const setSettlementDetailsError = createAction<string>(SET_SETTLEMENT_DETAILS_ERROR);
 export const closeSettlementDetailsModal = createAction(CLOSE_SETTLEMENT_DETAIL_MODAL);
+export const finalizeSettlement = createAction<Settlement>(FINALIZE_SETTLEMENT);
+// TODO: type?
+export const setFinalizeSettlementError = createAction<any>(FINALIZE_SETTLEMENT_ERROR);
 
 export const selectSettlementDetail = createAction<SettlementDetail>(SELECT_SETTLEMENT_DETAIL);
 export const setSettlementDetailPositions = createAction<SettlementDetailPosition[]>(SET_SETTLEMENT_DETAIL_POSITIONS);

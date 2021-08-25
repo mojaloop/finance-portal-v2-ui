@@ -22,10 +22,12 @@ const Settlements: FC<ConnectorProps> = ({
   settlements,
   settlementsError,
   isSettlementsPending,
+  finalizingSettlement,
   selectedSettlement,
   filters,
   onDateRangerFilterSelect,
   onDateFilterClearClick,
+  onFinalizeButtonClick,
   onStateFilterClearClick,
   onStartDateRangeFilterSelect,
   onEndDateRangeFilterSelect,
@@ -58,8 +60,8 @@ const Settlements: FC<ConnectorProps> = ({
                 noFill
                 size="s"
                 label="Finalize"
-                pending={false} // {isFinalizeSettlementPending}
-                onClick={() => {}} // {() => onFinalizeButtonClick(item)}
+                pending={finalizingSettlement}
+                onClick={() => onFinalizeButtonClick(item)}
               />
             );
           }

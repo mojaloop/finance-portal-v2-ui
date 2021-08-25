@@ -14,16 +14,253 @@ export const SELECT_SETTLEMENT = 'Settlements / Select Settlement';
 export const SET_SETTLEMENT_DETAILS = 'Settlements / Set Settlement Details';
 export const SET_SETTLEMENT_DETAILS_ERROR = 'Settlements / Set Settlement Details Error';
 export const CLOSE_SETTLEMENT_DETAIL_MODAL = 'Settlements / Close Settlement Detail Modal';
+export const FINALIZE_SETTLEMENT = 'Settlements / Finalize Settlement';
+export const FINALIZE_SETTLEMENT_ERROR = 'Settlements / Finalize Settlement Failure';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
 export const SET_SETTLEMENT_DETAIL_POSITIONS = 'Settlements / Set Settlement Detail Positions';
 export const SET_SETTLEMENT_DETAIL_POSITIONS_ERROR = 'Settlements / Set Settlement Detail Positions Error';
 export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Settlement Detail Positions Modal';
 
+export type IsActive = 1 | 0;
+
+export type LedgerAccountType = "INTERCHANGE_FEE" | "POSITION";
+
+export interface LedgerAccount {
+  id: number;
+  ledgerAccountType: LedgerAccountType;
+  currency: Currency;
+  isActive: IsActive;
+}
+
+export interface LedgerParticipant {
+  name: string;
+  id: string;
+  created: string; // This is an annoyingly nested json string. I.e. { "created": "\"2021-08-20T08:27:30.000Z\"" }
+  isActive: IsActive;
+  accounts: LedgerAccount[];
+}
+
+export enum FinalizeSettlementErrorKind {
+  RESERVE_PAYER_FUNDS_OUT = 'Error attempting to reserve payer funds out',
+  PROCESS_PAYEE_FUNDS_IN = 'Error attempting to process payee funds in',
+  COMMIT_PAYER_FUNDS_OUT = 'Error attempting to commit payer funds out',
+}
+
+export type Currency =
+  | 'AED'
+  | 'AFA'
+  | 'AFN'
+  | 'ALL'
+  | 'AMD'
+  | 'ANG'
+  | 'AOA'
+  | 'AOR'
+  | 'ARS'
+  | 'AUD'
+  | 'AWG'
+  | 'AZN'
+  | 'BAM'
+  | 'BBD'
+  | 'BDT'
+  | 'BGN'
+  | 'BHD'
+  | 'BIF'
+  | 'BMD'
+  | 'BND'
+  | 'BOB'
+  | 'BOV'
+  | 'BRL'
+  | 'BSD'
+  | 'BTN'
+  | 'BWP'
+  | 'BYN'
+  | 'BYR'
+  | 'BZD'
+  | 'CAD'
+  | 'CDF'
+  | 'CHE'
+  | 'CHF'
+  | 'CHW'
+  | 'CLF'
+  | 'CLP'
+  | 'CNY'
+  | 'COP'
+  | 'COU'
+  | 'CRC'
+  | 'CUC'
+  | 'CUP'
+  | 'CVE'
+  | 'CZK'
+  | 'DJF'
+  | 'DKK'
+  | 'DOP'
+  | 'DZD'
+  | 'EEK'
+  | 'EGP'
+  | 'ERN'
+  | 'ETB'
+  | 'EUR'
+  | 'FJD'
+  | 'FKP'
+  | 'GBP'
+  | 'GEL'
+  | 'GGP'
+  | 'GHS'
+  | 'GIP'
+  | 'GMD'
+  | 'GNF'
+  | 'GTQ'
+  | 'GYD'
+  | 'HKD'
+  | 'HNL'
+  | 'HRK'
+  | 'HTG'
+  | 'HUF'
+  | 'IDR'
+  | 'ILS'
+  | 'IMP'
+  | 'INR'
+  | 'IQD'
+  | 'IRR'
+  | 'ISK'
+  | 'JEP'
+  | 'JMD'
+  | 'JOD'
+  | 'JPY'
+  | 'KES'
+  | 'KGS'
+  | 'KHR'
+  | 'KMF'
+  | 'KPW'
+  | 'KRW'
+  | 'KWD'
+  | 'KYD'
+  | 'KZT'
+  | 'LAK'
+  | 'LBP'
+  | 'LKR'
+  | 'LRD'
+  | 'LSL'
+  | 'LTL'
+  | 'LVL'
+  | 'LYD'
+  | 'MAD'
+  | 'MDL'
+  | 'MGA'
+  | 'MKD'
+  | 'MMK'
+  | 'MNT'
+  | 'MOP'
+  | 'MRO'
+  | 'MUR'
+  | 'MVR'
+  | 'MWK'
+  | 'MXN'
+  | 'MXV'
+  | 'MYR'
+  | 'MZN'
+  | 'NAD'
+  | 'NGN'
+  | 'NIO'
+  | 'NOK'
+  | 'NPR'
+  | 'NZD'
+  | 'OMR'
+  | 'PAB'
+  | 'PEN'
+  | 'PGK'
+  | 'PHP'
+  | 'PKR'
+  | 'PLN'
+  | 'PYG'
+  | 'QAR'
+  | 'RON'
+  | 'RSD'
+  | 'RUB'
+  | 'RWF'
+  | 'SAR'
+  | 'SBD'
+  | 'SCR'
+  | 'SDG'
+  | 'SEK'
+  | 'SGD'
+  | 'SHP'
+  | 'SLL'
+  | 'SOS'
+  | 'SPL'
+  | 'SRD'
+  | 'SSP'
+  | 'STD'
+  | 'SVC'
+  | 'SYP'
+  | 'SZL'
+  | 'THB'
+  | 'TJS'
+  | 'TMT'
+  | 'TND'
+  | 'TOP'
+  | 'TRY'
+  | 'TTD'
+  | 'TVD'
+  | 'TWD'
+  | 'TZS'
+  | 'UAH'
+  | 'UGX'
+  | 'USD'
+  | 'USN'
+  | 'UYI'
+  | 'UYU'
+  | 'UZS'
+  | 'VEF'
+  | 'VND'
+  | 'VUV'
+  | 'WST'
+  | 'XAF'
+  | 'XAG'
+  | 'XAU'
+  | 'XCD'
+  | 'XDR'
+  | 'XFO'
+  | 'XFU'
+  | 'XOF'
+  | 'XPD'
+  | 'XPF'
+  | 'XPT'
+  | 'XSU'
+  | 'XTS'
+  | 'XUA'
+  | 'XXX'
+  | 'YER'
+  | 'ZAR'
+  | 'ZMK'
+  | 'ZMW'
+  | 'ZWD'
+  | 'ZWL'
+  | 'ZWN'
+  | 'ZWR';
+
+export interface NetSettlementAmount {
+  amount: number;
+  currency: Currency;
+}
+
+export interface SettlementAccount {
+  id: number;
+  state: SettlementStatus;
+  reason: string;
+  netSettlementAmount: NetSettlementAmount;
+}
+
+export interface SettlementParticipant {
+  id: number;
+  accounts: SettlementAccount[];
+}
+
 export interface Settlement {
   id: string;
   state: SettlementStatus;
-  participants: number[];
+  participants: SettlementParticipant[];
   amounts: number[];
   totalValue: number;
   totalVolume: number;
@@ -87,6 +324,8 @@ export interface SettlementsState {
   isSettlementDetailPositionsPending: boolean;
   settlementDetailPositions: SettlementDetailPosition[];
   settlementDetailPositionsError: ErrorMessage;
+
+  finalizingSettlement: null | Settlement;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;

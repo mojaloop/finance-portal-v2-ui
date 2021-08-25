@@ -51,6 +51,8 @@ const initialState: SettlementsState = {
   isSettlementDetailPositionsPending: false,
   settlementDetailPositions: [],
   settlementDetailPositionsError: null,
+
+  finalizingSettlement: null,
 };
 
 export default createReducer(initialState, (builder) =>
