@@ -1,6 +1,6 @@
 import { ErrorMessage } from 'App/types';
 import { DFSP } from 'App/DFSPs/types';
-import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
+// import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
 
 export const REQUEST_FINANCIAL_POSITIONS = 'Financial Positions / Request Financial Positions';
 export const SET_FINANCIAL_POSITIONS = 'Financial Positions / Set Financial Positions';
@@ -20,6 +20,13 @@ export const SUBMIT_FINANCIAL_POSITION_UPDATE_CONFIRM_MODAL =
   'Financial Positions / Submit Financial Position Update Confirm Modal';
 export const UPDATE_FINANCIAL_POSITION_NDC_AFTER_CONFIRM_MODAL =
   'Financial Positions / Update Financial Position NDC After Confirm Modal';
+
+const composeOptions = (opts: any) => {
+  return Object.keys(opts).map((k) => ({
+    label: k,
+    value: opts[k],
+  }));
+};
 
 export interface FinancialPosition {
   dfsp: DFSP;

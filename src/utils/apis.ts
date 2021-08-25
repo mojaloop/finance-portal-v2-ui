@@ -23,6 +23,10 @@ const services = {
     withCredentials: true,
     baseUrl: '/api/portal-backend',
   },
+  transfersService: {
+    withCredentials: true,
+    baseUrl: '/api/portal-backend',
+  },
 };
 
 type Endpoint = ApiConfig<State>;
@@ -30,6 +34,23 @@ type Endpoint = ApiConfig<State>;
 const login: Endpoint = {
   service: services.loginService,
   url: () => '/login',
+};
+
+const transfers: Endpoint = {
+  service: services.transfersService,
+  url: (_: State, filters) => {
+    // dont pass any undefined keys to URLSearchParams
+    const sanitisedFilters = {
+      ...filters,
+    };
+
+    Object.keys(sanitisedFilters).forEach((k) =>
+      sanitisedFilters[k] === undefined ? delete sanitisedFilters[k] : null,
+    );
+
+    const queryString = new URLSearchParams(sanitisedFilters).toString();
+    return `/transfers?${queryString}`;
+  },
 };
 
 const settlements: Endpoint = {
@@ -128,6 +149,7 @@ interface EndpointsMap {
   fundsOut: Endpoint;
   fundsIn: Endpoint;
   netdebitcap: Endpoint;
+  transfers: Endpoint;
 }
 
 const endpoints = {
@@ -147,6 +169,7 @@ const endpoints = {
   fundsOut,
   fundsIn,
   netdebitcap,
+  transfers,
 };
 
 export default buildApis<EndpointsMap, State>(endpoints);

@@ -4,6 +4,7 @@ import { AuthState } from 'App/Auth/types';
 import { FinancialPositionsState } from 'App/FinancialPositions/types';
 import { SettlementWindowsState } from 'App/SettlementWindows/types';
 import { SettlementsState } from 'App/Settlements/types';
+import { TransfersState } from 'App/Transfers/types';
 import { DFSPsState } from 'App/DFSPs/types';
 
 export interface State {
@@ -14,6 +15,7 @@ export interface State {
     financialPositions: FinancialPositionsState;
     settlementWindows: SettlementWindowsState;
     settlements: SettlementsState;
+    transfers: TransfersState;
   };
 }
 export type PartialState = Partial<State>;

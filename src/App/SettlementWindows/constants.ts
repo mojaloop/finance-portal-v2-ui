@@ -1,5 +1,12 @@
-import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
+// import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
 import { DateRanges, SettlementWindowStatus } from './types';
+
+const composeOptions = (opts: any) => {
+  return Object.keys(opts).map((k) => ({
+    label: k,
+    value: opts[k],
+  }));
+};
 
 export const dateRanges = composeOptions({
   [DateRanges.Today]: DateRanges.Today,

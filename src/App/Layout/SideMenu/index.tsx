@@ -16,6 +16,9 @@ const SideMenu: FC<unknown> = () => {
         <MenuSection label="Participants">
           <MenuItem path="/positions" label="DFSP Financial Positions" partial />
         </MenuSection>
+        <MenuSection label="Transfers">
+          <MenuItem path="/transfers" label="Find Transfers" partial />
+        </MenuSection>
       </Menu>
     </div>
   );
