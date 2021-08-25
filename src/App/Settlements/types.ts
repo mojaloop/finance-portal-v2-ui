@@ -24,7 +24,7 @@ export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Sett
 
 export type IsActive = 1 | 0;
 
-export type LedgerAccountType = "INTERCHANGE_FEE" | "POSITION";
+export type LedgerAccountType = 'INTERCHANGE_FEE' | 'POSITION';
 
 export interface LedgerAccount {
   id: number;

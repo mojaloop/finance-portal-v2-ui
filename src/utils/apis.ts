@@ -38,26 +38,30 @@ const login: Endpoint = {
 
 const participants: Endpoint = {
   service: services.ledgerService,
-  url: () => '/participants'
-}
+  url: () => '/participants',
+};
 
 const participantAccountTransfer: Endpoint = {
   service: services.ledgerService,
-  url: (_: State, { participantName, accountId, transferId }: { participantName: string, accountId: string, transferId: string }) =>
-  `/participants/${participantName}/accounts/${accountId}/transfers/${transferId}`,
-}
+  url: (
+    _: State,
+    { participantName, accountId, transferId }: { participantName: string; accountId: string; transferId: string },
+  ) => `/participants/${participantName}/accounts/${accountId}/transfers/${transferId}`,
+};
 
 const participantAccount: Endpoint = {
   service: services.ledgerService,
-  url: (_: State, { participantName, accountId }: { participantName: string, accountId: string }) =>
-  `/participants/${participantName}/accounts/${accountId}`,
-}
+  url: (_: State, { participantName, accountId }: { participantName: string; accountId: string }) =>
+    `/participants/${participantName}/accounts/${accountId}`,
+};
 
 const settlementParticipantAccount: Endpoint = {
   service: services.settlementService,
-  url: (_: State, { settlementId, participantId, accountId }: { settlementId: string, participantId: string, accountId: string }) =>
-    `/settlements/${settlementId}/participants/${participantId}/accounts/${accountId}`,
-}
+  url: (
+    _: State,
+    { settlementId, participantId, accountId }: { settlementId: string; participantId: string; accountId: string },
+  ) => `/settlements/${settlementId}/participants/${participantId}/accounts/${accountId}`,
+};
 
 const settlements: Endpoint = {
   service: services.settlementService,
