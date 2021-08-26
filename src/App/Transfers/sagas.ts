@@ -1,9 +1,10 @@
 // import { PayloadAction } from '@reduxjs/toolkit';
 import apis from 'utils/apis';
+import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest } from 'redux-saga/effects';
-import { REQUEST_TRANSFERS, Transfer, TransferParty } from './types';
+import { REQUEST_TRANSFERS, SELECT_TRANSFER, Transfer, TransferParty } from './types';
 
-import { setTransfers, setTransfersError } from './actions';
+import { setTransfers, setTransfersError, setTransferDetails } from './actions';
 
 import { getTransfersFilter } from './selectors';
 
@@ -48,10 +49,28 @@ function* fetchTransfers() {
   }
 }
 
+function* fetchTransferDetails(action: PayloadAction<Transfer>) {
+  try {
+    const response = yield call(apis.transferDetails.read, action.payload.id);
+
+    if (response.status !== 200) {
+      throw new Error(response.data);
+    }
+
+    yield put(setTransferDetails(response.data));
+  } catch (e) {
+    yield put(setTransfersError(e.message));
+  }
+}
+
+export function* FetchTransferDetailsSaga(): Generator {
+  yield takeLatest(SELECT_TRANSFER, fetchTransferDetails);
+}
+
 export function* FetchTransfersSaga(): Generator {
   yield takeLatest(REQUEST_TRANSFERS, fetchTransfers);
 }
 
 export default function* rootSaga(): Generator {
-  yield all([FetchTransfersSaga()]);
+  yield all([FetchTransfersSaga(), FetchTransferDetailsSaga()]);
 }

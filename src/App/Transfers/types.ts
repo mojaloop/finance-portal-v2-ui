@@ -9,6 +9,8 @@ export const SET_TRANSFER_DETAILS_ERROR = ' Transfers / Set Transfer Details Err
 export const CLOSE_TRANSFER_DETAIL_MODAL = 'Transfers / Close Transfer Detail Modal';
 export const REQUEST_TRANSFERS_ERRORS = 'Transfers / Request Transfers Errors';
 export const SET_IS_TRANSFERS_PENDING = 'Transfers / Set Is Transfers Pending';
+export const REQUEST_TRANSFER_DETAILS = 'Transfers / Request Transfer Details';
+export const SET_SELECTED_TRANSFER = 'Transfers / Set Selected Transfer';
 
 export interface TransfersFilter {
   transferId: string | undefined;

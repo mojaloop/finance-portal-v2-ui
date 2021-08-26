@@ -53,6 +53,11 @@ const transfers: Endpoint = {
   },
 };
 
+const transferDetails = {
+  service: services.transfersService,
+  url: (_: State, transferId: string) => `/transferDetails/${transferId}`,
+};
+
 const settlements: Endpoint = {
   service: services.settlementService,
   url: () => `/settlements`,
@@ -150,6 +155,7 @@ interface EndpointsMap {
   fundsIn: Endpoint;
   netdebitcap: Endpoint;
   transfers: Endpoint;
+  transferDetails: Endpoint;
 }
 
 const endpoints = {
@@ -170,6 +176,7 @@ const endpoints = {
   fundsIn,
   netdebitcap,
   transfers,
+  transferDetails,
 };
 
 export default buildApis<EndpointsMap, State>(endpoints);

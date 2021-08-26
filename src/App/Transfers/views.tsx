@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, Link, TextField, Select } from 'components';
+import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, TextField, Select } from 'components';
 import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
@@ -12,13 +12,6 @@ const transfersColumns = [
   {
     label: 'Transfer ID',
     key: 'id',
-    func: (value: string, item: Transfer) => (
-      /* eslint-disable */
-      <Link>
-        <span style={{ textDecoration: 'underline' }}>{item.id}</span>
-      </Link>
-      /* eslint-enable */
-    ),
   },
   {
     label: 'Type',
@@ -134,7 +127,7 @@ const Transfers: FC<ConnectorProps> = ({
   filtersModel,
   onFindTransfersClick,
   onClearFiltersClick,
-  // onTransferSelect,
+  onTransferSelect,
   onFilterChange,
 }) => {
   let content = null;
@@ -157,6 +150,7 @@ const Transfers: FC<ConnectorProps> = ({
         pageSize={Number(20)}
         paginatorSize={Number(7)}
         flex={true}
+        onSelect={onTransferSelect}
       />
     );
   }
