@@ -44,7 +44,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       <br />
       <div>{`State: ${finalizingSettlement?.state}.`}</div>
       <br />
-      <Spinner size={20} />
+      {finalizingSettlement?.state !== SettlementStatus.Settled && <Spinner size={20} />}
     </div>
   );
 
