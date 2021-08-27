@@ -11,6 +11,7 @@ export const REQUEST_TRANSFERS_ERRORS = 'Transfers / Request Transfers Errors';
 export const SET_IS_TRANSFERS_PENDING = 'Transfers / Set Is Transfers Pending';
 export const REQUEST_TRANSFER_DETAILS = 'Transfers / Request Transfer Details';
 export const SET_SELECTED_TRANSFER = 'Transfers / Set Selected Transfer';
+export const TRANSFER_DETAILS_MODAL_CLOSE = 'Transfers / Transfer Details Modal Close';
 
 export interface TransfersFilter {
   transferId: string | undefined;
@@ -46,12 +47,15 @@ export type TransferStatus = string;
 
 export interface TransferDetail {
   transferId: string;
-  transfer: Transfer;
-  quoteRequest: object;
-  quoteResponse: object;
-  prepare: object;
-  fulfil: object;
-  unstructuredData: string[];
+  quoteRequests: object[];
+  quoteParties: object[];
+  quoteResponses: object[];
+  quoteErrors: object[];
+  transferPrepares: object[];
+  transferFulfilments: object[];
+  transferParticipants: object[];
+  transferStateChanges: object[];
+  unstructuredData: string[] | undefined;
 }
 
 export interface ExtensionListItem {
@@ -86,7 +90,7 @@ export interface MojaloopErrorInformation {
 
 export interface TransfersState {
   transfers: Transfer[];
-  selectedTransfer: Transfer | undefined;
+  selectedTransfer: TransferDetail | undefined;
   transfersError: string | null;
   transfersFilter: TransfersFilter;
   isTransfersPending: Boolean;

@@ -3,10 +3,11 @@ import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, TextField, 
 import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
-import { TransfersFilter, FilterChangeValue, Transfer } from './types';
+import { TransfersFilter, FilterChangeValue, Transfer, TransferDetail } from './types';
 import * as actions from './actions';
 import * as selectors from './selectors';
 import './Transfers.css';
+import TransferDetailsModal from './TransferDetails';
 
 const transfersColumns = [
   {
@@ -108,7 +109,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
 });
 
 interface ConnectorProps {
-  selectedTransfer: Transfer;
+  selectedTransfer: TransferDetail | undefined;
   transfers: Transfer[];
   transfersError: string | null;
   isTransfersPending: boolean;
@@ -120,7 +121,7 @@ interface ConnectorProps {
 }
 
 const Transfers: FC<ConnectorProps> = ({
-  // selectedTransfer,
+  selectedTransfer,
   transfers,
   transfersError,
   isTransfersPending,
@@ -165,6 +166,11 @@ const Transfers: FC<ConnectorProps> = ({
     );
   }
 
+  let detailModal = null;
+  if (selectedTransfer) {
+    detailModal = <TransferDetailsModal />;
+  }
+
   return (
     <div className="transfers">
       <Heading size="3">Find Transfers</Heading>
@@ -176,6 +182,7 @@ const Transfers: FC<ConnectorProps> = ({
       />
       {warning}
       {content}
+      {detailModal}
     </div>
   );
 };

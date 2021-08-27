@@ -55,5 +55,16 @@ export default createReducer(initialState, (builder) =>
     .addCase(actions.clearTransferFinderFilters, (state: types.TransfersState) => ({
       ...state,
       transfersFilter: initialState.transfersFilter,
+    }))
+    .addCase(
+      actions.setTransferDetails,
+      (state: types.TransfersState, action: PayloadAction<types.TransferDetail>) => ({
+        ...state,
+        selectedTransfer: action.payload,
+      }),
+    )
+    .addCase(actions.transferDetailsModalClose, (state: types.TransfersState) => ({
+      ...state,
+      selectedTransfer: initialState.selectedTransfer,
     })),
 );

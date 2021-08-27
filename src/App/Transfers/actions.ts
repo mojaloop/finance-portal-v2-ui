@@ -9,10 +9,10 @@ import {
   CLEAR_TRANSFERS_FILTERS,
   SELECT_TRANSFER,
   REQUEST_TRANSFER_DETAILS,
-  SET_SELECTED_TRANSFER,
+  // SET_SELECTED_TRANSFER,
   SET_TRANSFER_DETAILS,
   // SET_TRANSFER_DETAILS_ERROR,
-  // CLOSE_TRANSFER_DETAIL_MODAL,
+  TRANSFER_DETAILS_MODAL_CLOSE,
   Transfer,
   TransferDetail,
   FilterChangeValue,
@@ -29,3 +29,4 @@ export const selectTransfer = createAction<Transfer>(SELECT_TRANSFER);
 export const setIsTransfersPending = createAction<Boolean>(SET_IS_TRANSFERS_PENDING);
 export const requestTransferDetails = createAction<Transfer>(REQUEST_TRANSFER_DETAILS);
 export const setTransferDetails = createAction<TransferDetail>(SET_TRANSFER_DETAILS);
+export const transferDetailsModalClose = createAction(TRANSFER_DETAILS_MODAL_CLOSE);
