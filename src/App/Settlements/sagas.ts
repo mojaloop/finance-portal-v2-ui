@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { PayloadAction } from '@reduxjs/toolkit';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
@@ -14,6 +14,8 @@ import {
   SET_SETTLEMENTS_FILTER_VALUE,
   CLEAR_SETTLEMENTS_FILTERS,
   FINALIZE_SETTLEMENT,
+  // Currency,
+  FinalizeSettlementError,
   FinalizeSettlementErrorKind,
   Settlement,
   SettlementDetail,
@@ -21,10 +23,11 @@ import {
   LedgerParticipant,
   LedgerAccount,
   SettlementParticipant,
-  SettlementAccount,
+  SettlementPositionAccount,
 } from './types';
 import {
   setFinalizeSettlementError,
+  setFinalizingSettlement,
   setSettlements,
   setSettlementsError,
   setSettlementDetails,
@@ -37,153 +40,186 @@ import { getSettlementsFilters } from './selectors';
 import * as helpers from './helpers';
 import { getSettlementDetails, getSettlementDetailPositions } from './_mockData';
 
-class FinalizeSettlementError extends Error {
-  info: {
-    type: FinalizeSettlementErrorKind;
-    data: any;
-  };
-  constructor(info: FinalizeSettlementError['info']) {
-    super(info.type);
-    this.info = info;
+class FinalizeSettlementAssertionError extends Error {
+  data: FinalizeSettlementError;
+
+  constructor(data: FinalizeSettlementError) {
+    super();
+    this.data = data;
   }
 }
 
+function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, state: SettlementStatus) {
+  return {
+    settlementId: settlement.id,
+    body: {
+      participants: settlement.participants.map((p) => ({
+        ...p,
+        accounts: p.accounts.map((a) => ({
+          id: a.id,
+          reason: 'Business operations portal request',
+          state,
+        })),
+      })),
+    },
+  };
+}
+
 function* finalizeSettlement(action: PayloadAction<Settlement>) {
-  type SettlementAccountData = { participant: LedgerParticipant; transferId: string };
   try {
     switch (action.payload.state) {
-      case SettlementStatus.PendingSettlement:
-        yield call(
+      case SettlementStatus.PendingSettlement: {
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.PendingSettlement,
+          }),
+        );
+        const result = yield call(
           apis.settlement.update,
           buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersRecorded),
         );
+        assert.strictEqual(
+          result.status,
+          200,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED,
+            value: result.data,
+          }),
+        );
+      }
       // Note the deliberate fall-through behaviour here, representing the expected state transitions
-      case SettlementStatus.PsTransfersRecorded:
-        yield call(
+      // eslint-ignore-next-line: no-fallthrough
+      case SettlementStatus.PsTransfersRecorded: {
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.PsTransfersRecorded,
+          }),
+        );
+        const result = yield call(
           apis.settlement.update,
           buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersReserved),
         );
+        assert.strictEqual(
+          result.status,
+          200,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED,
+            value: result.data,
+          }),
+        );
+      }
       // Note the deliberate fall-through behaviour here, representing the expected state transitions
-      case SettlementStatus.PsTransfersReserved:
-        yield call(
+      // eslint-ignore-next-line: no-fallthrough
+      case SettlementStatus.PsTransfersReserved: {
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.PsTransfersReserved,
+          }),
+        );
+        const result = yield call(
           apis.settlement.update,
           buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersCommitted),
         );
+        assert.strictEqual(
+          result.status,
+          200,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED,
+            value: result.data,
+          }),
+        );
+      }
       // Note the deliberate fall-through behaviour here, representing the expected state transitions
+      // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
-        // Because participants returned from central settlement are database identifiers (i.e.
-        // integer ids) but central ledger requires participant names, we request participants from
-        // central ledger here and map account ids from central settlement to participant names. See
-        // also https://github.com/mojaloop/mojaloop-specification/issues/91
-        let participants: LedgerParticipant[] = yield call(apis.participants.read);
-        const accountDataMap: Map<LedgerAccount['id'], SettlementAccountData> = new Map(
-          participants.flatMap((p: LedgerParticipant) =>
-            p.accounts.map(({ id }) => [
-              id,
-              {
-                participant: p,
-                transferId: uuidv4(),
-              },
-            ]),
-          ),
+      // We could transition to PS_TRANSFERS_COMMITTED, but then we'd immediately transition to
+      // SETTLING anyway, so we do nothing here.
+      // Note the deliberate fall-through behaviour here, representing the expected state transitions
+      // eslint-ignore-next-line: no-fallthrough
+      case SettlementStatus.Settling: {
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.Settling,
+          }),
         );
 
-        const reason = `Business operations portal settlement id ${action.payload.id} settlement`;
-        const accounts = action.payload.participants.flatMap((p: SettlementParticipant) => p.accounts);
+        const participantsResult = yield call(apis.participants.read, {});
+        const participants: LedgerParticipant[] = participantsResult.data;
+        const accountParticipantMap: Map<LedgerAccount['id'], LedgerParticipant> = new Map(
+          participants
+            .filter((p: LedgerParticipant) => p.name !== 'Hub' && p.name !== 'hub')
+            .flatMap((p: LedgerParticipant) => p.accounts.map(({ id }) => [id, p])),
+        );
 
-        // This assert ensures the result of accountDataMap.get(acc.id) will not be undefined for
-        // any of our accounts. It lets us safely use accountDataMap.get without checking the
-        // result.
+        // Ensure we have participant info for every account in our settlement. This ensures the
+        // result of accountParticipantsMap.get will not be undefined for any of our accounts. It
+        // lets us safely use accountParticipantsMap.get without checking the result.
         assert(
-          accounts.every((acc: SettlementAccount) => accountDataMap.has(acc.id)),
-          'Expected every account id required in settlement to be returned by GET /participants',
+          action.payload.participants
+            .flatMap((p: SettlementParticipant) => p.accounts)
+            .every((a: SettlementPositionAccount) => accountParticipantMap.has(a.id)),
+          'Expected every account id present in settlement to be returned by GET /participants',
         );
 
-        // Payers settlement amount will be positive and payees will be negative
-        const accsToDebit = accounts.filter((a: SettlementAccount) => a.netSettlementAmount.amount > 0);
-        const accsToCredit = accounts.filter((a: SettlementAccount) => a.netSettlementAmount.amount < 0);
-
-        // Deliberately sequence payers before payees
-        const payerPrepareReserveResults: { status: number; body: any }[] = yield all(
-          accsToDebit.map((acc: SettlementAccount) =>
-            recordFundsOutPrepareReserve(
-              acc,
-              reason,
-              <string>accountDataMap.get(acc.id)?.participant.name,
-              <string>accountDataMap.get(acc.id)?.transferId,
-            ),
-          ),
+        const requests = action.payload.participants.flatMap((p: SettlementParticipant) =>
+          p.accounts
+            .filter((a: SettlementPositionAccount) => a.state !== SettlementStatus.Settled)
+            .map((a: SettlementPositionAccount) => ({
+              request: {
+                settlementId: action.payload.id,
+                participantId: p.id,
+                accountId: a.id,
+                body: {
+                  state: SettlementStatus.Settled,
+                  reason: 'Business operations portal request',
+                },
+              },
+              account: a,
+            })),
         );
-        const payerPrepareReserveErrors = payerPrepareReserveResults
-          .filter(({ status }) => status !== 202)
-          .map((result, i: number) => ({
-            participant: accountDataMap.get(accsToDebit[i].id)?.participant,
-            error: result.body.errorInformation,
-          }));
+        const accountSettlementResults: { status: number; data: any }[] = yield all(
+          requests.map((r) => call(apis.settlementParticipantAccount.update, r.request)),
+        );
+        const requestResultZip = accountSettlementResults.map((res, i) => ({ req: requests[i], res }));
+        const accountSettlementErrors = requestResultZip
+          .filter(({ res }) => res.status !== 200)
+          .map(({ req, res }) => {
+            return {
+              participant: <LedgerParticipant>accountParticipantMap.get(req.account.id),
+              apiResponse: res.data.errorInformation,
+              account: req.account,
+            };
+          });
         assert.strictEqual(
-          payerPrepareReserveErrors.length,
+          accountSettlementErrors.length,
           0,
-          new FinalizeSettlementError({
-            type: FinalizeSettlementErrorKind.RESERVE_PAYER_FUNDS_OUT,
-            data: payerPrepareReserveErrors,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS,
+            value: accountSettlementErrors,
           }),
         );
 
-        const payeeFundsInResults: { status: number; body: any }[] = yield all(
-          accsToCredit.map((acc: SettlementAccount) =>
-            recordFundsIn(
-              acc,
-              reason,
-              <string>accountDataMap.get(acc.id)?.participant.name,
-              <string>accountDataMap.get(acc.id)?.transferId,
-            ),
-          ),
-        );
-        const payeeFundsInErrors = payeeFundsInResults
-          .filter(({ status }) => status !== 202)
-          .map((result, i: number) => ({
-            participant: accountDataMap.get(accsToDebit[i].id)?.participant,
-            error: result.body.errorInformation,
-          }));
-        assert.strictEqual(
-          payeeFundsInErrors.length,
-          0,
-          new FinalizeSettlementError({
-            type: FinalizeSettlementErrorKind.PROCESS_PAYEE_FUNDS_IN,
-            data: payeeFundsInErrors,
-          }),
-        );
-
-        const payerCommitResults: { status: number; body: any }[] = yield all(
-          accsToDebit.map((acc: SettlementAccount) =>
-            recordFundsOutCommit(
-              acc.id,
-              reason,
-              <string>accountDataMap.get(acc.id)?.participant.name,
-              <string>accountDataMap.get(acc.id)?.transferId,
-            ),
-          ),
-        );
-        const payerCommitErrors = payerCommitResults
-          .filter(({ status }) => status !== 202)
-          .map((result, i: number) => ({
-            ...accountDataMap.get(accsToDebit[i].id),
-            error: result.body.errorInformation,
-          }));
-        assert.strictEqual(
-          payerCommitErrors.length,
-          0,
-          new FinalizeSettlementError({
-            type: FinalizeSettlementErrorKind.COMMIT_PAYER_FUNDS_OUT,
-            data: payerCommitErrors,
-          }),
-        );
-
-        break;
-      case SettlementStatus.Settling:
-        // participants = participants || yield call(apis.participants.read);
-        break;
+        let result: { data: Settlement; status: number } = yield call(apis.settlement.read, {
+          settlementId: action.payload.id,
+        });
+        while (result.data.state !== SettlementStatus.Settled) {
+          yield delay(5000);
+          result = yield call(apis.settlement.read, { settlementId: action.payload.id });
+        }
+      }
+      // Note the deliberate fall-through behaviour here, representing the expected state transitions
+      // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settled:
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.Settled,
+          }),
+        );
         break;
       case SettlementStatus.Aborted:
         break;
@@ -191,78 +227,14 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
         // Did you get a compile error here? This code is written such that if every
         // case in the above switch state is not handled, compilation will fail.
         const exhaustiveCheck: never = action.payload.state;
-        throw new Error(`Unhandled message type: ${exhaustiveCheck}`);
+        throw new Error(`Unhandled settlement status: ${exhaustiveCheck}`);
       }
     }
   } catch (err) {
-    yield put(setFinalizeSettlementError(err));
-  }
-
-  function recordFundsOutCommit(accountId: number, reason: string, participantName: string, transferId: string) {
-    return call(apis.participantAccountTransfer.update, {
-      participantName,
-      accountId,
-      transferId,
-      body: {
-        action: 'recordFundsOutCommit',
-        reason,
-      },
-    });
-  }
-
-  function recordFundsIn(acc: SettlementAccount, reason: string, participantName: string, transferId: string) {
-    return call(apis.participantAccount.create, {
-      participantName,
-      accountId: acc.id,
-      body: {
-        transferId: transferId,
-        externalReference: reason,
-        action: 'recordFundsIn',
-        reason,
-        amount: {
-          currency: acc.netSettlementAmount.currency,
-          amount: acc.netSettlementAmount.amount,
-        },
-      },
-    });
-  }
-
-  function recordFundsOutPrepareReserve(
-    acc: SettlementAccount,
-    reason: string,
-    participantName: string,
-    transferId: string,
-  ) {
-    return call(apis.participantAccount.create, {
-      participantName,
-      accountId: acc.id,
-      body: {
-        transferId,
-        externalReference: reason,
-        action: 'recordFundsOutPrepareReserve',
-        reason,
-        amount: {
-          currency: acc.netSettlementAmount.currency,
-          amount: -acc.netSettlementAmount.amount,
-        },
-      },
-    });
-  }
-
-  function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, state: SettlementStatus) {
-    return {
-      settlementId: settlement.id,
-      body: {
-        participants: settlement.participants.map((p) => ({
-          ...p,
-          accounts: p.accounts.map((a) => ({
-            id: a.id,
-            reason: 'Business operations portal request',
-            state,
-          })),
-        })),
-      },
-    };
+    if (!(err instanceof FinalizeSettlementAssertionError)) {
+      throw err;
+    }
+    yield put(setFinalizeSettlementError(err.data));
   }
 }
 

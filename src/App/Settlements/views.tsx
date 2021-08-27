@@ -6,7 +6,8 @@ import { Settlement, DateRanges, SettlementStatus, SettlementFilters, FilterValu
 import * as helpers from './helpers';
 import { dateRanges, settlementStatuses } from './constants';
 
-import SettlementDetails from './SettlementDetails';
+// import SettlementDetails from './SettlementDetails';
+import SettlementFinalizingModal from './SettlementFinalizingModal';
 import './Settlements.css';
 
 function renderStatus(state: SettlementStatus) {
@@ -22,8 +23,7 @@ const Settlements: FC<ConnectorProps> = ({
   settlements,
   settlementsError,
   isSettlementsPending,
-  finalizingSettlement,
-  selectedSettlement,
+  showFinalizeSettlementModal,
   filters,
   onDateRangerFilterSelect,
   onDateFilterClearClick,
@@ -41,6 +41,13 @@ const Settlements: FC<ConnectorProps> = ({
   } else if (isSettlementsPending) {
     content = <Spinner center />;
   } else {
+    const finalizableStates = [
+      SettlementStatus.PendingSettlement,
+      SettlementStatus.PsTransfersCommitted,
+      SettlementStatus.PsTransfersReserved,
+      SettlementStatus.PsTransfersRecorded,
+      SettlementStatus.Settling, // TODO: is it?
+    ];
     const columns = [
       { key: 'id', label: 'Settlement ID' },
       { key: 'state', label: 'State', func: renderStatus, sortable: false, searchable: false },
@@ -53,15 +60,20 @@ const Settlements: FC<ConnectorProps> = ({
         sortable: false,
         searchable: false,
         func: (_settlementId: string, item: Settlement) => {
-          if (item.state === SettlementStatus.PendingSettlement) {
+          if (finalizableStates.includes(item.state)) {
             return (
               <Button
                 kind="secondary"
                 noFill
                 size="s"
                 label="Finalize"
-                pending={finalizingSettlement}
+                pending={showFinalizeSettlementModal}
                 onClick={() => onFinalizeButtonClick(item)}
+                // style={{ zIndex: 100 }}
+                // onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                //   e.preventDefault();
+                //   onFinalizeButtonClick(item);
+                // }}
               />
             );
           }
@@ -79,7 +91,8 @@ const Settlements: FC<ConnectorProps> = ({
           sortColumn="Settlement ID"
           sortAsc={false}
         />
-        {selectedSettlement && <SettlementDetails />}
+        {/* selectedSettlement && <SettlementDetails /> */}
+        {showFinalizeSettlementModal && <SettlementFinalizingModal />}
       </>
     );
   }

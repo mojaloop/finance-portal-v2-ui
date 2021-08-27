@@ -8,6 +8,7 @@ const stateProps = (state: State) => ({
   selectedSettlement: selectors.getSelectedSettlement(state),
   settlements: selectors.getSettlements(state),
   settlementsError: selectors.getSettlementsError(state),
+  showFinalizeSettlementModal: selectors.getFinalizeSettlementModalVisible(state),
   finalizingSettlement: selectors.getFinalizingSettlement(state),
   isSettlementsPending: selectors.getIsSettlementsPending(state),
 
@@ -17,7 +18,10 @@ const stateProps = (state: State) => ({
 const dispatchProps = (dispatch: Dispatch) => ({
   onMount: () => dispatch(actions.requestSettlements()),
 
-  onFinalizeButtonClick: (settlement: Settlement) => dispatch(actions.finalizeSettlement(settlement)),
+  onFinalizeButtonClick: (settlement: Settlement) => {
+    dispatch(actions.finalizeSettlement(settlement));
+    dispatch(actions.showFinalizeSettlementModal());
+  },
   onDateRangerFilterSelect: (payload: DateRanges) => dispatch(actions.selectSettlementsFilterDateRange(payload)),
   onDateFilterClearClick: () => dispatch(actions.clearSettlementsFilterDateRange()),
   onStateFilterClearClick: () => dispatch(actions.clearSettlementsFilterState()),

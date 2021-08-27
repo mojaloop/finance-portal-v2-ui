@@ -15,7 +15,10 @@ export const SET_SETTLEMENT_DETAILS = 'Settlements / Set Settlement Details';
 export const SET_SETTLEMENT_DETAILS_ERROR = 'Settlements / Set Settlement Details Error';
 export const CLOSE_SETTLEMENT_DETAIL_MODAL = 'Settlements / Close Settlement Detail Modal';
 export const FINALIZE_SETTLEMENT = 'Settlements / Finalize Settlement';
-export const FINALIZE_SETTLEMENT_ERROR = 'Settlements / Finalize Settlement Failure';
+export const FINALIZE_SETTLEMENT_ERROR = 'Settlements / Finalize Settlement Error';
+export const FINALIZING_SETTLEMENT = 'Settlements / Finalizing Settlement';
+export const HIDE_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Hide Finalize Settlement Modal';
+export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settlement Modal';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
 export const SET_SETTLEMENT_DETAIL_POSITIONS = 'Settlements / Set Settlement Detail Positions';
@@ -24,7 +27,7 @@ export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Sett
 
 export type IsActive = 1 | 0;
 
-export type LedgerAccountType = 'INTERCHANGE_FEE' | 'POSITION';
+export type LedgerAccountType = 'INTERCHANGE_FEE' | 'POSITION' | 'SETTLEMENT';
 
 export interface LedgerAccount {
   id: number;
@@ -42,9 +45,42 @@ export interface LedgerParticipant {
 }
 
 export enum FinalizeSettlementErrorKind {
-  RESERVE_PAYER_FUNDS_OUT = 'Error attempting to reserve payer funds out',
-  PROCESS_PAYEE_FUNDS_IN = 'Error attempting to process payee funds in',
-  COMMIT_PAYER_FUNDS_OUT = 'Error attempting to commit payer funds out',
+  SET_SETTLEMENT_PS_TRANSFERS_RECORDED = 'Error attempting to set settlement state to PS_TRANSFERS_RECORDED',
+  SET_SETTLEMENT_PS_TRANSFERS_RESERVED = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
+  SET_SETTLEMENT_PS_TRANSFERS_COMMITTED = 'Error attempting to set settlement state to PS_TRANSFERS_COMMITTED',
+  SET_SETTLEMENT_SETTLED = 'Error attempting to set settlement state to SETTLED',
+  RESERVE_PAYER_FUNDS_OUT = 'Errors attempting to reserve payer funds out',
+  PROCESS_PAYEE_FUNDS_IN = 'Errors attempting to process payee funds in',
+  COMMIT_PAYER_FUNDS_OUT = 'Errors attempting to commit payer funds out',
+  SETTLE_ACCOUNTS = 'Errors attempting to settle accounts',
+}
+
+export interface FinalizeSettlementTransferError {
+  apiResponse: MojaloopError;
+  participant: LedgerParticipant;
+  account: SettlementPositionAccount;
+  transferId: string;
+}
+
+export interface FinalizeSettlementSettleAccountError {
+  apiResponse: MojaloopError;
+  participant: LedgerParticipant;
+  account: SettlementPositionAccount;
+}
+
+export type FinalizeSettlementError =
+  | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
+  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
+  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }
+  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError }
+  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_SETTLED; value: MojaloopError }
+  | { type: FinalizeSettlementErrorKind.COMMIT_PAYER_FUNDS_OUT; value: FinalizeSettlementTransferError[] }
+  | { type: FinalizeSettlementErrorKind.PROCESS_PAYEE_FUNDS_IN; value: FinalizeSettlementTransferError[] }
+  | { type: FinalizeSettlementErrorKind.RESERVE_PAYER_FUNDS_OUT; value: FinalizeSettlementTransferError[] };
+
+export interface MojaloopError {
+  errorCode: string;
+  errorDescription: string;
 }
 
 export type Currency =
@@ -245,7 +281,7 @@ export interface NetSettlementAmount {
   currency: Currency;
 }
 
-export interface SettlementAccount {
+export interface SettlementPositionAccount {
   id: number;
   state: SettlementStatus;
   reason: string;
@@ -254,7 +290,7 @@ export interface SettlementAccount {
 
 export interface SettlementParticipant {
   id: number;
-  accounts: SettlementAccount[];
+  accounts: SettlementPositionAccount[];
 }
 
 export interface Settlement {
@@ -262,6 +298,7 @@ export interface Settlement {
   state: SettlementStatus;
   participants: SettlementParticipant[];
   amounts: number[];
+  reason: string;
   totalValue: number;
   totalVolume: number;
   createdDate: string;
@@ -326,6 +363,8 @@ export interface SettlementsState {
   settlementDetailPositionsError: ErrorMessage;
 
   finalizingSettlement: null | Settlement;
+  showFinalizeSettlementModal: boolean;
+  finalizingSettlementError: null | FinalizeSettlementError;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;
