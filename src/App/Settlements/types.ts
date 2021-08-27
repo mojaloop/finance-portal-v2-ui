@@ -48,10 +48,6 @@ export enum FinalizeSettlementErrorKind {
   SET_SETTLEMENT_PS_TRANSFERS_RECORDED = 'Error attempting to set settlement state to PS_TRANSFERS_RECORDED',
   SET_SETTLEMENT_PS_TRANSFERS_RESERVED = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
   SET_SETTLEMENT_PS_TRANSFERS_COMMITTED = 'Error attempting to set settlement state to PS_TRANSFERS_COMMITTED',
-  SET_SETTLEMENT_SETTLED = 'Error attempting to set settlement state to SETTLED',
-  RESERVE_PAYER_FUNDS_OUT = 'Errors attempting to reserve payer funds out',
-  PROCESS_PAYEE_FUNDS_IN = 'Errors attempting to process payee funds in',
-  COMMIT_PAYER_FUNDS_OUT = 'Errors attempting to commit payer funds out',
   SETTLE_ACCOUNTS = 'Errors attempting to settle accounts',
 }
 
@@ -72,11 +68,7 @@ export type FinalizeSettlementError =
   | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }
-  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError }
-  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_SETTLED; value: MojaloopError }
-  | { type: FinalizeSettlementErrorKind.COMMIT_PAYER_FUNDS_OUT; value: FinalizeSettlementTransferError[] }
-  | { type: FinalizeSettlementErrorKind.PROCESS_PAYEE_FUNDS_IN; value: FinalizeSettlementTransferError[] }
-  | { type: FinalizeSettlementErrorKind.RESERVE_PAYER_FUNDS_OUT; value: FinalizeSettlementTransferError[] };
+  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError };
 
 export interface MojaloopError {
   errorCode: string;

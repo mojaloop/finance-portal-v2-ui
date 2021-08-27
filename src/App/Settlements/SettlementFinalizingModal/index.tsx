@@ -12,16 +12,16 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 }) => {
   function computeErrorMessage(err: FinalizeSettlementError) {
     switch (err.type) {
+      // TODO: suggest remedial action to the user
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
-      case FinalizeSettlementErrorKind.SET_SETTLEMENT_SETTLED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {
         return `${err.type}: ${err.value.errorDescription} [CODE: ${err.value.errorCode}]`;
       }
-      case FinalizeSettlementErrorKind.PROCESS_PAYEE_FUNDS_IN:
-      case FinalizeSettlementErrorKind.RESERVE_PAYER_FUNDS_OUT:
-      case FinalizeSettlementErrorKind.COMMIT_PAYER_FUNDS_OUT: {
-        // TODO: table
+      case FinalizeSettlementErrorKind.SETTLE_ACCOUNTS: {
+        // TODO:
+        // - table
+        // - use the account information etc. available to us
         const details = err.value
           .map((v) => `For participant: ${v.participant.name}. Error: ${v.apiResponse.errorDescription}.`)
           .join('\n');
@@ -30,8 +30,9 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       default: {
         // Did you get a compile error here? This code is written such that if every
         // case in the above switch state is not handled, compilation will fail.
-        // TODO: why does this have an error when every case is indeed handled?
+        // TODO: why does this have an error when every case is handled?
         // const exhaustiveCheck: never = err.type;
+        // throw new Error(`Unhandled error state: ${exhaustiveCheck}`);
         throw new Error('Unhandled error state');
       }
     }
