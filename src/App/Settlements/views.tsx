@@ -6,7 +6,7 @@ import { Settlement, DateRanges, SettlementStatus, SettlementFilters, FilterValu
 import * as helpers from './helpers';
 import { dateRanges, settlementStatuses } from './constants';
 
-// import SettlementDetails from './SettlementDetails';
+import SettlementDetails from './SettlementDetails';
 import SettlementFinalizingModal from './SettlementFinalizingModal';
 import './Settlements.css';
 
@@ -22,6 +22,7 @@ function renderStatus(state: SettlementStatus) {
 const Settlements: FC<ConnectorProps> = ({
   settlements,
   settlementsError,
+  selectedSettlement,
   isSettlementsPending,
   showFinalizeSettlementModal,
   filters,
@@ -68,12 +69,10 @@ const Settlements: FC<ConnectorProps> = ({
                 size="s"
                 label="Finalize"
                 pending={showFinalizeSettlementModal}
-                onClick={() => onFinalizeButtonClick(item)}
-                // style={{ zIndex: 100 }}
-                // onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                //   e.preventDefault();
-                //   onFinalizeButtonClick(item);
-                // }}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.stopPropagation();
+                  onFinalizeButtonClick(item);
+                }}
               />
             );
           }
@@ -91,7 +90,7 @@ const Settlements: FC<ConnectorProps> = ({
           sortColumn="Settlement ID"
           sortAsc={false}
         />
-        {/* selectedSettlement && <SettlementDetails /> */}
+        {selectedSettlement && <SettlementDetails />}
         {showFinalizeSettlementModal && <SettlementFinalizingModal />}
       </>
     );
