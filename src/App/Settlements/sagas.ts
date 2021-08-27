@@ -13,7 +13,6 @@ import {
   SET_SETTLEMENTS_FILTER_VALUE,
   CLEAR_SETTLEMENTS_FILTERS,
   FINALIZE_SETTLEMENT,
-  // Currency,
   FinalizeSettlementError,
   FinalizeSettlementErrorKind,
   Settlement,
@@ -221,6 +220,12 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
         );
         break;
       case SettlementStatus.Aborted:
+        yield put(
+          setFinalizingSettlement({
+            ...action.payload,
+            state: SettlementStatus.Settled,
+          }),
+        );
         break;
       default: {
         // Did you get a compile error here? This code is written such that if every

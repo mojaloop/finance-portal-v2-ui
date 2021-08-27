@@ -1,5 +1,6 @@
+import { strict as assert } from 'assert';
 import React, { FC } from 'react';
-import { ErrorBox, Modal, Spinner } from 'components';
+import { ErrorBox, Modal, Spinner, DataList } from 'components';
 import connector, { ConnectorProps } from './connectors';
 import { SettlementStatus, FinalizeSettlementError, FinalizeSettlementErrorKind } from '../types';
 
@@ -10,22 +11,39 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   finalizingSettlementError,
   onModalCloseClick,
 }) => {
-  function computeErrorMessage(err: FinalizeSettlementError) {
+  function computeErrorDetails(err: FinalizeSettlementError) {
     switch (err.type) {
-      // TODO: suggest remedial action to the user
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {
-        return `${err.type}: ${err.value.errorDescription} [CODE: ${err.value.errorCode}]`;
+        return (
+          <div>
+            `${err.type}: ${err.value.errorDescription} [CODE: ${err.value.errorCode}]`
+          </div>
+        );
       }
       case FinalizeSettlementErrorKind.SETTLE_ACCOUNTS: {
-        // TODO:
-        // - table
-        // - use the account information etc. available to us
-        const details = err.value
-          .map((v) => `For participant: ${v.participant.name}. Error: ${v.apiResponse.errorDescription}.`)
-          .join('\n');
-        return `${err.type}:\n${details}`;
+        const columns = [
+          { key: 'participantName', label: 'Participant' },
+          { key: 'errorMessage', label: 'Error' },
+          { key: 'errorCode', label: 'Code' },
+          { key: 'currency', label: 'Currency' },
+          { key: 'amount', label: 'Amount' },
+          { key: 'state', label: 'State' },
+          { key: 'accountId', label: 'Account ID' },
+          { key: 'remediation', label: 'Remediation' },
+        ];
+        const list = err.value.map((v) => ({
+          participantName: v.participant.name,
+          errorMessage: v.apiResponse.errorDescription,
+          errorCode: v.apiResponse.errorCode,
+          currency: v.account.netSettlementAmount.currency,
+          amount: v.account.netSettlementAmount.amount,
+          state: v.account.state,
+          accountId: v.account.id,
+          remediation: 'TODO', // TODO
+        }));
+        return <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />;
       }
       default: {
         // Did you get a compile error here? This code is written such that if every
@@ -37,24 +55,32 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       }
     }
   }
+
+  assert(finalizingSettlement, 'Expected finalizing settlement. This should be an unreachable state.');
+
   const content = finalizingSettlementError ? (
-    <ErrorBox>{`Error finalizing settlement: ${computeErrorMessage(finalizingSettlementError)}`}</ErrorBox>
+    <ErrorBox>
+      <div>'Errors finalizing settlement'</div>
+      {computeErrorDetails}
+    </ErrorBox>
   ) : (
     <div className="finalizing-settlement">
-      <div>{`Finalizing settlement: ${finalizingSettlement?.id}.`}</div>
+      <div>{`Finalizing settlement: ${finalizingSettlement.id}.`}</div>
       <br />
-      <div>{`State: ${finalizingSettlement?.state}.`}</div>
+      <div>{`State: ${finalizingSettlement.state}.`}</div>
       <br />
-      {finalizingSettlement?.state !== SettlementStatus.Settled && <Spinner size={20} />}
+      {finalizingSettlement.state !== SettlementStatus.Settled && <Spinner size={20} />}
     </div>
   );
 
+  const endStates = [SettlementStatus.Settled, SettlementStatus.Aborted];
+
   return (
     <Modal
-      title={`Finalizing settlement ${finalizingSettlement?.id}`}
+      title={`Finalizing settlement ${finalizingSettlement.id}`}
       width="1200px"
       onClose={onModalCloseClick}
-      isCloseEnabled={finalizingSettlement?.state === SettlementStatus.Settled || finalizingSettlementError}
+      isCloseEnabled={endStates.includes(finalizingSettlement.state) || finalizingSettlementError}
       flex
     >
       {content}

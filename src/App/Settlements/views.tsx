@@ -47,7 +47,7 @@ const Settlements: FC<ConnectorProps> = ({
       SettlementStatus.PsTransfersCommitted,
       SettlementStatus.PsTransfersReserved,
       SettlementStatus.PsTransfersRecorded,
-      SettlementStatus.Settling, // TODO: is it?
+      SettlementStatus.Settling, // When a subset of the accounts participating in the settlement are settled
     ];
     const columns = [
       { key: 'id', label: 'Settlement ID' },
