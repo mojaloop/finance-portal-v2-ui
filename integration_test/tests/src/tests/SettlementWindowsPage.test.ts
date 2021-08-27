@@ -78,7 +78,7 @@ test
   .meta({
     ID: '',
     STORY: 'MMD-440',
-    description: `Selecting Settlement Windows tab in Side Menu, the main settlement page should be
+    Scenario: `Selecting Settlement Windows tab in Side Menu, the main settlement page should be
                   displayed with Date drop-down defaulted to Today, From and To drop-down defaulted
                   to current date in MM/DD/YYYY HH:MM:SS format, State should be empty and Clear
                   Filters button`
@@ -115,7 +115,7 @@ test.meta({
 test.meta({
   ID: '',
   STORY: 'MMD-440',
-  description:
+  Scenario:
     `Close the single open settlement window, and expect the same window now shows up in a list of
      closed windows`,
 })('Close settlement window', async (t) => {
@@ -215,101 +215,113 @@ test.meta({
 });
 
 test
-  .skip
   .meta({
     ID: '',
     STORY: 'MMD-440',
-})(
-  `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-    Date drop-down. Select the Date to Past 48 hours.Check that From and To Date should be update
-    to reflect 48 hours. Select state to open. All the corresponding windows should display based
-    on the criteria selected`,
-  async (t) => {
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    Date drop-down defaulted to Today, From and To drop-down defaulted to current date in ISO8601 format
+    State field should be empty and Clear Filters button should be present`
+  })
+  (`Default Windows landing page`, async t => {
 
-        //Call Mojaloop Settlement API to get the current window details
+      
+  });
 
-        // Check that the latest window ID that displays on the page is the same 
+test
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    Date drop-down. The drop down should list values, Today, Past 48 Hours, 1 Week, 1 Month, Custom Range`
+  })
+  (`Drop down menu options for Date filter`, async t => {
+
+      
+  });
+
+test
+  .meta({
+    ID: '',
+    STORY: 'MMD-440',
+    Scenario: `Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
+    State drop-down. The drop down should list values, Open, Closed, Pending, Settled, Aborted`
+  })
+  (`Drop down menu options for State filter`, async t => {
+
+      
+  });
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `On the default Settlement Windows page, if Today option for Date is selected and no other filters are active then all 
+      the windows that are available for current day should be displayed. This can be a combination of
+      open, closed windows. If there are no windows that were transacted the current day, the current open
+      window should be displayed. 
+      For each window that is displayed, Window ID, State, Open Date, Closed Date should be visible. `
+    })(
+      `Test Windows landing page with Today Date option selected`,
+      async (t) => {
+        
+      },
+    );
+
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `Once an open window is selected, there should be a button to close the window. Once the window
+      is closed, the status of that window should change from Open to Closed and a new window should appear.`
+    })(
+    `Close Open Window`, async t => {
+
+          
     });
 
-test
-  .skip
-  .meta({
-    ID: '',
-    STORY: 'MMD-440'
-  })
-  (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-  Date drop-down. Select the Date to Past 1 week.Check that From and To Date should be update
-  to reflect 48 hours. Select state to Closed. All the corresponding windows should display based
-  on the criteria selected`,
-  async (t) => {
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `If I try to close a window that does not have any transfers, it should give an 
+      error message: Unable to Close Window due to error 3100: "Generic validation error - Window 60 is empty"`
+    })(
+    `Unable to close window without any transfers`, async t => {
 
-      //Call Mojaloop Settlement API to get the current window details
+          
+    });
 
-      // Check that the latest window ID that displays on the page is the same 
-  });
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `Regardless of the filters that are chosen, clicking "Clear Filters" button should reset
+      to default values Date - Today, From date with currrent date in YY/MM/DDDD 00:00:00 format and 
+      To date with currrent date in YY/MM/DDDD 23:59:59 format`
+    })(
+    `Clicking Clear Filters button to reset with default options`, async t => {
 
-test
-  .skip
-  .meta({
-    ID: '',
-    STORY: 'MMD-440'
-  })
-  (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-  Date drop-down. Select the Date to Past 1 month.Check that From and To Date should be update
-  to reflect 48 hours. Select state to Pending. All the corresponding windows should display based
-  on the criteria selected`,
-  async (t) => {
+          
+    });
 
-      //Call Mojaloop Settlement API to get the window details
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `On the Settlement Windows page, the settle windows button should be grayed out. 
+      If there is only one closed window, there should be a checkbox to the left of the window id. 
+      I should be able to click it, which will enable settle windows button at the top. I should be
+      to click it and close the window.`
+    })(
+    `Settle closed windows individually`, async t => {
 
-      // Check that the latest window ID that displays on the page is the same 
-  });
+          
+    });
 
-test
-  .skip
-  .meta({
-    ID: '',
-    STORY: 'MMD-440'
-  })
-  (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-  Date drop-down. Select the Dates to custom range. Check that From and To Date should be update
-  to reflect 48 hours. Select state to Settled. All the corresponding windows should display based
-  on the criteria selected`, async (t) => {
+  test.meta({
+      ID: '',
+      STORY: 'MMD-440',
+      Scenario: `On the Settlement Windows page, the settle windows button should be grayed out. 
+      If there is a list of closed windows, there should be a checkbox to the left of the window ids. 
+      I should be able to select multiple closed windows, which will enable settle windows button at the top. 
+      I should be to click it and close the windows.`
+    })(
+    `Settle multiple closed windows simultaneously`, async t => {
 
-      //Call Mojaloop Settlement API to get the window details
-
-      // Check that the latest window ID that displays on the page is the same 
-  });
-
-test
-  .skip
-  .meta({
-    ID: '',
-    STORY: 'MMD-440'
-  })
-  (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-  Date drop-down. Select the Date to custom range. Check that From and To Date should be update
-  to reflect 48 hours. Select state to Aborted. All the corresponding windows should display based
-  on the criteria selected`,
-  async (t) => {
-
-      //Call Mojaloop Settlement API to get the window details
-
-      // Check that the latest window ID that displays on the page is the same 
-  });
-
-test
-  .skip
-  .meta({
-    ID: '',
-    STORY: 'MMD-440'
-  })
-  (`Once I click Settlement Windows tab in Side Menu, the page on the right should come up with 
-  Date drop-down. Select the Date to custom range. Check that From and To Date should be update
-  to reflect 48 hours. Select state to Aborted. All the corresponding windows should display based
-  on the criteria selected`,
-  async (t) => {
-    //Call Mojaloop Settlement API to get the window details
-    // Check that the latest window ID that displays on the page is the same
-  },
-);
+          
+    });
