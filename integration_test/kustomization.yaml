@@ -17,6 +17,9 @@ configMapGenerator:
 - name: portal-backend
   behavior: merge
   literals: *oauth_creds
+- name: wso2is-populate-users
+  files:
+  - users.json=tests/users.json
 
 patches:
 - patch: |-
@@ -37,3 +40,10 @@ patches:
                 name: oauth-app-credentials
             - configMapRef:
                 name: wso2is-populate
+            volumeMounts:
+            - name: user-config
+              mountPath: /src/imports
+          volumes:
+          - name: user-config
+            configMap:
+              name: wso2is-populate-users

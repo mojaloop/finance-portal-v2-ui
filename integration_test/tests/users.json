@@ -1,0 +1,15 @@
+[
+  {
+    "username": "portaladmin",
+    "password": "mcvV2KYw9eKPqNagjGy6",
+    "roles": [
+        "ndc_update"
+    ]
+  },
+  {
+    "username": "portaluser",
+    "password": "mcvV2KYw9eKPqNagjGy5",
+    "roles": [
+    ]
+  }
+]
