@@ -8,8 +8,11 @@
  *       Sridevi Miriyala - sridevi.miriyala@modusbox.com                   *
  **************************************************************************/
 
+import * as dotenv from 'dotenv';
 import * as assert from 'assert';
 import users from '../users.json';
+
+dotenv.config();
 
 function ensureEnv(e: string): string {
   const result = process.env[e];
