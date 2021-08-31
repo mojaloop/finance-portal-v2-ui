@@ -42,7 +42,8 @@ patches:
                 name: wso2is-populate
             volumeMounts:
             - name: user-config
-              mountPath: /src/imports
+              mountPath: /src/imports/users.json
+              subPath: users.json
           volumes:
           - name: user-config
             configMap:
