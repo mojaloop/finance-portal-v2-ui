@@ -10,7 +10,7 @@
 
 import * as dotenv from 'dotenv';
 import * as assert from 'assert';
-import users from '../users.json';
+import users from '../../manifests/backend/users.json'
 
 dotenv.config();
 

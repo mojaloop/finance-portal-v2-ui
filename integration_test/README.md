@@ -89,6 +89,8 @@ BROWSER_TCAFE=chromium npm run test
 BROWSER_TCAFE=firefox npm run test
 ```
 
+#### Testing local changes
+
 #### Re-running tests with changes
 In the project root, re-build and redeploy your changes:
 ```sh
