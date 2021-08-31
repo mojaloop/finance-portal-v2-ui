@@ -18,10 +18,10 @@ References for those unfamiliar with page models:
 
 You'll probably want at least four cores and 8gb mem. This is left as an exercise for the reader.
 Some suggestions:
-1. ![Minikube](https://minikube.sigs.k8s.io/docs/)
-2. ![k3d](https://k3d.io/)
-3. ![KinD](https://kind.sigs.k8s.io/docs/)
-4. ![DigitalOcean](https://www.digitalocean.com/products/kubernetes/)
+1. [Minikube](https://minikube.sigs.k8s.io/docs/)
+2. [k3d](https://k3d.io/)
+3. [KinD](https://kind.sigs.k8s.io/docs/)
+4. [DigitalOcean](https://www.digitalocean.com/products/kubernetes/)
 
 #### Install dependencies
 
@@ -34,14 +34,18 @@ using Nix here are:
    required dependencies at the correct versions, and enter a shell with those dependencies.
 
 ###### With Nix
-1. Install nix: https://nixos.org/manual/nix/stable/#sect-single-user-installation
+1. Install nix:
+    ```sh
+    curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
+    ```
+    (From: https://nixos.org/manual/nix/stable/#sect-single-user-installation)
 2. Navigate to the `integration_test` directory of this project
 3. Run `nix-shell` to be dropped into a shell containing all necessary dependencies
 
 ###### Without Nix
 Install the following:
-- Google Chrome (it's possible to use another browser, see [here](#with-a-different-browser))
-- Skaffold v1.28.0 or greater
+- Google Chrome (it's possible to use another browser, see [run tests with a different browser](#with-a-different-browser))
+- Skaffold v1.28.0 or greater: https://github.com/GoogleContainerTools/skaffold/releases
 
 ##### Deploy portal, Mojaloop and dependencies to cluster
 From the project root:
