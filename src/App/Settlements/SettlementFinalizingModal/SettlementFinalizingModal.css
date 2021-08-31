@@ -1,27 +1,7 @@
-.settlement-details__details-block {
-  margin-right: 20px;
+tr {
+  height: 30px;
 }
 
-.settlement-details__dates-block {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 10px;
-}
-
-.settlement-details__loader {
-  height: 100px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  flex-direction: row;
-}
-.settlement-details__list {
-  margin: 10px;
-}
-
-.settlement-details__list__debit.el-datalist__item-cell {
-  color: #c33;
-}
-.settlement-details__list__credit.el-datalist__item-cell {
-  color: #3c6;
+td:nth-child(1) {
+  width: 30px;
 }

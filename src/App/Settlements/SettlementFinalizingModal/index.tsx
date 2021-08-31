@@ -58,19 +58,58 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 
   assert(finalizingSettlement, 'Expected finalizing settlement. This should be an unreachable state.');
 
+  const orderedStates = [
+    SettlementStatus.PendingSettlement,
+    SettlementStatus.PsTransfersReserved,
+    SettlementStatus.PsTransfersRecorded,
+    SettlementStatus.PsTransfersCommitted,
+    SettlementStatus.Settling,
+    SettlementStatus.Settled,
+  ];
+
+  function computeStateCharacter(displayState: SettlementStatus, currentState: SettlementStatus) {
+    const done = (
+      <span role="img" aria-label="completed">
+        ✅
+      </span>
+    );
+    const inProgress = <Spinner size={17} />;
+    const pending = <div />;
+
+    if (currentState === SettlementStatus.Settled) {
+      return done;
+    }
+
+    const currentStatePosition = orderedStates.indexOf(currentState);
+    const displayStatePosition = orderedStates.indexOf(displayState);
+
+    if (currentStatePosition > displayStatePosition) {
+      return done;
+    }
+
+    if (currentStatePosition === displayStatePosition) {
+      return inProgress;
+    }
+
+    return pending;
+  }
+
   const content = finalizingSettlementError ? (
     <ErrorBox>
       <div>'Errors finalizing settlement'</div>
       {computeErrorDetails}
     </ErrorBox>
   ) : (
-    <div className="finalizing-settlement">
-      <div>{`Finalizing settlement: ${finalizingSettlement.id}.`}</div>
-      <br />
-      <div>{`State: ${finalizingSettlement.state}.`}</div>
-      <br />
-      {finalizingSettlement.state !== SettlementStatus.Settled && <Spinner size={20} />}
-    </div>
+    <table>
+      <tbody>
+        {orderedStates.map((s) => (
+          <tr key={s}>
+            <td>{computeStateCharacter(s, finalizingSettlement.state)}</td>
+            <td>{s}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 
   const endStates = [SettlementStatus.Settled, SettlementStatus.Aborted];

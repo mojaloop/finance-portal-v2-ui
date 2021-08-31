@@ -64,6 +64,7 @@ function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, sta
 }
 
 function* finalizeSettlement(action: PayloadAction<Settlement>) {
+  // TODO: timeout
   try {
     switch (action.payload.state) {
       case SettlementStatus.PendingSettlement: {
