@@ -43,23 +43,28 @@ Install the following:
 - Google Chrome (it's possible to use another browser, see [here](#with-a-different-browser))
 - Skaffold v1.28.0 or greater
 
-##### Deploy portal, Mojaloop, dependencies to cluster
+##### Deploy portal, Mojaloop and dependencies to cluster
 From the project root:
 ```sh
 skaffold run
 ```
+Skaffold will build portal v2 from the local Dockerfile, push the built image into the image
+registry hosted in your cluster (Minikube, KinD, k3d) or to your logged-in docker registry, then
+deploy the locally built portal image and Mojaloop etc. to the cluster.
 
 ##### Install integration test npm dependencies
-Install dependencies. From the `integration_test/tests` directory:
+From the `integration_test/tests` directory:
 ```sh
 npm ci
 ```
 
 ### Run tests
+From the `integration_test/tests` directory:
 ```sh
 npm run test
 ```
 #### View results
+From the `integration_test/tests` directory:
 ```sh
 $BROWSER results.html
 ```
@@ -76,6 +81,8 @@ npm run test -- -t 'Log in with valid credentials'
 #### With a different browser
 ```sh
 BROWSER_TCAFE=chromium npm run test
+# or
+BROWSER_TCAFE=firefox npm run test
 ```
 
 #### Re-running tests with changes
