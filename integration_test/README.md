@@ -23,9 +23,7 @@ Some suggestions:
 3. [KinD](https://kind.sigs.k8s.io/docs/)
 4. [DigitalOcean](https://www.digitalocean.com/products/kubernetes/)
 
-#### Install dependencies
-
-##### Application dependencies
+#### Install application dependencies
 You have two choices here: [with Nix](#with-nix) and [without Nix](#without-nix). The advantages of
 using Nix here are:
 1. Exactly the same versions of dependencies as CI, and other developers (except core system things
@@ -33,7 +31,7 @@ using Nix here are:
 2. Therefore, no need to track and manage dependency versions, simply run one command to get all
    required dependencies at the correct versions, and enter a shell with those dependencies.
 
-###### With Nix
+##### With Nix
 1. Install nix:
     ```sh
     curl -L https://nixos.org/nix/install | sh -s -- --no-daemon
@@ -42,33 +40,44 @@ using Nix here are:
 2. Navigate to the `integration_test` directory of this project
 3. Run `nix-shell` to be dropped into a shell containing all necessary dependencies
 
-###### Without Nix
+##### Without Nix
 Install the following:
 - Google Chrome (it's possible to use another browser, see [run tests with a different browser](#with-a-different-browser))
 - Skaffold v1.28.0 or greater: https://github.com/GoogleContainerTools/skaffold/releases
 
-##### Deploy portal, Mojaloop and dependencies to cluster
+#### Deploy Mojaloop and dependencies to cluster
+In the project root:
+```sh
+skaffold run -p backend
+```
+
+#### Port-forward the ingress and support service
+```sh
+kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8000:80
+kubectl port-forward voodoo-doll 3030
+```
+
+#### Build and run the portal
 From the project root:
 ```sh
-skaffold run
+yarn install
+yarn start
 ```
-Skaffold will build portal v2 from the local Dockerfile, push the built image into the image
-registry hosted in your cluster (Minikube, KinD, k3d) or to your logged-in docker registry, then
-deploy the locally built portal image and Mojaloop etc. to the cluster.
 
-##### Install integration test npm dependencies
-From the `integration_test/tests` directory:
+#### Install integration test npm dependencies
+In the `integration_test/tests` directory:
 ```sh
 npm ci
 ```
 
 ### Run tests
-From the `integration_test/tests` directory:
+In the `integration_test/tests` directory:
 ```sh
 npm run test
 ```
+
 #### View results
-From the `integration_test/tests` directory:
+In the `integration_test/tests` directory:
 ```sh
 $BROWSER results.html
 ```
@@ -89,12 +98,8 @@ BROWSER_TCAFE=chromium npm run test
 BROWSER_TCAFE=firefox npm run test
 ```
 
-#### Re-running tests with changes
-In the project root, re-build and redeploy your changes:
+### Clean up
+In the project root:
 ```sh
-skaffold run
-```
-From `integration_tests/tests` directory, execute integration tests:
-```sh
-npm run test
+skaffold delete -p backend
 ```
