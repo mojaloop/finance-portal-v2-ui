@@ -94,10 +94,8 @@ jobs:
         npm ci
 
     - name: Run tests
-      # TODO: the env file is hard-coded. We should really get the creds in a more sensible fashion
       working-directory: integration_test/tests
       run: |-
-        cp .env.example.ci .env
         npm run test:headless
 
     - name: Archive test report
