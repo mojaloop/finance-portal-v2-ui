@@ -45,9 +45,14 @@ export type TransferType = string;
 
 export type TransferStatus = string;
 
+export interface QuoteRequest {
+  quoteId: string;
+  [key: string]: any;
+}
+
 export interface TransferDetail {
   transferId: string;
-  quoteRequests: object[];
+  quoteRequests: QuoteRequest[];
   quoteParties: object[];
   quoteResponses: object[];
   quoteErrors: object[];
