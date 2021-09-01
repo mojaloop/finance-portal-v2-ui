@@ -4,18 +4,19 @@ import { t } from 'testcafe';
 
 // TODO: get this data from the application? Instead of using this data, use the actual text
 // displayed to the user, as the user would?
-export enum SettlementWindowStatus {
-  Open = 'OPEN',
-  Closed = 'CLOSED',
-  Pending = 'PENDING_SETTLEMENT',
-  Settled = 'SETTLED',
-  Aborted = 'ABORTED',
+export enum SettlementStatus {
+  PendingSettlement    = 'PENDING_SETTLEMENT',
+  PsTransfersRecorded  = 'PS_TRANSFERS_RECORDED',
+  PsTransfersReserved  = 'PS_TRANSFERS_RESERVED',
+  PsTransfersCommitted = 'PS_TRANSFERS_COMMITTED',
+  Settling             = 'SETTLING',
+  Settled              = 'SETTLED',
+  Aborted              = 'ABORTED',
 }
 
-export type SettlementWindowRow = {
+export type SettlementRow = {
   id: Selector,
-  closeButton: Selector,
-  checkbox: Selector,
+  state: Selector,
 }
 
 const datePickerSelectDate = async (
@@ -24,7 +25,7 @@ const datePickerSelectDate = async (
   newDate: Temporal.PlainDate,
 ) => {
   // TODO: the following code hangs for some reason. We should probably not make assumptions
-  // about the default month displayed, instead we should all getReact() on the Month component
+  // about the default month displayed, instead we should call getReact() on the Month component
   // and use its props .months property to determine how many times we need to press the
   // back/forward button. As a user would do.
   //   const { month } = await datePicker.findReact('Month').getReact().props;
@@ -47,16 +48,41 @@ const datePickerSelectDate = async (
 };
 
 type Filters =
-  | { fromDate: Temporal.PlainDate; toDate?: Temporal.PlainDate; state?: SettlementWindowStatus }
-  | { toDate: Temporal.PlainDate; fromDate?: Temporal.PlainDate; state?: SettlementWindowStatus }
-  | { state: SettlementWindowStatus, toDate?: Temporal.PlainDate; fromDate?: Temporal.PlainDate };
+  | { fromDate: Temporal.PlainDate; toDate?: Temporal.PlainDate; state?: SettlementStatus }
+  | { toDate: Temporal.PlainDate; fromDate?: Temporal.PlainDate; state?: SettlementStatus }
+  | { state: SettlementStatus, toDate?: Temporal.PlainDate; fromDate?: Temporal.PlainDate };
 
-export const SettlementWindowsSettlementModal = {
-  viewSubmittedSettlementsButton: ReactSelector('SettlementWindowModal').findReact('Button').withText('View Submitted Settlements'),
-  continueViewingWindowsButton: ReactSelector('SettlementWindowModal').findReact('Button').withText('Continue Viewing Windows'),
+export type WindowRow = {
+  id: Selector,
+  dfsp: Selector,
+  debit: Selector,
+  credit: Selector,
+  viewNetPositionsButton: Selector,
 };
 
-export const SettlementWindowsPage = {
+const modalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });
+export const SettlementDetailModal = {
+  async getWindowsRows(): Promise<WindowRow[]> {
+    await t.expect(ReactSelector('Modal').exists).ok();
+    await t.expect(modalRoot.exists).ok();
+    const rows = modalRoot.findReact('DataList Rows').findReact('RowItem');
+    // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
+    // rows.count always returns zero, and this function fails.
+    await t.expect(rows.exists).ok();
+    const length = await rows.count;
+    return Array
+      .from({ length })
+      .map((_, i) => ({
+        dfsp: rows.nth(i).findReact('ItemCell').nth(0),
+        id: rows.nth(i).findReact('ItemCell').nth(1),
+        debit: rows.nth(i).findReact('ItemCell').nth(2),
+        credit: rows.nth(i).findReact('ItemCell').nth(3),
+        viewNetPositionsButton: rows.nth(i).findReact('ItemCell').nth(4).findReact('Button'),
+      }));
+  },
+}
+
+export const SettlementsPage = {
   date: ReactSelector('Select').withProps({ placeholder: 'Date' }),
 
   fromDate: ReactSelector('DatePicker').withProps({ placeholder: 'From' }),
@@ -68,9 +94,7 @@ export const SettlementWindowsPage = {
   state: ReactSelector('Select').withProps({ placeholder: 'State' }),
   clearFiltersButton: ReactSelector('Button').withProps({ label: 'Clear Filters' }),
 
-  settleWindowsButton: ReactSelector('Button').withText('Settle Selected Windows'),
-
-  async getResultRows(): Promise<SettlementWindowRow[]> {
+  async getResultRows(): Promise<SettlementRow[]> {
     const rows = ReactSelector('DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
@@ -79,9 +103,8 @@ export const SettlementWindowsPage = {
     return Array
       .from({ length })
       .map((_, i) => ({
-          closeButton: rows.nth(i).findReact('Button'),
-          id: rows.nth(i).findReact('ItemCell').nth(1),
-          checkbox: rows.nth(i).findReact('ItemCell').withKey('_checkbox_column'),
+        id: rows.nth(i).findReact('ItemCell').nth(0),
+        state: rows.nth(i).findReact('ItemCell').nth(1),
       }));
   },
 
