@@ -1,5 +1,5 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementsPage } from '../page-objects/pages/SettlementsPage';
+import { SettlementsPage, SettlementFinalizeModal } from '../page-objects/pages/SettlementsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
@@ -28,39 +28,31 @@ fixture `Settlements Feature`
       },
     ];
     await cli.createHubAccounts(hubAccounts);
-
+    ctx.cli = cli;
+  })
+  .beforeEach(async (t) => {
     const accounts: protocol.AccountInitialization[] = [
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
     ];
-    const participants = await cli.createParticipants(accounts);
+    const participants = await t.fixtureCtx.cli.createParticipants(accounts);
 
-    const transfers: protocol.TransferMessage[] = [{
-      msg_sender: participants[0].name,
-      msg_recipient: participants[1].name,
-      currency: 'MMK',
-      amount: '10',
-      transfer_id: uuidv4(),
-    }];
-    await cli.completeTransfers(transfers);
-    ctx.participants = participants;
-    ctx.cli = cli;
-  })
-  .beforeEach(async (t) => {
+    t.fixtureCtx.participants = participants;
+
     await waitForReact();
     await t
       .typeText(LoginPage.userName, config.credentials.admin.username)
       .typeText(LoginPage.password, config.credentials.admin.password)
       .click(LoginPage.submitButton)
-      .click(SideMenu.settlementsButton);
+      .click(SideMenu.settlementWindowsButton); // yes, not the settlements button
   });
 
 test.meta({
   ID: '',
   STORY: 'MMD-440',
   description:
-    `Close two settlement windows. Add them to a settlement. Check the settlement exists.`,
-})('Create settlement from two closed windows', async (t) => {
+    `Close two settlement windows. Add them to a settlement. Settle the settlement.`,
+})('Settle settlement containing two closed windows', async (t) => {
   const { cli, participants } = t.fixtureCtx;
   // Run a transfer to ensure the settlement window can be closed
   const transfers1: protocol.TransferMessage[] = [{
@@ -99,38 +91,26 @@ test.meta({
     closedSettlementWindowId2,
   ];
 
-  await SettlementWindowsPage.selectFiltersCustomDateRange(t, {
-    state: SettlementWindowStatus.Closed,
-  });
-  const closedRows = await SettlementWindowsPage.getResultRows();
-  await t.expect(closedRows.length).gt(1, 'Expected at least two closed settlement windows');
-  const closedRowsById = Object.fromEntries(
-    await Promise.all(closedRows.map(async (r) => [await r.id.innerText,  r])));
-  await t.expect(
-    settlementWindowIds.map((idNum) => String(idNum)).every((idStr) => idStr in closedRowsById)
-  ).ok('Expected both our closed windows to be in the list of closed windows displayed in the UI');
-
-  // Check our just-closed windows for closure
-  await Promise.all(
-    // Testcafe balks if we don't use async/await syntax here
-    settlementWindowIds.map(async id => await t.click(closedRowsById[id].checkbox))
-  );
-
-  await t.click(SettlementWindowsPage.settleWindowsButton);
-  const settlements = await cli.getSettlements({
-    state: 'PENDING_SETTLEMENT',
-    settlementWindowId: settlementWindowIds[0],
+  const settlement = await cli.createSettlement({
+    reason: 'Integration test',
+    settlementModel: 'DEFERREDNET',
+    settlementWindows: settlementWindowIds.map((id) => ({ id })),
   });
 
-  await t.expect(settlements.length).eql(1,
-    'Expected our settlement windows to be in exactly one settlement');
-  await t.expect(
-    settlements[0].settlementWindows.map((sw: protocol.SettlementSettlementWindow) => sw.id).sort()
-  ).eql(
-    settlementWindowIds.sort(),
-    `Expect settlement to contain the settlement windows we nominated and only those settlement
-    windows`
-  );
+  await t.click(SideMenu.settlementsButton);
+
+  const rowsBefore = await SettlementsPage.getResultRows();
+  const settlementRowBefore = await Promise.any(rowsBefore.map(
+    (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
+  ));
+  await t.expect(settlementRowBefore.state.innerText).eql('Pending Settlement');
+  await t.click(settlementRowBefore.finalizeButton);
+  await t.click(SettlementFinalizeModal.closeButton);
+  const rowsAfter = await SettlementsPage.getResultRows();
+  const settlementRowAfter = await Promise.any(rowsAfter.map(
+    (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
+  ));
+  await t.expect(settlementRowAfter.state.innerText).eql('Settled');
 });
 
 
