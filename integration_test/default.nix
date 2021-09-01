@@ -41,6 +41,8 @@ in
 [
   nixpkgs.google-chrome
   nixpkgs.kubeconform
+  nixpkgs.kustomize
+  nixpkgs.kubectl
   k3d
   skaffold
 ]
