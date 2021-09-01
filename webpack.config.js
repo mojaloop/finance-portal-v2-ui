@@ -44,26 +44,9 @@ module.exports = {
     port: 3000,
     publicPath: '/',
     proxy: {
-      '/api/login': {
-        target: 'http://localhost:3002',
+      '/api': {
+        target: 'http://localhost:8000',
         secure: false,
-        pathRewrite: {
-          '^/api/login': '',
-        },
-      },
-      '/api/settlement': {
-        target: 'http://localhost:3007',
-        secure: false,
-        pathRewrite: {
-          '^/api/settlement': '',
-        },
-      },
-      '/api/portal-backend': {
-        target: 'http://localhost:3002',
-        secure: false,
-        pathRewrite: {
-          '^/api/portal-backend': '',
-        },
       },
     },
   },
