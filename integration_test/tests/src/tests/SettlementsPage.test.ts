@@ -14,7 +14,7 @@ shim();
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo');
+    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: 15000 });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [

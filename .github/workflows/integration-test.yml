@@ -19,7 +19,7 @@ jobs:
       run: kustomize build integration_test | kubeconform -strict -kubernetes-version 1.17.9
 
   integration_test:
-    timeout-minutes: 40
+    timeout-minutes: 45
     needs: manifest_check
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +67,7 @@ jobs:
     - name: Wait for deployment readiness
       # Skaffold is supposed to do this, but for whatever reason, does not. At the time of writing,
       # investigating this was not a priority.
-      run: timeout 480 kubectl wait --for=condition=Ready pod --all --timeout=480s
+      run: timeout 900 kubectl wait --for=condition=Ready pod --all --timeout=900s
 
     - name: Wait for populate to complete
       # This normally happens about a minute after wso2is comes up, but sometimes takes a bit
