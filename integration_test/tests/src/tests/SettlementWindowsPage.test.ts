@@ -215,6 +215,7 @@ test.meta({
 });
 
 test
+  .skip
   .meta({
     ID: '',
     STORY: 'MMD-440',
@@ -227,6 +228,7 @@ test
   });
 
 test
+  .skip
   .meta({
     ID: '',
     STORY: 'MMD-440',
@@ -238,6 +240,7 @@ test
   });
 
 test
+  .skip
   .meta({
     ID: '',
     STORY: 'MMD-440',
@@ -248,7 +251,7 @@ test
 
   });
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `On the default Settlement Windows page, if Today option for Date is selected and no other filters are active then all
@@ -263,7 +266,7 @@ test
       },
     );
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `Once an open window is selected, there should be a button to close the window. Once the window
@@ -273,7 +276,7 @@ test
 
     });
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `If I try to close a window that does not have any transfers, it should give an
@@ -283,7 +286,7 @@ test
 
     });
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `Regardless of the filters that are chosen, clicking "Clear Filters" button should reset
@@ -294,7 +297,7 @@ test
 
     });
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `On the Settlement Windows page, the settle windows button should be grayed out.
@@ -306,7 +309,7 @@ test
 
     });
 
-  test.meta({
+  test.skip.meta({
       ID: '',
       STORY: 'MMD-440',
       scenario: `On the Settlement Windows page, the settle windows button should be grayed out.
