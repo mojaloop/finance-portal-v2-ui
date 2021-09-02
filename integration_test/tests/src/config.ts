@@ -10,6 +10,7 @@
 
 import * as dotenv from 'dotenv';
 import * as assert from 'assert';
+import users from '../../manifests/backend/users.json'
 
 dotenv.config();
 
@@ -24,12 +25,12 @@ export const config = {
   financePortalEndpoint: ensureEnv('FINANCE_PORTAL_ENDPOINT'),
   credentials: {
     admin: {
-      username: ensureEnv('ADMIN_USER_NAME'),
-      password: ensureEnv('ADMIN_PASSWORD'),
+      username: users[0].username,
+      password: users[0].password,
     },
     user: {
-      username: ensureEnv('USER_NAME'),
-      password: ensureEnv('PASSWORD'),
+      username: users[1].username,
+      password: users[1].password,
     },
   },
 };

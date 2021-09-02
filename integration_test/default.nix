@@ -41,7 +41,9 @@ in
 [
   nixpkgs.google-chrome
   nixpkgs.kubeconform
-  nixpkgs.kubernetes-helm
+  nixpkgs.kustomize
+  nixpkgs.kubectl
+  nixpkgs.nodejs-16_x
   k3d
   skaffold
 ]

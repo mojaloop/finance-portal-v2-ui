@@ -1,7 +1,9 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+// TODO: probably only need `yarn install assert`
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const { ModuleFederationPlugin } = require('webpack').container;
 const { DefinePlugin } = require('webpack');
-const TerserPlugin = require("terser-webpack-plugin");
+const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
 
 module.exports = {
@@ -44,26 +46,9 @@ module.exports = {
     port: 3000,
     publicPath: '/',
     proxy: {
-      '/api/login': {
-        target: 'http://localhost:3002',
+      '/api': {
+        target: 'http://localhost:8000',
         secure: false,
-        pathRewrite: {
-          '^/api/login': '',
-        },
-      },
-      '/api/settlement': {
-        target: 'http://localhost:3007',
-        secure: false,
-        pathRewrite: {
-          '^/api/settlement': '',
-        },
-      },
-      '/api/portal-backend': {
-        target: 'http://localhost:3002',
-        secure: false,
-        pathRewrite: {
-          '^/api/portal-backend': '',
-        },
       },
     },
   },
@@ -112,6 +97,7 @@ module.exports = {
     ],
   },
   plugins: [
+    new NodePolyfillPlugin(),
     new ModuleFederationPlugin({
       name: 'app',
       library: { type: 'var', name: 'app' },

@@ -1,0 +1,7 @@
+tr {
+  height: 30px;
+}
+
+td:nth-child(1) {
+  width: 30px;
+}

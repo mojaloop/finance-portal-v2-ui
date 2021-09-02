@@ -2,7 +2,6 @@ import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { Selector } from 'testcafe';
 import { waitForReact } from 'testcafe-react-selectors';
-import { container } from '../page-objects/components/Layout';
 
 fixture`Login Feature`
   .page`${config.financePortalEndpoint}`
@@ -19,10 +18,8 @@ test.meta({
     .typeText(LoginPage.password, config.credentials.admin.password)
     .click(LoginPage.submitButton);
 
-  await t.expect(container.exists).ok();
-
-  // TODO: not this:
-  // await t.expect(basePage.getNavBarLink()).contains('Business Operations Portal');
+  // Expect that the username dialog has disappeared, indicating login succeeded.
+  await t.expect(LoginPage.userName.exists).notOk();
 });
 
 test.skip.meta({

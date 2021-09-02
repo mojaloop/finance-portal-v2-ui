@@ -52,12 +52,6 @@ const SettlementDetailPositions: FC<ConnectorProps> = ({
             </Column>
             <Column grow="0" className="settlement-detail-positions__details-block">
               <DataLabel size="s" light>
-                Window ID
-              </DataLabel>
-              <DataLabel size="m">{selectedSettlementDetail.windowId}</DataLabel>
-            </Column>
-            <Column grow="0" className="settlement-detail-positions__details-block">
-              <DataLabel size="s" light>
                 Total Debit
               </DataLabel>
               <DataLabel size="m" className="settlement-detail-positions__details-block__debit">

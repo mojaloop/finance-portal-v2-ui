@@ -19,7 +19,7 @@ jobs:
       run: kustomize build integration_test | kubeconform -strict -kubernetes-version 1.17.9
 
   integration_test:
-    timeout-minutes: 40
+    timeout-minutes: 45
     needs: manifest_check
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +52,7 @@ jobs:
           int-test
 
     - name: Deploy
-      run: skaffold run
+      run: skaffold run -p integration-test
 
     - name: Wait for kube api server to process and create all resources
       # This is because the wait step that follows this one does this:
@@ -67,7 +67,7 @@ jobs:
     - name: Wait for deployment readiness
       # Skaffold is supposed to do this, but for whatever reason, does not. At the time of writing,
       # investigating this was not a priority.
-      run: timeout 480 kubectl wait --for=condition=Ready pod --all --timeout=480s
+      run: timeout 900 kubectl wait --for=condition=Ready pod --all --timeout=900s
 
     - name: Wait for populate to complete
       # This normally happens about a minute after wso2is comes up, but sometimes takes a bit
@@ -75,17 +75,9 @@ jobs:
       run: time kubectl wait --timeout=600s --for=condition=complete jobs/wso2is-populate
 
     - name: Port-forward the portal frontend ingress
-      # We only port-forward portal frontend because we don't want to encourage or accidentally
-      # develop dependencies on other services for our tests, if we can avoid it.
-      # Port-forwarding might prove problematic in future; if it proves unreliable. In this case,
-      # we could bundle the integration tests in a container and deploy them to the cluster.
       run: kubectl port-forward -n ingress-nginx --address 0.0.0.0 svc/ingress-nginx-controller 3000:80 &
 
     - name: Port-forward voodoo-doll
-      # We only port-forward portal frontend because we don't want to encourage or accidentally
-      # develop dependencies on other services for our tests, if we can avoid it.
-      # Port-forwarding might prove problematic in future; if it proves unreliable. In this case,
-      # we could bundle the integration tests in a container and deploy them to the cluster.
       run: kubectl port-forward --address 0.0.0.0 voodoo-doll 3030 &
 
     - name: Install test dependencies
@@ -94,11 +86,9 @@ jobs:
         npm ci
 
     - name: Run tests
-      # TODO: the env file is hard-coded. We should really get the creds in a more sensible fashion
       working-directory: integration_test/tests
       run: |-
-        cp .env.example.ci .env
-        npm run test:headless
+        FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
 
     - name: Archive test report
       if: ${{ always() }}
