@@ -30,10 +30,6 @@ spec:
             backend:
               serviceName: {{ .Values.ingress.loginService.name }}
               servicePort: {{ .Values.ingress.loginService.portName }}
-          - path: /api/ledger(/|$)(.*)
-            backend:
-              serviceName: {{ .Values.ingress.ledgerService.name }}
-              servicePort: {{ .Values.ingress.ledgerService.portName }}
           - path: /api/settlement(/|$)(.*)
             backend:
               serviceName: {{ .Values.ingress.settlementService.name }}

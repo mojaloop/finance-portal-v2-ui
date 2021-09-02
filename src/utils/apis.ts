@@ -23,10 +23,6 @@ const services = {
     withCredentials: true,
     baseUrl: '/api/portal-backend',
   },
-  ledgerService: {
-    withCredentials: true,
-    baseUrl: '/api/ledger/',
-  },
 };
 
 type Endpoint = ApiConfig<State>;
@@ -34,25 +30,6 @@ type Endpoint = ApiConfig<State>;
 const login: Endpoint = {
   service: services.loginService,
   url: () => '/login',
-};
-
-const participants: Endpoint = {
-  service: services.ledgerService,
-  url: () => '/participants',
-};
-
-const participantAccountTransfer: Endpoint = {
-  service: services.ledgerService,
-  url: (
-    _: State,
-    { participantName, accountId, transferId }: { participantName: string; accountId: string; transferId: string },
-  ) => `/participants/${participantName}/accounts/${accountId}/transfers/${transferId}`,
-};
-
-const participantAccount: Endpoint = {
-  service: services.ledgerService,
-  url: (_: State, { participantName, accountId }: { participantName: string; accountId: string }) =>
-    `/participants/${participantName}/accounts/${accountId}`,
 };
 
 const settlementParticipantAccount: Endpoint = {
