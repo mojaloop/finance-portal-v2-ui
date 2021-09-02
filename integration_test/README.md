@@ -44,6 +44,8 @@ using Nix here are:
 Install the following:
 - Google Chrome (it's possible to use another browser, see [run tests with a different browser](#with-a-different-browser))
 - Skaffold v1.28.0 or greater: https://github.com/GoogleContainerTools/skaffold/releases
+- Kustomize v4.0.5 or greater: https://github.com/kubernetes-sigs/kustomize/releases
+- A recent version of kubectl
 
 #### Deploy Mojaloop and dependencies to cluster
 In the project root:

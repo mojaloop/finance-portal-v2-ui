@@ -1,7 +1,9 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+// TODO: probably only need `yarn install assert`
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const { ModuleFederationPlugin } = require('webpack').container;
 const { DefinePlugin } = require('webpack');
-const TerserPlugin = require("terser-webpack-plugin");
+const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
 
 module.exports = {
@@ -95,6 +97,7 @@ module.exports = {
     ],
   },
   plugins: [
+    new NodePolyfillPlugin(),
     new ModuleFederationPlugin({
       name: 'app',
       library: { type: 'var', name: 'app' },
