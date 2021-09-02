@@ -48,9 +48,7 @@ module.exports = {
     'react/jsx-one-expression-per-line': 'off',
     'react/jsx-wrap-multilines': 'off',
     'react/destructuring-assignment': 'off',
-    // TODO:
-    // > Configuration for rule "max-len" is invalid:
-    // > Severity should be one of the following: 0 = off, 1 = warn, 2 = error (you passed '{ code: 100 }').
+    'react/require-default-props': 'off',
     'max-len': [
       1,
       {
