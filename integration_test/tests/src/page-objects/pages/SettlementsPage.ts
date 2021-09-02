@@ -17,6 +17,7 @@ export enum SettlementStatus {
 export type SettlementRow = {
   id: Selector,
   state: Selector,
+  finalizeButton: Selector,
 }
 
 const datePickerSelectDate = async (
@@ -60,12 +61,16 @@ export type WindowRow = {
   viewNetPositionsButton: Selector,
 };
 
-const modalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });
+export const SettlementFinalizeModal = {
+  closeButton: ReactSelector('Modal').findReact('Button'),
+};
+
+const SettlementDetailModalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });
 export const SettlementDetailModal = {
   async getWindowsRows(): Promise<WindowRow[]> {
     await t.expect(ReactSelector('Modal').exists).ok();
-    await t.expect(modalRoot.exists).ok();
-    const rows = modalRoot.findReact('DataList Rows').findReact('RowItem');
+    await t.expect(SettlementDetailModalRoot.exists).ok();
+    const rows = SettlementDetailModalRoot.findReact('DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
     await t.expect(rows.exists).ok();
@@ -105,6 +110,7 @@ export const SettlementsPage = {
       .map((_, i) => ({
         id: rows.nth(i).findReact('ItemCell').nth(0),
         state: rows.nth(i).findReact('ItemCell').nth(1),
+        finalizeButton: rows.nth(i).findReact('Button'),
       }));
   },
 

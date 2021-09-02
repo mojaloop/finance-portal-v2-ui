@@ -16,6 +16,10 @@ spec:
         backend:
           serviceName: portal-backend
           servicePort: 3000
+      - path: /api/ledger(/|$)(.*)
+        backend:
+          serviceName: centralledger-service
+          servicePort: 80
       - path: /api/settlement(/|$)(.*)
         backend:
           serviceName: centralsettlement-service

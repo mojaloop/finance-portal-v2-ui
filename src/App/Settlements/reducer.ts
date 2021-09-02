@@ -1,5 +1,6 @@
 import { createReducer, PayloadAction } from '@reduxjs/toolkit';
 import {
+  FinalizeSettlementError,
   SettlementsState,
   Settlement,
   SettlementDetail,
@@ -26,6 +27,10 @@ import {
   setSettlementDetailPositions,
   setSettlementDetailPositionsError,
   closeSettlementDetailPositionsModal,
+  setFinalizeSettlementError,
+  setFinalizingSettlement,
+  showFinalizeSettlementModal,
+  hideFinalizeSettlementModal,
 } from './actions';
 
 const initialState: SettlementsState = {
@@ -51,6 +56,10 @@ const initialState: SettlementsState = {
   isSettlementDetailPositionsPending: false,
   settlementDetailPositions: [],
   settlementDetailPositionsError: null,
+
+  showFinalizeSettlementModal: false,
+  finalizingSettlement: null,
+  finalizingSettlementError: null,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -182,5 +191,21 @@ export default createReducer(initialState, (builder) =>
       selectedSettlementDetail: initialState.selectedSettlementDetail,
       settlementDetailPositions: initialState.settlementDetailPositions,
       settlementDetailPositionsError: initialState.settlementDetailPositionsError,
+    }))
+    .addCase(setFinalizeSettlementError, (state: SettlementsState, action: PayloadAction<FinalizeSettlementError>) => ({
+      ...state,
+      finalizingSettlementError: action.payload,
+    }))
+    .addCase(setFinalizingSettlement, (state: SettlementsState, action: PayloadAction<Settlement>) => ({
+      ...state,
+      finalizingSettlement: action.payload,
+    }))
+    .addCase(hideFinalizeSettlementModal, (state: SettlementsState) => ({
+      ...state,
+      showFinalizeSettlementModal: false,
+    }))
+    .addCase(showFinalizeSettlementModal, (state: SettlementsState) => ({
+      ...state,
+      showFinalizeSettlementModal: true,
     })),
 );
