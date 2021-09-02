@@ -1,5 +1,5 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementsPage, SettlementFinalizeModal } from '../page-objects/pages/SettlementsPage';
+import { FindTransfersPage } from '../page-objects/pages/FindTransfersPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
