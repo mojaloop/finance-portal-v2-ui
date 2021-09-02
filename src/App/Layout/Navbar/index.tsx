@@ -19,7 +19,7 @@ const Navbar: FC<NavbarProps> = ({ username, onLogoutClick }) => (
         <Icon name="user-small" fill="#fff" />
       </div>
       <div className="layout__navbar__user__name" onClick={onLogoutClick} role="presentation">
-        <Tooltip label="logout">{username || '-'}</Tooltip>
+        <Tooltip label="logout">{username}</Tooltip>
       </div>
     </div>
   </div>

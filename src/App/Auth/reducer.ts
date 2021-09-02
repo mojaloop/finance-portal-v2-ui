@@ -3,10 +3,12 @@ import { AuthState } from './types';
 import {
   setUsername,
   setPassword,
+  requestLogout,
+  setLogoutSucceeded,
+  setLogoutFailed,
   requestLogin,
   setLoginSucceeded,
   setLoginFailed,
-  logout,
   setIsTokenValid,
 } from './actions';
 
@@ -17,6 +19,8 @@ const initialState: AuthState = {
   isLoginPending: false,
   isLoginSucceeded: false,
   isLoginFailed: false,
+  isLogoutPending: false,
+  isLogoutFailed: false,
   isTokenValid: null,
 };
 
@@ -43,6 +47,7 @@ export default createReducer(initialState, (builder) =>
       isLoginFailed: false,
       isLoginSucceeded: true,
       isLoginPending: false,
+      password: initialState.password, // reset password immediately after login
     }))
     .addCase(setLoginFailed, (state: AuthState, action: PayloadAction<string | undefined>) => ({
       ...state,
@@ -51,14 +56,26 @@ export default createReducer(initialState, (builder) =>
       isLoginSucceeded: false,
       isLoginPending: false,
     }))
-    .addCase(logout, (state: AuthState) => ({
+    .addCase(requestLogout, (state: AuthState) => ({
       ...state,
-      loginError: initialState.loginError,
+      isLogoutFailed: false,
+      isLogoutPending: true,
+    }))
+    .addCase(setLogoutSucceeded, (state: AuthState) => ({
+      ...state,
+      // reset login
       isLoginFailed: initialState.isLoginFailed,
       isLoginSucceeded: initialState.isLoginSucceeded,
       isLoginPending: initialState.isLoginPending,
-      username: initialState.username,
       password: initialState.password,
+      // set logout
+      isLogoutFailed: false,
+      isLogoutPending: false,
+    }))
+    .addCase(setLogoutFailed, (state: AuthState) => ({
+      ...state,
+      isLogoutFailed: true,
+      isLogoutPending: false,
     }))
     .addCase(setIsTokenValid, (state: AuthState, action: PayloadAction<boolean>) => ({
       ...state,

@@ -17,7 +17,7 @@ const stateProps = (state: State) => ({
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
-  onLogoutClick: () => dispatch(actions.logout()),
+  onLogoutClick: () => dispatch(actions.requestLogout()),
 });
 
 const connector = connect(stateProps, dispatchProps);

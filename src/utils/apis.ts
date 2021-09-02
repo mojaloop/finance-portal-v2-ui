@@ -31,6 +31,11 @@ const services = {
 
 type Endpoint = ApiConfig<State>;
 
+const logout: Endpoint = {
+  service: services.authService,
+  url: () => '/logout',
+};
+
 const login: Endpoint = {
   service: services.authService,
   url: () => '/login',
@@ -144,6 +149,7 @@ const netdebitcap: Endpoint = {
 
 interface EndpointsMap {
   login: Endpoint;
+  logout: Endpoint;
   settlements: Endpoint;
   settlementWindows: Endpoint;
   settlementWindow: Endpoint;
@@ -167,6 +173,7 @@ interface EndpointsMap {
 
 const endpoints = {
   login,
+  logout,
   settlementWindows,
   settlementWindow,
   settlements,
