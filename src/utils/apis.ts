@@ -125,9 +125,6 @@ interface EndpointsMap {
   settlementWindows: Endpoint;
   settlementWindow: Endpoint;
   settlement: Endpoint;
-  participants: Endpoint;
-  participantAccount: Endpoint;
-  participantAccountTransfer: Endpoint;
   settlementParticipantAccount: Endpoint;
   settlementsDetailPositions: Endpoint;
   settleSettlementWindows: Endpoint;
@@ -148,9 +145,6 @@ const endpoints = {
   settlementWindow,
   settlements,
   settlement,
-  participants,
-  participantAccount,
-  participantAccountTransfer,
   settlementParticipantAccount,
   settlementsDetailPositions,
   settleSettlementWindows,
