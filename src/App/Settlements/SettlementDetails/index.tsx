@@ -19,7 +19,6 @@ const SettlementDetails: FC<ConnectorProps> = ({
 }) => {
   const detailsColumns = [
     { label: 'DFSP', key: 'dfspId', func: (id: number) => dfsps.find((dfsp: DFSP) => dfsp.id === id)?.name },
-    { label: 'Window ID', key: 'windowId' },
     {
       label: 'Debit',
       key: 'debit',

@@ -2,11 +2,12 @@ import React, { FC } from 'react';
 import { Led, Heading, Button, MessageBox, Spinner, DataList, Select, DatePicker } from 'components';
 import withMount from 'hocs';
 import connector, { ConnectorProps } from './connectors';
-import { DateRanges, SettlementStatus, SettlementFilters, FilterValue } from './types';
+import { Settlement, DateRanges, SettlementStatus, SettlementFilters, FilterValue } from './types';
 import * as helpers from './helpers';
 import { dateRanges, settlementStatuses } from './constants';
 
 import SettlementDetails from './SettlementDetails';
+import SettlementFinalizingModal from './SettlementFinalizingModal';
 import './Settlements.css';
 
 function renderStatus(state: SettlementStatus) {
@@ -18,22 +19,16 @@ function renderStatus(state: SettlementStatus) {
   );
 }
 
-const columns = [
-  { key: 'id', label: 'Settlement ID' },
-  { key: 'state', label: 'State', func: renderStatus, sortable: false, searchable: false },
-  { key: 'totalValue', label: 'Total Value', func: helpers.formatNumber },
-  { key: 'createdDate', label: 'Open Date', func: helpers.formatDate },
-  { key: 'changedDate', label: 'Last Action Date', func: helpers.formatDate },
-];
-
 const Settlements: FC<ConnectorProps> = ({
   settlements,
   settlementsError,
-  isSettlementsPending,
   selectedSettlement,
+  isSettlementsPending,
+  showFinalizeSettlementModal,
   filters,
   onDateRangerFilterSelect,
   onDateFilterClearClick,
+  onFinalizeButtonClick,
   onStateFilterClearClick,
   onStartDateRangeFilterSelect,
   onEndDateRangeFilterSelect,
@@ -47,6 +42,45 @@ const Settlements: FC<ConnectorProps> = ({
   } else if (isSettlementsPending) {
     content = <Spinner center />;
   } else {
+    const finalizableStates = [
+      SettlementStatus.PendingSettlement,
+      SettlementStatus.PsTransfersCommitted,
+      SettlementStatus.PsTransfersReserved,
+      SettlementStatus.PsTransfersRecorded,
+      SettlementStatus.Settling, // When a subset of the accounts participating in the settlement are settled
+    ];
+    const columns = [
+      { key: 'id', label: 'Settlement ID' },
+      { key: 'state', label: 'State', func: renderStatus, sortable: false, searchable: false },
+      { key: 'totalValue', label: 'Total Value', func: helpers.formatNumber },
+      { key: 'createdDate', label: 'Open Date', func: helpers.formatDate },
+      { key: 'changedDate', label: 'Last Action Date', func: helpers.formatDate },
+      {
+        key: 'settlementId',
+        label: 'Action',
+        sortable: false,
+        searchable: false,
+        func: (_settlementId: string, item: Settlement) => {
+          if (finalizableStates.includes(item.state)) {
+            return (
+              <Button
+                kind="secondary"
+                noFill
+                size="s"
+                label="Finalize"
+                pending={showFinalizeSettlementModal}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.stopPropagation();
+                  onFinalizeButtonClick(item);
+                }}
+              />
+            );
+          }
+          return null;
+        },
+      },
+    ];
+
     content = (
       <>
         <DataList
@@ -57,6 +91,7 @@ const Settlements: FC<ConnectorProps> = ({
           sortAsc={false}
         />
         {selectedSettlement && <SettlementDetails />}
+        {showFinalizeSettlementModal && <SettlementFinalizingModal />}
       </>
     );
   }

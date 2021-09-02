@@ -18,9 +18,9 @@ export const dateRanges = composeOptions({
 
 export const settlementStatuses = composeOptions({
   'Pending Settlement': SettlementStatus.PendingSettlement,
-  'Ps Transfers Recorded': SettlementStatus.PsTransfersRecorded,
-  'Ps Transfers Reserved': SettlementStatus.PsTransfersReserved,
-  'Ps Transfers Committed': SettlementStatus.PsTransfersCommitted,
+  'PS Transfers Recorded': SettlementStatus.PsTransfersRecorded,
+  'PS Transfers Reserved': SettlementStatus.PsTransfersReserved,
+  'PS Transfers Committed': SettlementStatus.PsTransfersCommitted,
   Settling: SettlementStatus.Settling,
   Settled: SettlementStatus.Settled,
   Aborted: SettlementStatus.Aborted,

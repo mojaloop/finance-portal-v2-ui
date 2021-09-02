@@ -53,9 +53,9 @@ interface SettlementStatusProperties {
 export function getStatusProperties(state: SettlementStatus): SettlementStatusProperties {
   const statusLabels: Record<SettlementStatus, SettlementStatusProperties> = {
     [SettlementStatus.PendingSettlement]: { color: 'blue', label: 'Pending Settlement' },
-    [SettlementStatus.PsTransfersRecorded]: { color: 'purple', label: 'Ps Transfers Recorded' },
-    [SettlementStatus.PsTransfersReserved]: { color: 'pink', label: 'Ps Transfers Reserved' },
-    [SettlementStatus.PsTransfersCommitted]: { color: 'yellow', label: 'Ps Transfers Committed' },
+    [SettlementStatus.PsTransfersRecorded]: { color: 'purple', label: 'PS Transfers Recorded' },
+    [SettlementStatus.PsTransfersReserved]: { color: 'pink', label: 'PS Transfers Reserved' },
+    [SettlementStatus.PsTransfersCommitted]: { color: 'yellow', label: 'PS Transfers Committed' },
     [SettlementStatus.Settling]: { color: 'orange', label: 'Settling' },
     [SettlementStatus.Settled]: { color: 'green', label: 'Settled' },
     [SettlementStatus.Aborted]: { color: 'red', label: 'Aborted' },
@@ -82,10 +82,13 @@ export function buildFiltersParams(filters: SettlementFilters) {
 export function mapApiToModel(item: any): Settlement {
   return {
     id: item.id,
-    windowId: item.settlementWindows[0].id,
     state: item.state,
-    /* @ts-ignore */
-    participants: item.participants.map((c: any) => c.id),
+    participants: item.participants,
+    settlementWindows: item.settlementWindows,
+    reason: item.reason,
+    createdDate: item.createdDate,
+    changedDate: item.changedDate,
+
     /* @ts-ignore */
     amounts: item.participants.map((c: any) => {
       /* @ts-ignore */
@@ -96,7 +99,5 @@ export function mapApiToModel(item: any): Settlement {
       return p + c.accounts.reduce((pp: number, cc: any) => pp + Math.max(cc.netSettlementAmount.amount, 0), 0);
     }, 0),
     totalVolume: (Math.random() * 1000000).toFixed(2),
-    createdDate: item.createdDate,
-    changedDate: item.changedDate,
   };
 }
