@@ -40,7 +40,6 @@ const login: Endpoint = {
   url: () => '/login',
 };
 
-
 const transfers: Endpoint = {
   service: services.transfersService,
   url: (_: State, filters) => {

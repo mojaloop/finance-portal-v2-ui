@@ -21,9 +21,8 @@ import {
 export const requestTransfers = createAction(REQUEST_TRANSFERS);
 export const setTransfers = createAction<Transfer[]>(SET_TRANSFERS);
 export const setTransfersError = createAction<string>(SET_TRANSFERS_ERROR);
-export const setTransferFinderFilter = createAction<{ field: string; value: FilterChangeValue }>(
-  SET_TRANSFERS_FILTER_VALUE,
-);
+export const setTransferFinderFilter =
+  createAction<{ field: string; value: FilterChangeValue }>(SET_TRANSFERS_FILTER_VALUE);
 export const clearTransferFinderFilters = createAction(CLEAR_TRANSFERS_FILTERS);
 export const selectTransfer = createAction<Transfer>(SELECT_TRANSFER);
 export const setIsTransfersPending = createAction<Boolean>(SET_IS_TRANSFERS_PENDING);
