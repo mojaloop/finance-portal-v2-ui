@@ -5,9 +5,9 @@ import { ApiConfig } from './api/types';
 // Note that prefixes are used to conceptually separate backend services even though they may
 // be served by the same ingress/service.
 const services = {
-  loginService: {
+  authService: {
     withCredentials: true,
-    baseUrl: '/api/login',
+    baseUrl: '/api/auth',
   },
   settlementService: {
     withCredentials: true,
@@ -32,7 +32,7 @@ const services = {
 type Endpoint = ApiConfig<State>;
 
 const login: Endpoint = {
-  service: services.loginService,
+  service: services.authService,
   url: () => '/login',
 };
 

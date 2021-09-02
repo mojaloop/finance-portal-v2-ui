@@ -12,7 +12,7 @@ spec:
         backend:
           serviceName: portal-frontend
           servicePort: http
-      - path: /api/login(/|$)(.*)
+      - path: /api/auth(/|$)(.*)
         backend:
           serviceName: portal-backend
           servicePort: 3000
