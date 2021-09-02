@@ -1,5 +1,6 @@
 import { ErrorMessage } from 'App/types';
 import { DFSP } from 'App/DFSPs/types';
+// Removed because we reverted the version of this package due to a bug
 // import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
 
 export const REQUEST_FINANCIAL_POSITIONS = 'Financial Positions / Request Financial Positions';

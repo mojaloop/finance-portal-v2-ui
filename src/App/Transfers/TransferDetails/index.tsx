@@ -5,7 +5,6 @@ import { State, Dispatch } from 'store/types';
 import { TransferDetail, QuoteRequest } from '../types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
-import './TransferDetails.css';
 
 const stateProps = (state: State) => ({
   transferDetails: selectors.getSelectedTransfer(state),

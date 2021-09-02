@@ -1,4 +1,3 @@
-// import { PayloadAction } from '@reduxjs/toolkit';
 import apis from 'utils/apis';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest } from 'redux-saga/effects';
