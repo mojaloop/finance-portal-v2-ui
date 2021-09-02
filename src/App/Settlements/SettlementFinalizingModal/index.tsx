@@ -60,8 +60,8 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 
   const orderedStates = [
     SettlementStatus.PendingSettlement,
-    SettlementStatus.PsTransfersReserved,
     SettlementStatus.PsTransfersRecorded,
+    SettlementStatus.PsTransfersReserved,
     SettlementStatus.PsTransfersCommitted,
     SettlementStatus.Settling,
     SettlementStatus.Settled,
