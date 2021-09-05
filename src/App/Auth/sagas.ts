@@ -3,13 +3,7 @@ import apis from '../../utils/apis';
 import checkTokenCookie from '../../utils/auth';
 
 import { REQUEST_LOGIN, CHECK_TOKEN, REQUEST_LOGOUT } from './types';
-import {
-  setLoginSucceeded,
-  setLoginFailed,
-  setLogoutFailed,
-  setLogoutSucceeded,
-  setIsTokenValid,
-} from './actions';
+import { setLoginSucceeded, setLoginFailed, setLogoutFailed, setLogoutSucceeded, setIsTokenValid } from './actions';
 import { getUsername, getPassword } from './selectors';
 
 function* checkToken() {
@@ -40,9 +34,8 @@ function* login() {
 }
 
 function* logout() {
-  console.log('HELLO!');
   try {
-    const response = yield call(apis.logout.update);
+    const response = yield call(apis.logout.update, {});
     if (response.status === 200) {
       yield put(setLogoutSucceeded());
     } else {
