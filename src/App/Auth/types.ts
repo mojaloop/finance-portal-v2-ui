@@ -24,6 +24,6 @@ export interface AuthState {
   isLoginFailed: boolean;
   isLogoutPending: boolean;
   isLogoutFailed: boolean;
-  userInfo?: UserInfo;
+  userInfo: UserInfo | null;
   userInfoPending: boolean;
 }

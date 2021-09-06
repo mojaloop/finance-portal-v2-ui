@@ -14,7 +14,7 @@ import {
 } from './types';
 
 export const requestUserInfo = createAction(REQUEST_USER_INFO);
-export const setUserInfo = createAction<UserInfo | undefined>(SET_USER_INFO);
+export const setUserInfo = createAction<UserInfo | null>(SET_USER_INFO);
 export const setUsername = createAction<string>(SET_USERNAME);
 export const setPassword = createAction<string>(SET_PASSWORD);
 export const requestLogin = createAction(REQUEST_LOGIN);

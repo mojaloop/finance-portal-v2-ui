@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import Layout from './Layout';
-import Auth, { UserInfo } from './Auth';
+import Auth from './Auth';
 import DFSPs from './DFSPs';
 import SettlementWindows from './SettlementWindows';
 import Settlements from './Settlements';
@@ -13,20 +13,20 @@ import * as actions from './Auth/actions';
 import * as selectors from './Auth/selectors';
 
 const stateProps = (state: State) => ({
-  username: selectors.getUsername(state),
+  // Auth should never succeed and fail to set userInfo
+  username: selectors.getUserInfo(state)?.username as string,
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
   onLogoutClick: () => dispatch(actions.requestLogout()),
-  onLogin: (userInfo: UserInfo) => dispatch(actions.setUserInfo(userInfo)),
 });
 
 const connector = connect(stateProps, dispatchProps);
 type ConnectorProps = ConnectedProps<typeof connector>;
 
-const App: FC<ConnectorProps> = ({ username, onLogoutClick, onLogin }) => (
+const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
   /* @ts-ignore */
-  <Auth onLogin={onLogin}>
+  <Auth>
     {/* @ts-ignore */}
     <DFSPs>
       <Layout.Container>

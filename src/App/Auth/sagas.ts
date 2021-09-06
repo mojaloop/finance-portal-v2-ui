@@ -10,7 +10,7 @@ function* requestUserInfo() {
   if (userInfo.status === 200) {
     yield put(setUserInfo(userInfo.data));
   } else {
-    yield put(setUserInfo(undefined));
+    yield put(setUserInfo(null));
   }
 }
 
@@ -21,7 +21,7 @@ function* login() {
     // Call finance-portal-backend-service POST /login
     const response = yield call(apis.login.create, { body: { username, password } });
     if (response.status === 200) {
-      yield all([put(setLoginSucceeded()), put(setUserInfo(response.data))]);
+      yield all([put(setUserInfo(response.data)), put(setLoginSucceeded())]);
     } else if (response.status === 401) {
       yield put(setLoginFailed('Wrong Credentials'));
     } else {

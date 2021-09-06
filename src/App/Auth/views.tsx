@@ -21,20 +21,18 @@ const connector = connect(stateProps, dispatchProps);
 
 interface AuthRouterProps {
   userInfo?: UserInfo;
-  onLogin: (payload: UserInfo) => void;
   userInfoPending: boolean;
 }
 
-const AuthRouter: FC<AuthRouterProps> = ({ children, userInfo, userInfoPending, onLogin }) => {
+const AuthRouter: FC<AuthRouterProps> = ({ children, userInfo, userInfoPending }) => {
   if (userInfoPending) {
     return <Spinner center size={40} />;
   }
 
-  if (userInfo === undefined) {
+  if (userInfo === null) {
     return <Login />;
   }
 
-  onLogin(userInfo);
   return <>{children}</>;
 };
 

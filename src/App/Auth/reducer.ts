@@ -22,7 +22,7 @@ const initialState: AuthState = {
   isLoginFailed: false,
   isLogoutPending: false,
   isLogoutFailed: false,
-  userInfo: undefined,
+  userInfo: null,
   userInfoPending: false,
 };
 
@@ -49,7 +49,7 @@ export default createReducer(initialState, (builder) =>
       isLoginFailed: false,
       isLoginSucceeded: true,
       isLoginPending: false,
-      password: initialState.password, // reset password immediately after login
+      password: initialState.password, // reset password immediately after login so at least *we* are less likely to leak it somewhere
     }))
     .addCase(setLoginFailed, (state: AuthState, action: PayloadAction<string | undefined>) => ({
       ...state,
@@ -62,6 +62,7 @@ export default createReducer(initialState, (builder) =>
       ...state,
       isLogoutFailed: false,
       isLogoutPending: true,
+      userInfo: null,
     }))
     .addCase(setLogoutSucceeded, (state: AuthState) => ({
       ...state,
