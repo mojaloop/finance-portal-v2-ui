@@ -91,5 +91,8 @@
 
 .layout__navbar__user__name {
   color: #fff;
-  cursor: pointer;
+}
+
+.layout__navbar__logout__button {
+  margin-left: 20px;
 }

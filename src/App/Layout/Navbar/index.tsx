@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { Icon, Tooltip } from 'components';
+import { Icon, Button } from 'components';
 
 interface NavbarProps {
   username: string;
@@ -18,8 +18,11 @@ const Navbar: FC<NavbarProps> = ({ username, onLogoutClick }) => (
       <div className="layout__navbar__user__icon">
         <Icon name="user-small" fill="#fff" />
       </div>
-      <div className="layout__navbar__user__name" onClick={onLogoutClick} role="presentation">
-        <Tooltip label="logout">{username}</Tooltip>
+      <div className="layout__navbar__user__name" role="presentation">
+        {username}
+      </div>
+      <div className="layout__navbar__logout__button">
+        <Button kind="secondary" size="s" label="Log out" onClick={onLogoutClick} />
       </div>
     </div>
   </div>
