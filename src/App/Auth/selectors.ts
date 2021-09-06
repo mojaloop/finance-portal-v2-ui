@@ -1,8 +1,9 @@
 import { State } from 'store/types';
 
-export const getIsTokenValid = (stage: State) => stage.subApp.auth.isTokenValid;
 export const getUsername = (state: State) => state.subApp.auth.username;
 export const getPassword = (state: State) => state.subApp.auth.password;
+export const getUserInfo = (state: State) => state.subApp.auth.userInfo;
+export const getUserInfoPending = (state: State) => state.subApp.auth.userInfoPending;
 
 export const getIsLogoutPending = (state: State) => state.subApp.auth.isLogoutPending;
 export const getIsLogoutFailed = (state: State) => state.subApp.auth.isLogoutFailed;

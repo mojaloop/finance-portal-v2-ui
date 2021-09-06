@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import Layout from './Layout';
-import Auth from './Auth';
+import Auth, { UserInfo } from './Auth';
 import DFSPs from './DFSPs';
 import SettlementWindows from './SettlementWindows';
 import Settlements from './Settlements';
@@ -18,14 +18,15 @@ const stateProps = (state: State) => ({
 
 const dispatchProps = (dispatch: Dispatch) => ({
   onLogoutClick: () => dispatch(actions.requestLogout()),
+  onLogin: (userInfo: UserInfo) => dispatch(actions.setUserInfo(userInfo)),
 });
 
 const connector = connect(stateProps, dispatchProps);
 type ConnectorProps = ConnectedProps<typeof connector>;
 
-const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
+const App: FC<ConnectorProps> = ({ username, onLogoutClick, onLogin }) => (
   /* @ts-ignore */
-  <Auth>
+  <Auth onLogin={onLogin}>
     {/* @ts-ignore */}
     <DFSPs>
       <Layout.Container>

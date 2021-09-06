@@ -1,5 +1,5 @@
 import { createReducer, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState } from './types';
+import { AuthState, UserInfo } from './types';
 import {
   setUsername,
   setPassword,
@@ -7,9 +7,10 @@ import {
   setLogoutSucceeded,
   setLogoutFailed,
   requestLogin,
+  requestUserInfo,
   setLoginSucceeded,
   setLoginFailed,
-  setIsTokenValid,
+  setUserInfo,
 } from './actions';
 
 const initialState: AuthState = {
@@ -21,7 +22,8 @@ const initialState: AuthState = {
   isLoginFailed: false,
   isLogoutPending: false,
   isLogoutFailed: false,
-  isTokenValid: null,
+  userInfo: undefined,
+  userInfoPending: false,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -67,6 +69,7 @@ export default createReducer(initialState, (builder) =>
       isLoginFailed: initialState.isLoginFailed,
       isLoginSucceeded: initialState.isLoginSucceeded,
       isLoginPending: initialState.isLoginPending,
+      username: initialState.username,
       password: initialState.password,
       // set logout
       isLogoutFailed: false,
@@ -77,8 +80,13 @@ export default createReducer(initialState, (builder) =>
       isLogoutFailed: true,
       isLogoutPending: false,
     }))
-    .addCase(setIsTokenValid, (state: AuthState, action: PayloadAction<boolean>) => ({
+    .addCase(requestUserInfo, (state: AuthState) => ({
       ...state,
-      isTokenValid: action.payload,
+      userInfoPending: true,
+    }))
+    .addCase(setUserInfo, (state: AuthState, action: PayloadAction<UserInfo>) => ({
+      ...state,
+      userInfo: action.payload,
+      userInfoPending: false,
     })),
 );
