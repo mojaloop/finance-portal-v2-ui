@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
-import Layout from './Layout';
+import { Navbar, Page, SideMenu, Content, Container } from './Layout';
 import Auth from './Auth';
 import DFSPs from './DFSPs';
 import SettlementWindows from './SettlementWindows';
@@ -29,11 +29,11 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
   <Auth>
     {/* @ts-ignore */}
     <DFSPs>
-      <Layout.Container>
-        <Layout.Navbar username={username} onLogoutClick={onLogoutClick} />
-        <Layout.Content>
-          <Layout.SideMenu />
-          <Layout.Page>
+      <Container>
+        <Navbar username={username} onLogoutClick={onLogoutClick} />
+        <Content>
+          <SideMenu />
+          <Page>
             <Switch>
               <Route path="/windows">
                 <SettlementWindows />
@@ -48,9 +48,9 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
                 <Redirect to="/windows" />
               </Route>
             </Switch>
-          </Layout.Page>
-        </Layout.Content>
-      </Layout.Container>
+          </Page>
+        </Content>
+      </Container>
     </DFSPs>
   </Auth>
 );

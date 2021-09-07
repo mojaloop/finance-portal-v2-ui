@@ -1,14 +1,7 @@
-import Navbar from './Navbar';
-import Page from './Page';
-import Container from './Container';
-import SideMenu from './SideMenu';
-import Content from './Content';
 import './Layout.css';
 
-export default {
-  Navbar,
-  Page,
-  Container,
-  SideMenu,
-  Content,
-};
+export { Navbar } from './Navbar';
+export { Page } from './Page';
+export { Container } from './Container';
+export { SideMenu } from './SideMenu';
+export { Content } from './Content';

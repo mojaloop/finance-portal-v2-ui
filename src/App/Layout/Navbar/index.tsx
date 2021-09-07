@@ -6,7 +6,7 @@ interface NavbarProps {
   onLogoutClick: () => void;
 }
 
-const Navbar: FC<NavbarProps> = ({ username, onLogoutClick }) => (
+export const Navbar: FC<NavbarProps> = ({ username, onLogoutClick }) => (
   <div className="layout__navbar">
     <div className="layout__navbar__controls">
       <div className="layout__navbar__logo" />
@@ -27,5 +27,3 @@ const Navbar: FC<NavbarProps> = ({ username, onLogoutClick }) => (
     </div>
   </div>
 );
-
-export default Navbar;
