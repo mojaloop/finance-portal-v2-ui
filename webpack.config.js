@@ -14,12 +14,13 @@ module.exports = {
         terserOptions: {
           keep_classnames: true,
           keep_fnames: true,
+          sourceMap: true,
         },
       }),
     ],
   },
   entry: './src/index',
-  devtool: 'cheap-module-source-map',
+  devtool: 'source-map',
   devServer: {
     disableHostCheck: true,
     // Enable gzip compression of generated files.

@@ -6,7 +6,7 @@ import { Spinner } from 'components';
 import * as actions from './actions';
 import * as selectors from './selectors';
 import { UserInfo } from './types';
-import Login from './Login';
+import { Login } from './Login';
 
 const stateProps = (state: State) => ({
   userInfo: selectors.getUserInfo(state),
@@ -36,4 +36,7 @@ const AuthRouter: FC<AuthRouterProps> = ({ children, userInfo, userInfoPending }
   return <>{children}</>;
 };
 
-export default connector(withMount(AuthRouter, 'onMount'));
+const Auth = connector(withMount(AuthRouter, 'onMount'));
+Auth.displayName = 'Auth';
+
+export { Auth };

@@ -3,7 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import { Navbar, Page, SideMenu, Content, Container } from './Layout';
-import Auth from './Auth';
+import { Auth } from './Auth';
 import DFSPs from './DFSPs';
 import SettlementWindows from './SettlementWindows';
 import Settlements from './Settlements';
