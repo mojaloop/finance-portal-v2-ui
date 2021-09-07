@@ -1,7 +1,10 @@
 import { ReactSelector } from 'testcafe-react-selectors';
 
-module.exports = {
-  navBarLink: ReactSelector('a'),
-  userIcon: ReactSelector('Icon'),
-  userNameTooltip: ReactSelector('ToolTip'),
+const root = ReactSelector('Navbar');
+
+export const Navbar = {
+  root,
+  navBarLink: root.findReact('a'),
+  userIcon: root.findReact('Icon'),
+  logoutButton: root.findReact('Button').withText('Log out'),
 };
