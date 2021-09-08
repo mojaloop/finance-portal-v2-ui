@@ -29,22 +29,40 @@ fixture `Find Transfers Feature`
     ];
     await cli.createHubAccounts(hubAccounts);
     ctx.cli = cli;
-  })
-  .beforeEach(async (t) => {
+
     const accounts: protocol.AccountInitialization[] = [
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
     ];
-    const participants = await t.fixtureCtx.cli.createParticipants(accounts);
 
-    t.fixtureCtx.participants = participants;
+    const participants = await cli.createParticipants(accounts);
+    ctx.participants = participants;
 
+    // Run two transfers
+    const transfers1: protocol.TransferMessage[] = [{
+      msg_sender: participants[1].name,
+      msg_recipient: participants[0].name,
+      currency: 'MMK',
+      amount: '10',
+      transfer_id: uuidv4(),
+    }];
+    await cli.completeTransfers(transfers1);
+    const transfers2: protocol.TransferMessage[] = [{
+      msg_sender: participants[0].name,
+      msg_recipient: participants[1].name,
+      currency: 'MMK',
+      amount: '10',
+      transfer_id: uuidv4(),
+    }];
+    await cli.completeTransfers(transfers2);
+  })
+  .beforeEach(async (t) => {
     await waitForReact();
     await t
       .typeText(LoginPage.userName, config.credentials.admin.username)
       .typeText(LoginPage.password, config.credentials.admin.password)
       .click(LoginPage.submitButton)
-      .click(SideMenu.settlementWindowsButton); // yes, not the settlements button
+      .click(SideMenu.findTransfersButton); // yes, not the settlements button
   });
 
 test.meta({
@@ -53,34 +71,15 @@ test.meta({
   description:
     `Find transfers with no filter selected`,
 })('Find transfers with no filter selected', async (t) => {
-  const { cli, participants } = t.fixtureCtx;
-  // Run two transfers
-  const transfers1: protocol.TransferMessage[] = [{
-    msg_sender: participants[1].name,
-    msg_recipient: participants[0].name,
-    currency: 'MMK',
-    amount: '10',
-    transfer_id: uuidv4(),
-  }];
-  await cli.completeTransfers(transfers1);
-  const transfers2: protocol.TransferMessage[] = [{
-    msg_sender: participants[0].name,
-    msg_recipient: participants[1].name,
-    currency: 'MMK',
-    amount: '10',
-    transfer_id: uuidv4(),
-  }];
-  await cli.completeTransfers(transfers2);
-
   // navigate to the find transfers page
   await t.click(SideMenu.findTransfersButton);
 
   // click the find transfers button (no filters selected by default)
   await t.click(FindTransfersPage.findTransfersButton);
 
-  // we should see two rows, one for each transfer we executed above
+  // we should see two or more rows, one for each transfer we executed above
   const rowsBefore = await FindTransfersPage.getResultRows();
-  await t.expect(rowsBefore.length).eql(2);
+  await t.expect(rowsBefore.length).gt(1);
 });
 
 
