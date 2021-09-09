@@ -60,15 +60,11 @@ function* fetchFinancialPositions() {
 
 function* updateFinancialPositionsParticipant() {
   const updateAmount = yield select(getFinancialPositionUpdateAmount);
-  if (updateAmount === 0) {
-    throw new Error('Value 0 is not valid for Amount.');
-  }
+  assert(updateAmount !== 0, 'Value 0 is not valid for Amount');
 
   const position = yield select(getSelectedFinancialPosition);
   const accounts = yield call(apis.accounts.read, { dfspName: position.dfsp.name });
-  if (accounts.status !== 200) {
-    throw new Error('Unable to fetch DFSP data');
-  }
+  assert(accounts.status === 200, 'Unable to fetch DFSP data');
 
   const account = accounts.data.filter(
     (acc: { ledgerAccountType: string }) => acc.ledgerAccountType === 'SETTLEMENT',
@@ -106,9 +102,7 @@ function* updateFinancialPositionsParticipant() {
         dfspName: position.dfsp.name,
         accountId: account.id,
       };
-      if (position.balance + updateAmount > 0) {
-        throw new Error('Balance is not enough for this operation');
-      }
+      assert(position.balance + updateAmount < 0, 'Balance insufficient for this operation');
       const response = yield call(apis.fundsOut.create, args);
 
       assert(response.status === 200, 'Unable to update Financial Position Balance');
