@@ -15,7 +15,7 @@ export const FindTransfersPage = {
     const rows = ReactSelector('DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
-    await t.expect(rows.exists).ok();
+    await t.expect(rows.exists).ok('Couldnt find any transfers page rows');
     const length = await rows.count;
     return Array
       .from({ length })
