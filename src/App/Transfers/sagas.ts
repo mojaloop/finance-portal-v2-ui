@@ -30,13 +30,13 @@ function* fetchTransfers() {
           amount: t.amount,
           payerParty: {
             type: 'payer',
-            idType: t.payerIdType,
-            idValue: t.payerIdValue,
+            idType: t.payerIdentifierType || '',
+            idValue: t.payerIdentifierValue || '',
           } as TransferParty,
           payeeParty: {
             type: 'payee',
-            idType: t.payeeIdType,
-            idValue: t.payeeIdValue,
+            idType: t.payeeIdentifierType || '',
+            idValue: t.payeeIdentifierValue || '',
           } as TransferParty,
           status: t.state,
         } as Transfer),
