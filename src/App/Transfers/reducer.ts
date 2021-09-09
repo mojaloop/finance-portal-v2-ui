@@ -18,6 +18,7 @@ const initialState: types.TransfersState = {
     to: undefined,
   },
   isTransfersPending: false,
+  isTransferDetailsPending: true,
 };
 
 export default createReducer(initialState, (builder) =>

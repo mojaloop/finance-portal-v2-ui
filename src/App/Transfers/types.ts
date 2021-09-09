@@ -50,13 +50,23 @@ export interface QuoteRequest {
   [key: string]: any;
 }
 
+export interface QuoteResponse {
+  quoteResponseId: string | number;
+  [key: string]: any;
+}
+
+export interface TransferPrepare {
+  transferId: string;
+  [key: string]: any;
+}
+
 export interface TransferDetail {
   transferId: string;
   quoteRequests: QuoteRequest[];
   quoteParties: object[];
-  quoteResponses: object[];
+  quoteResponses: QuoteResponse[];
   quoteErrors: object[];
-  transferPrepares: object[];
+  transferPrepares: TransferPrepare[];
   transferFulfilments: object[];
   transferParticipants: object[];
   transferStateChanges: object[];
@@ -99,4 +109,5 @@ export interface TransfersState {
   transfersError: string | null;
   transfersFilter: TransfersFilter;
   isTransfersPending: Boolean;
+  isTransferDetailsPending: Boolean;
 }

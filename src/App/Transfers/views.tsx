@@ -3,7 +3,7 @@ import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, TextField, 
 import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
-import { TransfersFilter, FilterChangeValue, Transfer, TransferDetail } from './types';
+import { TransfersFilter, FilterChangeValue, Transfer } from './types';
 import * as actions from './actions';
 import * as selectors from './selectors';
 import './Transfers.css';
@@ -93,7 +93,7 @@ const IDTypes = [
 ];
 
 const stateProps = (state: State) => ({
-  selectedTransfer: selectors.getSelectedTransfer(state),
+  // selectedTransfer: selectors.getSelectedTransfer(state),
   transfers: selectors.getTransfers(state),
   transfersError: selectors.getTransfersError(state),
   isTransfersPending: selectors.getIsTransfersPending(state),
@@ -109,7 +109,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
 });
 
 interface ConnectorProps {
-  selectedTransfer: TransferDetail | undefined;
+  // selectedTransfer: TransferDetail | undefined;
   transfers: Transfer[];
   transfersError: string | null;
   isTransfersPending: boolean;
@@ -121,7 +121,7 @@ interface ConnectorProps {
 }
 
 const Transfers: FC<ConnectorProps> = ({
-  selectedTransfer,
+  // selectedTransfer,
   transfers,
   transfersError,
   isTransfersPending,
@@ -132,18 +132,18 @@ const Transfers: FC<ConnectorProps> = ({
   onFilterChange,
 }) => {
   let content = null;
+  let detailModal = null;
+
   if (transfersError) {
     content = <MessageBox kind="danger">Error fetching transfers: {transfersError}</MessageBox>;
   } else if (isTransfersPending) {
     content = <Spinner center />;
   } else {
-    /*
-          onSelect={onTransferSelect}
-          sortColumn="D"
-          sortAsc={false}
-        
-        //selectedTransfer && <TransferDetails />
-*/
+    const selectTransfer = (t: Transfer) => {
+      detailModal = <TransferDetailsModal />;
+      onTransferSelect(t);
+    };
+
     content = (
       <DataList
         columns={transfersColumns}
@@ -151,7 +151,7 @@ const Transfers: FC<ConnectorProps> = ({
         pageSize={Number(20)}
         paginatorSize={Number(7)}
         flex={true}
-        onSelect={onTransferSelect}
+        onSelect={selectTransfer}
       />
     );
   }
@@ -164,11 +164,6 @@ const Transfers: FC<ConnectorProps> = ({
         available filters.
       </MessageBox>
     );
-  }
-
-  let detailModal = null;
-  if (selectedTransfer) {
-    detailModal = <TransferDetailsModal />;
   }
 
   return (
