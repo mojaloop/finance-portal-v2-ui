@@ -23,7 +23,7 @@ const loginDispatchProps = (dispatch: Dispatch) => ({
 const loginConnector = connect(loginStateProps, loginDispatchProps);
 type LoginConnectorProps = ConnectedProps<typeof loginConnector>;
 
-const Login: FC<LoginConnectorProps> = ({
+const LoginImpl: FC<LoginConnectorProps> = ({
   username,
   password,
   onUsernameChange,
@@ -64,4 +64,7 @@ const Login: FC<LoginConnectorProps> = ({
   );
 };
 
-export default loginConnector(Login);
+const Login = loginConnector(LoginImpl);
+Login.displayName = 'Login';
+
+export { Login };

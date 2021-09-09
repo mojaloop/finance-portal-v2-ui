@@ -5,9 +5,9 @@ import { ApiConfig } from './api/types';
 // Note that prefixes are used to conceptually separate backend services even though they may
 // be served by the same ingress/service.
 const services = {
-  loginService: {
+  authService: {
     withCredentials: true,
-    baseUrl: '/api/login',
+    baseUrl: '/api/auth',
   },
   settlementService: {
     withCredentials: true,
@@ -31,9 +31,19 @@ const services = {
 
 type Endpoint = ApiConfig<State>;
 
+const logout: Endpoint = {
+  service: services.authService,
+  url: () => '/logout',
+};
+
 const login: Endpoint = {
-  service: services.loginService,
+  service: services.authService,
   url: () => '/login',
+};
+
+const userInfo: Endpoint = {
+  service: services.authService,
+  url: () => '/userinfo',
 };
 
 const participants: Endpoint = {
@@ -143,49 +153,53 @@ const netdebitcap: Endpoint = {
 };
 
 interface EndpointsMap {
-  login: Endpoint;
-  settlements: Endpoint;
-  settlementWindows: Endpoint;
-  settlementWindow: Endpoint;
-  settlement: Endpoint;
-  participants: Endpoint;
-  participantAccount: Endpoint;
-  participantAccountTransfer: Endpoint;
-  settlementParticipantAccount: Endpoint;
-  settlementsDetailPositions: Endpoint;
-  settleSettlementWindows: Endpoint;
+  accounts: Endpoint;
   closeSettlementWindow: Endpoint;
   dfsps: Endpoint;
+  fundsIn: Endpoint;
+  fundsOut: Endpoint;
+  login: Endpoint;
+  logout: Endpoint;
+  netdebitcap: Endpoint;
+  participantAccount: Endpoint;
+  participantAccountTransfer: Endpoint;
+  participants: Endpoint;
+  position: Endpoint;
   previousWindow: Endpoint;
   settlementAccount: Endpoint;
-  position: Endpoint;
-  accounts: Endpoint;
-  fundsOut: Endpoint;
-  fundsIn: Endpoint;
-  netdebitcap: Endpoint;
+  settlement: Endpoint;
+  settlementParticipantAccount: Endpoint;
+  settlementsDetailPositions: Endpoint;
+  settlements: Endpoint;
+  settlementWindow: Endpoint;
+  settlementWindows: Endpoint;
+  settleSettlementWindows: Endpoint;
+  userInfo: Endpoint;
 }
 
 const endpoints = {
-  login,
-  settlementWindows,
-  settlementWindow,
-  settlements,
-  settlement,
-  participants,
-  participantAccount,
-  participantAccountTransfer,
-  settlementParticipantAccount,
-  settlementsDetailPositions,
-  settleSettlementWindows,
+  accounts,
   closeSettlementWindow,
   dfsps,
-  previousWindow,
-  settlementAccount,
-  position,
-  accounts,
-  fundsOut,
   fundsIn,
+  fundsOut,
+  login,
+  logout,
   netdebitcap,
+  participantAccount,
+  participantAccountTransfer,
+  participants,
+  position,
+  previousWindow,
+  settlement,
+  settlementAccount,
+  settlementParticipantAccount,
+  settlements,
+  settlementsDetailPositions,
+  settlementWindow,
+  settlementWindows,
+  settleSettlementWindows,
+  userInfo,
 };
 
 export default buildApis<EndpointsMap, State>(endpoints);

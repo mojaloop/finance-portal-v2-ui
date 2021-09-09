@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Menu, MenuItem, MenuSection } from 'components';
 import { useHistory, useLocation } from 'react-router-dom';
 
-const SideMenu: FC<unknown> = () => {
+export const SideMenu: FC<unknown> = () => {
   const history = useHistory();
   const location = useLocation();
 
@@ -20,5 +20,3 @@ const SideMenu: FC<unknown> = () => {
     </div>
   );
 };
-
-export default SideMenu;
