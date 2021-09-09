@@ -17,6 +17,20 @@ configMapGenerator:
 - name: portal-backend
   behavior: merge
   literals: *oauth_creds
+- name: portal-backend
+  behavior: merge
+  literals:
+  # Testcafe doesn't handle secure cookies well. For our integration tests, we make the cookie
+  # insecure. This is because:
+  # 1. we expect to remove auth functionality from the portal backend in the near future and hand
+  #    it off to a third-party tool
+  # 2. with (1) in mind, this meant we didn't need to spend time investigating the precise clause
+  #    in the cookie that causes the problem
+  # 3. it's not important for our tests to be secure
+  #
+  # Of course, the trade-off is that our tests are slightly less representative of a real
+  # deployment, but we accept that because of (1).
+  - INSECURE_COOKIE=true
 - name: wso2is-populate-users
   files:
   - users.json=./users.json
