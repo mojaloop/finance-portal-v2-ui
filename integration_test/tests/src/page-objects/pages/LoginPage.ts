@@ -1,7 +1,10 @@
 import { ReactSelector } from 'testcafe-react-selectors';
 
+const root = ReactSelector('Login');
+
 export const LoginPage = {
-  userName: ReactSelector('TextField').withProps({ placeholder: 'Username' }),
-  password: ReactSelector('TextField').withProps({ placeholder: 'Password' }),
-  submitButton: ReactSelector('Button'),
+  root,
+  userName: root.findReact('TextField').withProps({ placeholder: 'Username' }),
+  password: root.findReact('TextField').withProps({ placeholder: 'Password' }),
+  submitButton: root.findReact('Button'),
 };

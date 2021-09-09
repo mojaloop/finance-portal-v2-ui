@@ -1,3 +1,1 @@
-import Login from './views';
-
-export default Login;
+export { Login } from './views';
