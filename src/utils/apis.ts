@@ -23,6 +23,10 @@ const services = {
     withCredentials: true,
     baseUrl: '/api/portal-backend',
   },
+  transfersService: {
+    withCredentials: true,
+    baseUrl: '/api/portal-backend',
+  },
   ledgerService: {
     withCredentials: true,
     baseUrl: '/api/ledger/',
@@ -39,6 +43,28 @@ const logout: Endpoint = {
 const login: Endpoint = {
   service: services.authService,
   url: () => '/login',
+};
+
+const transfers: Endpoint = {
+  service: services.transfersService,
+  url: (_: State, filters) => {
+    // dont pass any undefined keys to URLSearchParams
+    const sanitisedFilters = {
+      ...filters,
+    };
+
+    Object.keys(sanitisedFilters).forEach((k) =>
+      sanitisedFilters[k] === undefined ? delete sanitisedFilters[k] : null,
+    );
+
+    const queryString = new URLSearchParams(sanitisedFilters).toString();
+    return `/transfers?${queryString}`;
+  },
+};
+
+const transferDetails = {
+  service: services.transfersService,
+  url: (_: State, transferId: string) => `/transferDetails/${transferId}`,
 };
 
 const userInfo: Endpoint = {
@@ -174,6 +200,8 @@ interface EndpointsMap {
   settlementWindow: Endpoint;
   settlementWindows: Endpoint;
   settleSettlementWindows: Endpoint;
+  transfers: Endpoint;
+  transferDetails: Endpoint;
   userInfo: Endpoint;
 }
 
@@ -199,6 +227,8 @@ const endpoints = {
   settlementWindow,
   settlementWindows,
   settleSettlementWindows,
+  transfers,
+  transferDetails,
   userInfo,
 };
 

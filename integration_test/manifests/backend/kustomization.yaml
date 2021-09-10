@@ -1,6 +1,6 @@
 resources:
 - github.com/partiallyordered/mojaloop-kustomize/base/nginx-ingress-controller?ref=ee2ffcc2588dcefda74ed6b4f2e47a7388f67f4e
-- github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=562f89237fdd9de3734da9b04cb1e95578547948
+- github.com/partiallyordered/mojaloop-kustomize/base/mojaloop/central?ref=3903827ee6b00e8efdca9a39d3fe0774b27e93e3
 - github.com/partiallyordered/voodoo-doll/kubernetes?ref=321a8986e97cf132aefc80b3646fe7203b5d71b2
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.4
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.4
@@ -17,6 +17,20 @@ configMapGenerator:
 - name: portal-backend
   behavior: merge
   literals: *oauth_creds
+- name: portal-backend
+  behavior: merge
+  literals:
+  # Testcafe doesn't handle secure cookies well. For our integration tests, we make the cookie
+  # insecure. This is because:
+  # 1. we expect to remove auth functionality from the portal backend in the near future and hand
+  #    it off to a third-party tool
+  # 2. with (1) in mind, this meant we didn't need to spend time investigating the precise clause
+  #    in the cookie that causes the problem
+  # 3. it's not important for our tests to be secure
+  #
+  # Of course, the trade-off is that our tests are slightly less representative of a real
+  # deployment, but we accept that because of (1).
+  - INSECURE_COOKIE=true
 - name: wso2is-populate-users
   files:
   - users.json=./users.json

@@ -4,6 +4,7 @@ import financialPositionsReducer from './FinancialPositions/reducer';
 import settlementWindowsReducer from './SettlementWindows/reducer';
 import settlementsReducer from './Settlements/reducer';
 import dfspsReducer from './DFSPs/reducer';
+import transfersReducer from './Transfers/reducer';
 
 export default combineReducers({
   auth: authReducer,
@@ -11,4 +12,5 @@ export default combineReducers({
   financialPositions: financialPositionsReducer,
   settlementWindows: settlementWindowsReducer,
   settlements: settlementsReducer,
+  transfers: transfersReducer,
 });

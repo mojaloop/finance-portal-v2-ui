@@ -97,7 +97,7 @@ const Settlements: FC<ConnectorProps> = ({
   }
   return (
     <div className="settlements">
-      <Heading size="3">Settlement Management</Heading>
+      <Heading size="3">Settlements</Heading>
       <Filters
         onDateRangerFilterSelect={onDateRangerFilterSelect}
         onDateFilterClearClick={onDateFilterClearClick}
