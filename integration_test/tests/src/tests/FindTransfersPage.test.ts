@@ -1,5 +1,5 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { FindTransfersPage } from '../page-objects/pages/FindTransfersPage';
+import { FindTransfersPage, TransferRow } from '../page-objects/pages/FindTransfersPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
@@ -35,8 +35,11 @@ fixture `Find Transfers Feature`
       { currency: 'MMK', initial_position: '0', ndc: 10000 },
     ];
 
+
     const participants = await cli.createParticipants(accounts);
     ctx.participants = participants;
+
+    ctx.transfers = [];
 
     // Run two transfers
     const transfers1: protocol.TransferMessage[] = [{
@@ -46,7 +49,9 @@ fixture `Find Transfers Feature`
       amount: '10',
       transfer_id: uuidv4(),
     }];
+    ctx.transfers.push(transfers1[0]);
     await cli.completeTransfers(transfers1);
+
     const transfers2: protocol.TransferMessage[] = [{
       msg_sender: participants[0].name,
       msg_recipient: participants[1].name,
@@ -54,6 +59,7 @@ fixture `Find Transfers Feature`
       amount: '10',
       transfer_id: uuidv4(),
     }];
+    ctx.transfers.push(transfers2[0]);
     await cli.completeTransfers(transfers2);
   })
   .beforeEach(async (t) => {
@@ -69,8 +75,8 @@ test.meta({
   ID: '',
   STORY: 'MMD-1430',
   description:
-    `Find transfers with no filter selected`,
-})('Find transfers with no filter selected', async (t) => {
+    `Find transfers with no filter selected should return transfers`,
+})('Find transfers with no filter selected should return transfers', async (t) => {
   // navigate to the find transfers page
   await t.click(SideMenu.findTransfersButton);
 
@@ -78,8 +84,16 @@ test.meta({
   await t.click(FindTransfersPage.findTransfersButton);
 
   // we should see two or more rows, one for each transfer we executed above
-  const rowsBefore = await FindTransfersPage.getResultRows();
-  await t.expect(rowsBefore.length).gt(1);
+  const rows = await FindTransfersPage.getResultRows();
+  await t.expect(rows.length).gt(1);
+
+  // we should see the two transfers we just created
+  const transferIds = t.fixtureCtx.transfers.map((t: protocol.TransferMessage) => t.transfer_id);
+  const rowIds = await Promise.all(rows.map((r: TransferRow) => r.id.innerText));
+
+  for(let i = 0; i < transferIds.length; i++) {
+    await t.expect(rowIds).contains(transferIds[i], 'rows contains the transfer');
+  }
 });
 
 
