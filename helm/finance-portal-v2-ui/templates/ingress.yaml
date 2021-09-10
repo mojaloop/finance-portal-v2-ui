@@ -26,10 +26,10 @@ spec:
             backend:
               serviceName: {{ include "finance-portal-v2-ui.fullname" . }}
               servicePort: http
-          - path: /api/login(/|$)(.*)
+          - path: /api/auth(/|$)(.*)
             backend:
-              serviceName: {{ .Values.ingress.loginService.name }}
-              servicePort: {{ .Values.ingress.loginService.portName }}
+              serviceName: {{ .Values.ingress.authService.name }}
+              servicePort: {{ .Values.ingress.authService.portName }}
           - path: /api/ledger(/|$)(.*)
             backend:
               serviceName: {{ .Values.ingress.ledgerService.name }}

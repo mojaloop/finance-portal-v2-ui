@@ -1,37 +1,42 @@
 import React, { FC } from 'react';
-import { connect, ConnectedProps } from 'react-redux';
+import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
 import { Spinner } from 'components';
 import * as actions from './actions';
 import * as selectors from './selectors';
-import Login from './Login';
+import { UserInfo } from './types';
+import { Login } from './Login';
 
 const stateProps = (state: State) => ({
-  isTokenValid: selectors.getIsTokenValid(state),
+  userInfo: selectors.getUserInfo(state),
+  userInfoPending: selectors.getUserInfoPending(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
-  onMount: () => dispatch(actions.checkToken()),
+  onMount: () => dispatch(actions.requestUserInfo()),
 });
 
 const connector = connect(stateProps, dispatchProps);
-type ConnectorProps = ConnectedProps<typeof connector>;
 
 interface AuthRouterProps {
-  isTokenValid: boolean | null;
+  userInfo?: UserInfo;
+  userInfoPending: boolean;
 }
 
-const AuthRouter: FC<AuthRouterProps> = ({ children, isTokenValid }) => {
-  if (isTokenValid === null) {
+const AuthRouter: FC<AuthRouterProps> = ({ children, userInfo, userInfoPending }) => {
+  if (userInfoPending) {
     return <Spinner center size={40} />;
   }
 
-  if (!isTokenValid) {
+  if (userInfo === null) {
     return <Login />;
   }
 
   return <>{children}</>;
 };
 
-export default connector(withMount(AuthRouter, 'onMount'));
+const Auth = connector(withMount(AuthRouter, 'onMount'));
+Auth.displayName = 'Auth';
+
+export { Auth };
