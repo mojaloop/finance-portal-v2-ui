@@ -118,5 +118,6 @@ const FinancialPositionUpdateConfirm: FC<ConnectorProps> = ({
     </Modal>
   );
 };
+FinancialPositionUpdateConfirm.displayName = 'FinancialPositionUpdateConfirm';
 
 export default connector(FinancialPositionUpdateConfirm);

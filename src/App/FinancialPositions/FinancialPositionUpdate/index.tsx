@@ -145,5 +145,6 @@ const FinancialPositionUpdate: FC<ConnectorProps> = ({
     </div>
   );
 };
+FinancialPositionUpdate.displayName = 'FinancialPositionUpdate';
 
 export default connector(FinancialPositionUpdate);
