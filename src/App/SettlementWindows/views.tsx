@@ -127,7 +127,7 @@ const SettlementWindows: FC<ConnectorProps> = ({
   }
   return (
     <div className="settlementWindows">
-      <Heading size="3">Settlement Window Management</Heading>
+      <Heading size="3">Settlement Windows</Heading>
       <Filters
         filters={filters}
         onDateRangerFilterSelect={onDateRangerFilterSelect}

@@ -48,6 +48,7 @@ module.exports = {
     'react/jsx-one-expression-per-line': 'off',
     'react/jsx-wrap-multilines': 'off',
     'react/destructuring-assignment': 'off',
+    'react/require-default-props': 'off',
     'max-len': [1, 120],
   },
   overrides: [

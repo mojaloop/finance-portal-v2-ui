@@ -1,4 +1,4 @@
-import '@modusbox/modusbox-ui-components/dist/react/components/index.css';
+import '@modusbox/modusbox-ui-components/dist/index.css';
 import {
   Button,
   Checkbox,
@@ -35,7 +35,7 @@ import {
   TextField,
   Toast,
   Tooltip,
-} from '@modusbox/modusbox-ui-components/dist/react/components/index';
+} from '@modusbox/modusbox-ui-components/dist/index';
 
 import DataLabel from './DataLabel';
 import Led from './Led';

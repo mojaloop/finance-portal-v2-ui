@@ -1,0 +1,33 @@
+.transfers {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.transfers__filters {
+  margin: 10px 0px;
+}
+
+/* SINGLE CONTROLS */
+.transfers__filters__filter-row {
+  display: flex;
+  align-items: center;
+}
+
+.transfers__filters__date-filter {
+  width: 200px;
+  margin: 4px;
+}
+.transfers__filters__date-picker {
+  width: 200px;
+  margin: 4px;
+}
+.transfers__filters__textfield {
+  width: 200px;
+  margin: 4px;
+}
+.transfers__filters__find {
+  width: 200px;
+  margin: 4px;
+}

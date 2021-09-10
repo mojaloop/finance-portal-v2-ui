@@ -8,6 +8,7 @@ import DFSPs from './DFSPs';
 import SettlementWindows from './SettlementWindows';
 import Settlements from './Settlements';
 import FinancialPositions from './FinancialPositions';
+import Transfers from './Transfers';
 
 import * as actions from './Auth/actions';
 import * as selectors from './Auth/selectors';
@@ -43,6 +44,9 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
               </Route>
               <Route path="/positions">
                 <FinancialPositions />
+              </Route>
+              <Route path="/transfers">
+                <Transfers />
               </Route>
               <Route>
                 <Redirect to="/windows" />
