@@ -49,13 +49,3 @@ export function buildFiltersParams(filters: SettlementWindowFilters) {
     toDateTime: filters.end ? moment(filters.end).toISOString() : undefined,
   };
 }
-
-/* @ts-ignore */
-export function mapApiToModel(item: any): SettlementWindow {
-  return {
-    settlementWindowId: item.settlementWindowId,
-    state: item.state,
-    createdDate: item.settlementWindowOpen,
-    changedDate: item.settlementWindowClose || '',
-  };
-}
