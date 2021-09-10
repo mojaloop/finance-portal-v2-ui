@@ -3,7 +3,7 @@ import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, TextField, 
 import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
-import { TransfersFilter, FilterChangeValue, Transfer } from './types';
+import { TransfersFilter, FilterChangeValue, Transfer, TransferDetail } from './types';
 import * as actions from './actions';
 import * as selectors from './selectors';
 import './Transfers.css';
@@ -93,11 +93,12 @@ const IDTypes = [
 ];
 
 const stateProps = (state: State) => ({
-  // selectedTransfer: selectors.getSelectedTransfer(state),
+  selectedTransfer: selectors.getSelectedTransfer(state),
   transfers: selectors.getTransfers(state),
   transfersError: selectors.getTransfersError(state),
   isTransfersPending: selectors.getIsTransfersPending(state),
   filtersModel: selectors.getTransfersFilter(state),
+  isTransferDetailsPending: selectors.getIsTransferDetailsPending(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -109,10 +110,11 @@ const dispatchProps = (dispatch: Dispatch) => ({
 });
 
 interface ConnectorProps {
-  // selectedTransfer: TransferDetail | undefined;
+  selectedTransfer: TransferDetail | undefined;
   transfers: Transfer[];
   transfersError: string | null;
   isTransfersPending: boolean;
+  isTransferDetailsPending: boolean;
   filtersModel: TransfersFilter;
   onFindTransfersClick: () => void;
   onClearFiltersClick: () => void;
@@ -121,10 +123,11 @@ interface ConnectorProps {
 }
 
 const Transfers: FC<ConnectorProps> = ({
-  // selectedTransfer,
+  selectedTransfer,
   transfers,
   transfersError,
   isTransfersPending,
+  isTransferDetailsPending,
   filtersModel,
   onFindTransfersClick,
   onClearFiltersClick,
@@ -164,6 +167,10 @@ const Transfers: FC<ConnectorProps> = ({
         available filters.
       </MessageBox>
     );
+  }
+
+  if (isTransferDetailsPending || selectedTransfer) {
+    detailModal = <TransferDetailsModal />;
   }
 
   return (

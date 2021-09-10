@@ -39,7 +39,7 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
   );
 
   if (transferDetails) {
-    const TransferPartiesTab = (
+    const TransferPartiesTab = transferDetails.quoteParties.length ? (
       <TabPanel>
         <Tabs>
           <TabList>
@@ -56,9 +56,9 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
           </TabPanels>
         </Tabs>
       </TabPanel>
-    );
+    ) : null;
 
-    const QuoteRequestsTab = (
+    const QuoteRequestsTab = transferDetails.quoteRequests.length ? (
       <TabPanel>
         <Tabs>
           <TabList>
@@ -86,9 +86,9 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
           </TabPanels>
         </Tabs>
       </TabPanel>
-    );
+    ) : null;
 
-    const QuoteResponsesTab = (
+    const QuoteResponsesTab = transferDetails.quoteResponses.length ? (
       <TabPanel>
         <Tabs>
           <TabList>
@@ -105,9 +105,9 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
           </TabPanels>
         </Tabs>
       </TabPanel>
-    );
+    ) : null;
 
-    const TransferPreparesTab = (
+    const TransferPreparesTab = transferDetails.transferPrepares.length ? (
       <TabPanel>
         <Tabs>
           <TabList>
@@ -124,7 +124,7 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
           </TabPanels>
         </Tabs>
       </TabPanel>
-    );
+    ) : null;
 
     content = (
       <div>
