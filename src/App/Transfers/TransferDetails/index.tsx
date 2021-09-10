@@ -5,6 +5,7 @@ import { State, Dispatch } from 'store/types';
 import { TransferDetail, QuoteRequest, QuoteResponse, TransferPrepare } from '../types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
+import './TransferDetails.css';
 
 const stateProps = (state: State) => ({
   transferDetails: selectors.getSelectedTransfer(state),
@@ -33,7 +34,7 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
   let content = null;
 
   content = (
-    <div className="transfers__transfers__loader">
+    <div className="transfers__transferDetails__loader">
       <Spinner size={20} />
     </div>
   );
