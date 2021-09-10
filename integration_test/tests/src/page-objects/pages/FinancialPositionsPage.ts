@@ -32,7 +32,7 @@ export const FinancialPositionUpdateModal = {
   addFundsRadioButton: finPosUpdateRoot.findReact('Radio').withText('Add Funds'),
   withdrawFundsRadioButton: finPosUpdateRoot.findReact('Radio').withText('Withdraw Funds'),
 
-  amountInput: finPosUpdateRoot.find('input'),
+  amountInput: finPosUpdateRoot.findReact('Row input'),
 
   cancelButton: finPosUpdateRoot.findReact('Button').withText('Cancel'),
   submitButton: finPosUpdateRoot.findReact('Button').withText('Submit'),
@@ -44,8 +44,15 @@ export const FinancialPositionUpdateModal = {
 };
 
 export const FinancialPositionsPage = {
+  async getDfspRowMap(): Promise<Map<string, FinancialPositionsRow>> {
+    const rows = await this.getResultRows();
+    return new Map(await Promise.all(
+      rows.map((r) => r.dfsp.innerText.then((t): [string, FinancialPositionsRow] => [t, r]))
+    ));
+  },
+
   async getResultRows(): Promise<FinancialPositionsRow[]> {
-    const rows = ReactSelector('FinancialPositions Datalist Rows').findReact('RowItem');
+    const rows = ReactSelector('FinancialPositions DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
     await t.expect(rows.exists).ok('Expected to find financial positions result rows');
