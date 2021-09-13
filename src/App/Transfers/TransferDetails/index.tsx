@@ -40,7 +40,7 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
   );
 
   if (transferDetails) {
-    const TransferPartiesTab = transferDetails.quoteParties.length ? (
+    const QuotePartiesTab = transferDetails.quoteParties.length ? (
       <TabPanel>
         <Tabs>
           <TabList>
@@ -52,6 +52,25 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
             {transferDetails.quoteParties.map((qp: any) => (
               <TabPanel key={`${qp.quoteId}-${qp.transferParticipantRoleType}`}>
                 <ScrollBox>{objectToFormInputs(qp.quoteId, qp)}</ScrollBox>
+              </TabPanel>
+            ))}
+          </TabPanels>
+        </Tabs>
+      </TabPanel>
+    ) : null;
+
+    const QuoteErrorsTab = transferDetails.quoteErrors.length ? (
+      <TabPanel>
+        <Tabs>
+          <TabList>
+            {transferDetails.quoteErrors.map((qe: any) => (
+              <Tab key={`${qe.quoteId}-${qe.quoteErrorId}`}>{qe.quoteErrorId}</Tab>
+            ))}
+          </TabList>
+          <TabPanels>
+            {transferDetails.quoteErrors.map((qe: any) => (
+              <TabPanel key={`${qe.quoteId}-${qe.quoteErrorId}`}>
+                <ScrollBox>{objectToFormInputs(qe.quoteId, qe)}</ScrollBox>
               </TabPanel>
             ))}
           </TabPanels>
@@ -74,12 +93,14 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
                   <TabList>
                     <Tab>Quote Request</Tab>
                     <Tab>Quote Parties</Tab>
+                    <Tab>Quote Errors</Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel>
                       <ScrollBox>{objectToFormInputs(qr.quoteId, qr)}</ScrollBox>
                     </TabPanel>
-                    {TransferPartiesTab}
+                    <TabPanel>{QuotePartiesTab}</TabPanel>
+                    <TabPanel>{QuoteErrorsTab}</TabPanel>
                   </TabPanels>
                 </Tabs>
               </TabPanel>
@@ -127,6 +148,63 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
       </TabPanel>
     ) : null;
 
+    const TransferParticipantsTab = transferDetails.transferParticipants.length ? (
+      <TabPanel>
+        <Tabs>
+          <TabList>
+            {transferDetails.transferParticipants.map((tp: any) => (
+              <Tab key={tp.transferParticipantId}>{tp.transferParticipantId}</Tab>
+            ))}
+          </TabList>
+          <TabPanels>
+            {transferDetails.transferParticipants.map((tp: any) => (
+              <TabPanel key={tp.transferParticipantId}>
+                <ScrollBox>{objectToFormInputs(tp.transferParticipantId, tp)}</ScrollBox>
+              </TabPanel>
+            ))}
+          </TabPanels>
+        </Tabs>
+      </TabPanel>
+    ) : null;
+
+    const TransferFulfilmentsTab = transferDetails.transferFulfilments.length ? (
+      <TabPanel>
+        <Tabs>
+          <TabList>
+            {transferDetails.transferFulfilments.map((tf: any) => (
+              <Tab key={tf.transferId}>{tf.transferId}</Tab>
+            ))}
+          </TabList>
+          <TabPanels>
+            {transferDetails.transferFulfilments.map((tf: any) => (
+              <TabPanel key={tf.transferId}>
+                <ScrollBox>{objectToFormInputs(tf.transferId, tf)}</ScrollBox>
+              </TabPanel>
+            ))}
+          </TabPanels>
+        </Tabs>
+      </TabPanel>
+    ) : null;
+
+    const TransferStateChangesTab = transferDetails.transferStateChanges.length ? (
+      <TabPanel>
+        <Tabs>
+          <TabList>
+            {transferDetails.transferStateChanges.map((tsc: any) => (
+              <Tab key={tsc.transferStateChangeId}>{tsc.transferStateChangeId}</Tab>
+            ))}
+          </TabList>
+          <TabPanels>
+            {transferDetails.transferStateChanges.map((tsc: any) => (
+              <TabPanel key={tsc.transferStateChangeId}>
+                <ScrollBox>{objectToFormInputs(tsc.transferStateChangeId, tsc)}</ScrollBox>
+              </TabPanel>
+            ))}
+          </TabPanels>
+        </Tabs>
+      </TabPanel>
+    ) : null;
+
     content = (
       <div>
         <Tabs>
@@ -134,11 +212,17 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
             <Tab>Quote Requests</Tab>
             <Tab>Quote Responses</Tab>
             <Tab>Transfer Prepares</Tab>
+            <Tab>Transfer Participants</Tab>
+            <Tab>Transfer Fulfilments</Tab>
+            <Tab>Transfer State Changes</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>{QuoteRequestsTab}</TabPanel>
             <TabPanel>{QuoteResponsesTab}</TabPanel>
             <TabPanel>{TransferPreparesTab}</TabPanel>
+            <TabPanel>{TransferParticipantsTab}</TabPanel>
+            <TabPanel>{TransferFulfilmentsTab}</TabPanel>
+            <TabPanel>{TransferStateChangesTab}</TabPanel>
           </TabPanels>
         </Tabs>
       </div>
