@@ -1,6 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 // TODO: probably only need `yarn install assert`
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
 const { DefinePlugin } = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -14,12 +14,13 @@ module.exports = {
         terserOptions: {
           keep_classnames: true,
           keep_fnames: true,
+          sourceMap: true,
         },
       }),
     ],
   },
   entry: './src/index',
-  devtool: 'cheap-module-source-map',
+  devtool: 'source-map',
   devServer: {
     disableHostCheck: true,
     // Enable gzip compression of generated files.

@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Menu, MenuItem, MenuSection } from 'components';
 import { useHistory, useLocation } from 'react-router-dom';
 
-const SideMenu: FC<unknown> = () => {
+export const SideMenu: FC<unknown> = () => {
   const history = useHistory();
   const location = useLocation();
 
@@ -16,9 +16,10 @@ const SideMenu: FC<unknown> = () => {
         <MenuSection label="Participants">
           <MenuItem path="/positions" label="DFSP Financial Positions" partial />
         </MenuSection>
+        <MenuSection label="Transfers">
+          <MenuItem path="/transfers" label="Find Transfers" partial />
+        </MenuSection>
       </Menu>
     </div>
   );
 };
-
-export default SideMenu;
