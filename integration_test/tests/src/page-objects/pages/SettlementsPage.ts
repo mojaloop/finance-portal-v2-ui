@@ -68,12 +68,14 @@ export const SettlementFinalizeModal = {
 const SettlementDetailModalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });
 export const SettlementDetailModal = {
   async getWindowsRows(): Promise<WindowRow[]> {
-    await t.expect(ReactSelector('Modal').exists).ok();
-    await t.expect(SettlementDetailModalRoot.exists).ok();
+    // TODO: this selector should be better; may need to have .displayName set on the component
+    await t.expect(ReactSelector('Modal').exists).ok('Expected to find settlement detail modal');
+    // TODO: this selector should be better; may need to have .displayName set on the component
+    await t.expect(SettlementDetailModalRoot.exists).ok('Expected to find settlement detail modal root');
     const rows = SettlementDetailModalRoot.findReact('DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
-    await t.expect(rows.exists).ok();
+    await t.expect(rows.exists).ok('Expected to find settlement detail row results');
     const length = await rows.count;
     return Array
       .from({ length })
@@ -100,10 +102,11 @@ export const SettlementsPage = {
   clearFiltersButton: ReactSelector('Button').withProps({ label: 'Clear Filters' }),
 
   async getResultRows(): Promise<SettlementRow[]> {
+    // TODO: this selector should be better; may need to have .displayName set on the component
     const rows = ReactSelector('DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,
     // rows.count always returns zero, and this function fails.
-    await t.expect(rows.exists).ok();
+    await t.expect(rows.exists).ok('Expected to find settlement row results');
     const length = await rows.count;
     return Array
       .from({ length })
