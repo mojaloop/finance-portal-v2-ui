@@ -6,11 +6,6 @@ import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
-import { shim } from 'promise.any';
-
-// At the time of writing, for some reason, in CI Promise.any is not working with
-// > TypeError: Promise.any is not a function
-shim();
 
 const closeOpenSettlementWindow = async (t: TestController): Promise<string> => {
   // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
