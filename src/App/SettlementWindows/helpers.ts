@@ -45,8 +45,11 @@ export function formatDate(date: string | undefined): string | undefined {
 export function buildFiltersParams(filters: SettlementWindowFilters) {
   return {
     state: filters.state,
-    fromDateTime: filters.start ? moment(filters.start).toISOString() : undefined,
-    toDateTime: filters.end ? moment(filters.end).toISOString() : undefined,
+    // The default datetimes are the earliest and latest dates representable in the MySQL DATETIME
+    // type. The database *shouldn't* leak here, really, but these aren't insane "default" dates to
+    // have, in any case.
+    fromDateTime: filters.start ? moment(filters.start).toISOString() : '1000-01-01T00:00:00Z',
+    toDateTime: filters.end ? moment(filters.end).toISOString() : '9999-12-31T23:59:59Z',
   };
 }
 

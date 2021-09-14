@@ -53,7 +53,7 @@ function* fetchSettlementWindows() {
     ) {
       yield put(setSettlementWindows([]));
     } else {
-      yield put(setSettlementWindows(response.data.map(helpers.mapApiToModel)));
+      yield put(setSettlementWindows(response.data));
     }
   } catch (e) {
     yield put(setSettlementWindowsError(e.message));

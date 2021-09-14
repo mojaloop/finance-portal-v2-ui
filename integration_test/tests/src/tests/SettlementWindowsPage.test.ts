@@ -6,11 +6,8 @@ import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
-import { shim } from 'promise.any';
 
-// At the time of writing, for some reason, in CI Promise.any is not working with
-// > TypeError: Promise.any is not a function
-shim();
+const dateNotPresentRegex = /^-$|^$/;
 
 const closeOpenSettlementWindow = async (t: TestController): Promise<string> => {
   // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
@@ -110,6 +107,8 @@ test.meta({
   // remaining open window?
   const resultRows = await SettlementWindowsPage.getResultRows();
   await t.expect(resultRows.length).eql(1, 'Expected exactly one closed settlement window');
+  await t.expect(resultRows[0].openDate.innerText).notMatch(dateNotPresentRegex);
+  await t.expect(resultRows[0].closeDate.innerText).match(dateNotPresentRegex);
 });
 
 test.meta({
@@ -117,7 +116,7 @@ test.meta({
   STORY: 'MMD-440',
   Scenario:
     `Close the single open settlement window, and expect the same window now shows up in a list of
-     closed windows`,
+     closed windows. Expect the closed windows in the list to display closed dates.`,
 })('Close settlement window', async (t) => {
   // TODO: consider comparing this with the ML API result? Or, instead, use the UI to set up a
   // state that we expect, i.e. by closing all existing windows, then observing the single
@@ -134,6 +133,8 @@ test.meta({
   ).catch(() => {
     throw new Error(`Couldn't find closed window with id ${settlementWindowId}`);
   });
+  await t.expect(closedRows[0].openDate.innerText).notMatch(dateNotPresentRegex);
+  await t.expect(closedRows[0].closeDate.innerText).notMatch(dateNotPresentRegex);
 });
 
 test.meta({
