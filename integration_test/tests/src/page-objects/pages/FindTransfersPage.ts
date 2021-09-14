@@ -3,6 +3,7 @@ import { Temporal } from '@js-temporal/polyfill';
 import { t } from 'testcafe';
 
 export type TransferRow = {
+  row: Selector,
   id: Selector,
 }
 
@@ -20,7 +21,10 @@ export const FindTransfersPage = {
     return Array
       .from({ length })
       .map((_, i) => ({
+        row: rows.nth(i),
         id: rows.nth(i).findReact('ItemCell').nth(0),
       }));
   },
+
+  getTransferDetailsModal: (transferId: string) => ReactSelector('Modal').withProps({ title: `Transfer Details: ${transferId}` }),
 };

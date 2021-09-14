@@ -18,7 +18,7 @@ const initialState: types.TransfersState = {
     to: undefined,
   },
   isTransfersPending: false,
-  isTransferDetailsPending: true,
+  isTransferDetailsPending: false,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -62,10 +62,16 @@ export default createReducer(initialState, (builder) =>
       (state: types.TransfersState, action: PayloadAction<types.TransferDetail>) => ({
         ...state,
         selectedTransfer: action.payload,
+        isTransferDetailsPending: false,
       }),
     )
     .addCase(actions.transferDetailsModalClose, (state: types.TransfersState) => ({
       ...state,
       selectedTransfer: initialState.selectedTransfer,
+      isTransferDetailsPending: false,
+    }))
+    .addCase(actions.selectTransfer, (state: types.TransfersState) => ({
+      ...state,
+      isTransferDetailsPending: true,
     })),
 );
