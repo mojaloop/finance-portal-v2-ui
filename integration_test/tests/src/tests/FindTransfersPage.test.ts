@@ -91,4 +91,26 @@ test.meta({
   }
 });
 
+test.meta({
+  ID: '',
+  STORY: 'MMD-1430',
+  description:
+    `Clicking on a transfer row should show a detail popup`,
+})('Clicking on transfer row should show detail popup', async (t) => {
+  // navigate to the find transfers page
+  await t.click(SideMenu.findTransfersButton);
 
+  // click the find transfers button (no filters selected by default)
+  await t.click(FindTransfersPage.findTransfersButton);
+
+  // get all rows found
+  const rows = await FindTransfersPage.getResultRows();
+
+  // click the first found row
+  await t.click(rows[0].row);
+  const transferId = await rows[0].id.innerText;
+
+  const popup = FindTransfersPage.getTransferDetailsModal(transferId);
+
+  await t.expect(popup.exists).ok('Transfer details popup not found in dom');
+});
