@@ -97,4 +97,5 @@ const FinancialPositions: FC<ConnectorProps> = ({
   );
 };
 
+FinancialPositions.displayName = 'FinancialPositions';
 export default connector(withMount(FinancialPositions, 'onMount'));

@@ -78,18 +78,19 @@ const FinancialPositionUpdate: FC<ConnectorProps> = ({
           <DataLabel>Action</DataLabel>
         </Row>
         <Row style={{ marginBottom: '30px' }}>
-          {isUpdateNDCModal && (
+          {isUpdateNDCModal ? (
             <Select
               id="select__action"
               label="Action"
               placeholder="Change Net Debit Cap"
               value={FinancialPositionsUpdateAction.ChangeNetDebitCap}
-              options={{ 'Change Net Debit Cap': FinancialPositionsUpdateAction.ChangeNetDebitCap }}
+              options={{
+                [FinancialPositionsUpdateAction.ChangeNetDebitCap]: FinancialPositionsUpdateAction.ChangeNetDebitCap,
+              }}
               onChange={setUpdateAction}
               disabled={true}
             />
-          )}
-          {!isUpdateNDCModal && (
+          ) : (
             <Select
               id="select__action"
               label="Action"
@@ -144,5 +145,6 @@ const FinancialPositionUpdate: FC<ConnectorProps> = ({
     </div>
   );
 };
+FinancialPositionUpdate.displayName = 'FinancialPositionUpdate';
 
 export default connector(FinancialPositionUpdate);
