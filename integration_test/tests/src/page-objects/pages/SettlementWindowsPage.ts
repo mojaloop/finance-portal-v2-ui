@@ -16,6 +16,8 @@ export type SettlementWindowRow = {
   id: Selector,
   closeButton: Selector,
   checkbox: Selector,
+  openDate: Selector,
+  closeDate: Selector,
 }
 
 const datePickerSelectDate = async (
@@ -79,9 +81,11 @@ export const SettlementWindowsPage = {
     return Array
       .from({ length })
       .map((_, i) => ({
-          closeButton: rows.nth(i).findReact('Button'),
-          id: rows.nth(i).findReact('ItemCell').nth(1),
-          checkbox: rows.nth(i).findReact('ItemCell').withKey('_checkbox_column'),
+        closeButton: rows.nth(i).findReact('Button'),
+        id: rows.nth(i).findReact('ItemCell').nth(1),
+        openDate: rows.nth(i).findReact('ItemCell').nth(3),
+        closeDate: rows.nth(i).findReact('ItemCell').nth(4),
+        checkbox: rows.nth(i).findReact('ItemCell').withKey('_checkbox_column'),
       }));
   },
 
