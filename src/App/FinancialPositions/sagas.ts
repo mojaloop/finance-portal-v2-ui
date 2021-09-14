@@ -1,3 +1,4 @@
+import { strict as assert } from 'assert';
 import { all, call, put, select, takeLatest } from 'redux-saga/effects';
 import { getDfsps } from 'App/DFSPs/selectors';
 import { DFSP } from 'App/DFSPs/types';
@@ -6,6 +7,7 @@ import {
   REQUEST_FINANCIAL_POSITIONS,
   SUBMIT_FINANCIAL_POSITION_UPDATE_MODAL,
   SUBMIT_FINANCIAL_POSITION_UPDATE_CONFIRM_MODAL,
+  FinancialPosition,
   FinancialPositionsUpdateAction,
 } from './types';
 import {
@@ -18,6 +20,7 @@ import {
 } from './actions';
 import * as helpers from './helpers';
 import {
+  getFinancialPositions,
   getSelectedFinancialPosition,
   getFinancialPositionUpdateAmount,
   getSelectedFinancialPositionUpdateAction,
@@ -57,15 +60,11 @@ function* fetchFinancialPositions() {
 
 function* updateFinancialPositionsParticipant() {
   const updateAmount = yield select(getFinancialPositionUpdateAmount);
-  if (updateAmount === 0) {
-    throw new Error('Value 0 is not valid for Amount.');
-  }
+  assert(updateAmount !== 0, 'Value 0 is not valid for Amount');
 
   const position = yield select(getSelectedFinancialPosition);
   const accounts = yield call(apis.accounts.read, { dfspName: position.dfsp.name });
-  if (accounts.status !== 200) {
-    throw new Error('Unable to fetch DFSP data');
-  }
+  assert(accounts.status === 200, 'Unable to fetch DFSP data');
 
   const account = accounts.data.filter(
     (acc: { ledgerAccountType: string }) => acc.ledgerAccountType === 'SETTLEMENT',
@@ -73,47 +72,52 @@ function* updateFinancialPositionsParticipant() {
 
   const updateAction = yield select(getSelectedFinancialPositionUpdateAction);
 
-  let response;
+  switch (updateAction) {
+    case FinancialPositionsUpdateAction.ChangeNetDebitCap: {
+      const response = yield call(apis.netdebitcap.create, {
+        body: { newValue: updateAmount, currency: account.currency },
+        dfspName: position.dfsp.name,
+      });
 
-  if (updateAction === FinancialPositionsUpdateAction.ChangeNetDebitCap) {
-    response = yield call(apis.netdebitcap.create, {
-      body: { newValue: updateAmount, currency: account.currency },
-      dfspName: position.dfsp.name,
-    });
+      assert(response.status !== 401, 'Unable to update Net Debit Cap - user not authorized');
+      assert(response.status === 200, 'Unable to update Net Debit Cap');
 
-    if (response.status === 401 && response.data.message === 'Forbidden') {
-      throw new Error('Unable to update Net Debit Cap - user not authorized');
+      break;
     }
+    case FinancialPositionsUpdateAction.AddFunds: {
+      const args = {
+        body: { amount: updateAmount, currency: account.currency },
+        dfspName: position.dfsp.name,
+        accountId: account.id,
+      };
+      const response = yield call(apis.fundsIn.create, args);
 
-    if (response.status !== 200) {
-      throw new Error('Unable to update Net Debit Cap');
+      assert(response.status === 200, 'Unable to update Financial Position Balance');
+
+      break;
     }
-  } else {
-    const args = {
-      body: { amount: updateAmount, currency: account.currency },
-      dfspName: position.dfsp.name,
-      accountId: account.id,
-    };
+    case FinancialPositionsUpdateAction.WithdrawFunds: {
+      const args = {
+        body: { amount: updateAmount, currency: account.currency },
+        dfspName: position.dfsp.name,
+        accountId: account.id,
+      };
+      assert(position.balance + updateAmount < 0, 'Balance insufficient for this operation');
+      const response = yield call(apis.fundsOut.create, args);
 
-    if (updateAction === FinancialPositionsUpdateAction.AddFunds) {
-      response = yield call(apis.fundsIn.create, args);
-    } else if (updateAction === FinancialPositionsUpdateAction.WithdrawFunds) {
-      if (position.balance + updateAmount > 0) {
-        throw new Error('Balance is not enough for this operation');
-      }
-      response = yield call(apis.fundsOut.create, args);
-    } else {
+      assert(response.status === 200, 'Unable to update Financial Position Balance');
+
+      break;
+    }
+    default: {
       throw new Error('Action not expected on update Financial Position Balance');
     }
-
-    if (response.status !== 200) {
-      throw new Error('Unable to update Financial Position Balance');
-    }
   }
 
-  if (response.status !== 200) {
-    throw new Error('Unable to update Financial Position');
-  }
+  const allPositions: FinancialPosition[] = yield select(getFinancialPositions);
+  const newPosition = yield call(fetchDFSPPositions, position.dfsp);
+  const newPositions = allPositions.map((pos) => (pos.dfsp.id === position.dfsp.id ? newPosition : pos));
+  yield put(setFinancialPositions(newPositions));
 }
 
 function* submitFinancialPositionsUpdateParticipant() {

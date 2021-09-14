@@ -87,7 +87,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           }),
         );
       }
-      // Note the deliberate fall-through behaviour here, representing the expected state transitions
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersRecorded: {
         yield put(
@@ -109,7 +108,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           }),
         );
       }
-      // Note the deliberate fall-through behaviour here, representing the expected state transitions
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
         yield put(
@@ -131,12 +129,10 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           }),
         );
       }
-      // Note the deliberate fall-through behaviour here, representing the expected state transitions
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
       // We could transition to PS_TRANSFERS_COMMITTED, but then we'd immediately transition to
       // SETTLING anyway, so we do nothing here.
-      // Note the deliberate fall-through behaviour here, representing the expected state transitions
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settling: {
         yield put(
@@ -183,7 +179,10 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
         const accountSettlementResults: { status: number; data: any }[] = yield all(
           requests.map((r) => call(apis.settlementParticipantAccount.update, r.request)),
         );
-        const requestResultZip = accountSettlementResults.map((res, i) => ({ req: requests[i], res }));
+        const requestResultZip = accountSettlementResults.map((res, i) => ({
+          req: requests[i],
+          res,
+        }));
         const accountSettlementErrors = requestResultZip
           .filter(({ res }) => res.status !== 200)
           .map(({ req, res }) => {
@@ -210,7 +209,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           result = yield call(apis.settlement.read, { settlementId: action.payload.id });
         }
       }
-      // Note the deliberate fall-through behaviour here, representing the expected state transitions
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settled:
         yield put(
