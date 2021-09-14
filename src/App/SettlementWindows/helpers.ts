@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { DateRanges, SettlementWindow, SettlementWindowFilters /* SettlementWindowStatus */ } from './types';
+import { DateRanges, SettlementWindowFilters } from './types';
 
 const getDateRangesTimestamps = {
   Any: () => ({
