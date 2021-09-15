@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 fixture `Find Transfers Feature`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: 15000 });
+    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [

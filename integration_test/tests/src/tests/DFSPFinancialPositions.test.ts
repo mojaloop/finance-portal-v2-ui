@@ -6,7 +6,6 @@ import { SideMenu } from '../page-objects/components/SideMenu';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import {
   FinancialPositionsPage,
-  FinancialPositionsRow,
   FinancialPositionUpdateConfirmModal,
   PositionUpdateAction,
   FinancialPositionUpdateModal
@@ -16,7 +15,7 @@ import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 fixture`DFSPFinancialPositions`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: 15000 });
+    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [
