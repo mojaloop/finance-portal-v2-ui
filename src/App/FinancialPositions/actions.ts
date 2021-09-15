@@ -14,6 +14,7 @@ import {
   CLOSE_FINANCIAL_POSITION_UPDATE_CONFIRM_MODAL,
   SUBMIT_FINANCIAL_POSITION_UPDATE_CONFIRM_MODAL,
   UPDATE_FINANCIAL_POSITION_NDC_AFTER_CONFIRM_MODAL,
+  TOGGLE_CURRENCY_ACTIVE,
 } from './types';
 
 /** Actions for "DFSP Financial Positions" */
@@ -37,3 +38,6 @@ export const submitFinancialPositionUpdateConfirmModal = createAction(SUBMIT_FIN
 export const updateFinancialPositionNDCAfterConfirmModal = createAction(
   UPDATE_FINANCIAL_POSITION_NDC_AFTER_CONFIRM_MODAL,
 );
+
+/** Actions for "DFSP Financial Positions" > "Enable"/"Disable" button */
+export const toggleCurrencyActive = createAction<FinancialPosition>(TOGGLE_CURRENCY_ACTIVE);

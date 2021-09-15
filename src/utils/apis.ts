@@ -77,6 +77,16 @@ const participants: Endpoint = {
   url: () => '/participants',
 };
 
+const participantLimits: Endpoint = {
+  service: services.ledgerService,
+  url: (_, { participantName }) => `/participants/${participantName}/limits`,
+}
+
+const participantAccounts: Endpoint = {
+  service: services.ledgerService,
+  url: (_, { participantName }) => `/participants/${participantName}/accounts`,
+};
+
 const participantAccountTransfer: Endpoint = {
   service: services.ledgerService,
   url: (
@@ -188,7 +198,9 @@ interface EndpointsMap {
   logout: Endpoint;
   netdebitcap: Endpoint;
   participantAccount: Endpoint;
+  participantAccounts: Endpoint;
   participantAccountTransfer: Endpoint;
+  participantLimits: Endpoint;
   participants: Endpoint;
   position: Endpoint;
   previousWindow: Endpoint;
@@ -215,7 +227,9 @@ const endpoints = {
   logout,
   netdebitcap,
   participantAccount,
+  participantAccounts,
   participantAccountTransfer,
+  participantLimits,
   participants,
   position,
   previousWindow,

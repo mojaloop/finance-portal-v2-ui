@@ -1,24 +1,27 @@
 import { strict as assert } from 'assert';
+import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest } from 'redux-saga/effects';
-import { getDfsps } from 'App/DFSPs/selectors';
-import { DFSP } from 'App/DFSPs/types';
+import { getDfsps } from '../DFSPs/selectors';
+import { DFSP } from '../DFSPs/types';
+import { Currency } from '../types';
 import apis from '../../utils/apis';
 import {
   REQUEST_FINANCIAL_POSITIONS,
   SUBMIT_FINANCIAL_POSITION_UPDATE_MODAL,
   SUBMIT_FINANCIAL_POSITION_UPDATE_CONFIRM_MODAL,
+  TOGGLE_CURRENCY_ACTIVE,
+  Account,
+  Limit,
   FinancialPosition,
   FinancialPositionsUpdateAction,
 } from './types';
 import {
   closeFinancialPositionUpdateModal,
-  requestFinancialPositions,
   setFinancialPositions,
   setFinancialPositionsError,
   closeFinancialPositionUpdateConfirmModal,
   updateFinancialPositionNDCAfterConfirmModal,
 } from './actions';
-import * as helpers from './helpers';
 import {
   getFinancialPositions,
   getSelectedFinancialPosition,
@@ -27,35 +30,68 @@ import {
 } from './selectors';
 
 function* fetchDFSPPositions(dfsp: DFSP) {
-  const { name, id } = dfsp;
+  const accounts = yield call(apis.participantAccounts.read, { participantName: dfsp.name });
+  assert.equal(accounts.status, 200, `Failed to retrieve accounts for ${dfsp.name}`);
+  const limits = yield call(apis.participantLimits.read, { participantName: dfsp.name });
+  assert.equal(limits.status, 200, `Failed to retrieve limits for ${dfsp.name}`);
 
-  const ndc = yield call(apis.netdebitcap.read, { dfspName: name });
-  const account = yield call(apis.settlementAccount.read, { dfspId: id });
-  const position = yield call(apis.position.read, { dfspId: id });
+  const currencies = new Set<Currency>(accounts.data.map((a: Account) => a.currency));
 
-  if (ndc.status !== 200 || account.status !== 200 || position.status !== 200) {
-    throw new Error('Unable to fetch data');
-  }
-
-  return {
+  return [...currencies].map((c) => ({
     dfsp,
-    balance: parseFloat(account.data[0].settlementBalance),
-    limits: ndc.data[0].netDebitCap || 0,
-    positions: parseFloat(position.data[0].position),
-  };
+    currency: c,
+    ndc: limits.data.find((l: Limit) => l.currency === c)?.limit.value,
+    settlementAccount: accounts.data.find((a: Account) => a.currency === c && a.ledgerAccountType === 'SETTLEMENT'),
+    positionAccount: accounts.data.find((a: Account) => a.currency === c && a.ledgerAccountType === 'POSITION'),
+  }));
+}
+
+function* updateFinancialPositions(newPositions: FinancialPosition[]) {
+  const currentPositions: FinancialPosition[] = yield select(getFinancialPositions);
+  const updatedPositions = currentPositions.map(
+    (oldPos) =>
+      newPositions.find((newPos) => newPos.currency === oldPos.currency && newPos.dfsp.id === oldPos.dfsp.id) || oldPos,
+  );
+  yield put(setFinancialPositions(updatedPositions));
+}
+
+function* reloadFinancialPositionsParticipant(dfsp: DFSP) {
+  const newDfspPositions = yield call(fetchDFSPPositions, dfsp);
+  yield call(updateFinancialPositions, newDfspPositions);
 }
 
 function* fetchFinancialPositions() {
   try {
-    const dfsps = yield select(getDfsps);
-    if (!dfsps) {
-      throw new Error('Unable to fetch data');
-    }
-    const data = yield all(dfsps.filter(helpers.isNotHUB).map((dfsp: DFSP) => call(fetchDFSPPositions, dfsp)));
-    yield put(setFinancialPositions(data));
+    const dfsps = (yield select(getDfsps)).filter((dfsp: DFSP) => dfsp.name !== 'Hub');
+    const data = yield all(dfsps.map((dfsp: DFSP) => call(fetchDFSPPositions, dfsp)));
+    yield put(setFinancialPositions(data.flat()));
   } catch (e) {
     yield put(setFinancialPositionsError(e.message));
   }
+}
+
+function* toggleCurrencyActive(action: PayloadAction<FinancialPosition>) {
+  yield call(updateFinancialPositions, [
+    {
+      ...action.payload,
+      positionAccount: {
+        ...action.payload.positionAccount,
+        updateInProgress: true,
+      },
+    },
+  ]);
+  const { positionAccount, dfsp } = action.payload;
+  const newIsActive = !positionAccount.isActive;
+  const description = newIsActive ? 'disable' : 'enable';
+  const result = yield call(apis.participantAccount.update, {
+    participantName: dfsp.name,
+    accountId: positionAccount.id,
+    body: {
+      isActive: newIsActive,
+    },
+  });
+  assert.equal(result.status, 200, `Failed to ${description} account ${positionAccount.id}`);
+  yield call(reloadFinancialPositionsParticipant, dfsp);
 }
 
 function* updateFinancialPositionsParticipant() {
@@ -113,17 +149,12 @@ function* updateFinancialPositionsParticipant() {
       throw new Error('Action not expected on update Financial Position Balance');
     }
   }
-
-  const allPositions: FinancialPosition[] = yield select(getFinancialPositions);
-  const newPosition = yield call(fetchDFSPPositions, position.dfsp);
-  const newPositions = allPositions.map((pos) => (pos.dfsp.id === position.dfsp.id ? newPosition : pos));
-  yield put(setFinancialPositions(newPositions));
+  yield call(reloadFinancialPositionsParticipant, position.dfsp);
 }
 
 function* submitFinancialPositionsUpdateParticipant() {
   try {
     yield call(updateFinancialPositionsParticipant);
-    yield put(requestFinancialPositions()); // load position to update the screen
   } catch (e) {
     yield put(setFinancialPositionsError(e.message));
   } finally {
@@ -157,10 +188,15 @@ export function* SubmitFinancialPositionsUpdateParticipantAndShowUpdateNDCSaga()
   );
 }
 
+export function* ToggleCurrencyActiveSaga(): Generator {
+  yield takeLatest([TOGGLE_CURRENCY_ACTIVE], toggleCurrencyActive);
+}
+
 export default function* rootSaga(): Generator {
   yield all([
     FetchFinancialPositionsSaga(),
     SubmitFinancialPositionsUpdateParticipantSaga(),
     SubmitFinancialPositionsUpdateParticipantAndShowUpdateNDCSaga(),
+    ToggleCurrencyActiveSaga(),
   ]);
 }
