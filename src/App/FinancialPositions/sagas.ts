@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import { PayloadAction } from '@reduxjs/toolkit';
-import { all, call, put, select, takeLatest } from 'redux-saga/effects';
+import { all, call, put, select, takeLatest, takeEvery } from 'redux-saga/effects';
 import { getDfsps } from '../DFSPs/selectors';
 import { DFSP } from '../DFSPs/types';
 import { Currency } from '../types';
@@ -189,7 +189,7 @@ export function* SubmitFinancialPositionsUpdateParticipantAndShowUpdateNDCSaga()
 }
 
 export function* ToggleCurrencyActiveSaga(): Generator {
-  yield takeLatest([TOGGLE_CURRENCY_ACTIVE], toggleCurrencyActive);
+  yield takeEvery([TOGGLE_CURRENCY_ACTIVE], toggleCurrencyActive);
 }
 
 export default function* rootSaga(): Generator {
