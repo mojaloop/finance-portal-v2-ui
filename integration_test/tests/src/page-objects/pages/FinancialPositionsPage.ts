@@ -61,11 +61,13 @@ export const FinancialPositionsPage = {
       .from({ length })
       .map((_, i) => ({
         dfsp: rows.nth(i).findReact('ItemCell').nth(0),
-        balance: rows.nth(i).findReact('ItemCell').nth(1),
-        position: rows.nth(i).findReact('ItemCell').nth(1),
-        ndc: rows.nth(i).findReact('ItemCell').nth(1),
-        ndcUsed: rows.nth(i).findReact('ItemCell').nth(1),
-        updateButton: rows.nth(i).findReact('Button'),
+        currency: rows.nth(i).findReact('ItemCell').nth(1),
+        balance: rows.nth(i).findReact('ItemCell').nth(2),
+        position: rows.nth(i).findReact('ItemCell').nth(3),
+        ndc: rows.nth(i).findReact('ItemCell').nth(4),
+        ndcUsed: rows.nth(i).findReact('ItemCell').nth(5),
+        updateButton: rows.nth(i).findReact('ItemCell').nth(6).findReact('Button'),
+        enableDisableButton: rows.nth(i).findReact('ItemCell').nth(7).findReact('Button'),
       }));
   },
 };
