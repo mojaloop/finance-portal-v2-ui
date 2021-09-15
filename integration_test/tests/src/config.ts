@@ -33,4 +33,5 @@ export const config = {
       password: users[1].password,
     },
   },
+  voodooTimeoutMs: 30000,
 };

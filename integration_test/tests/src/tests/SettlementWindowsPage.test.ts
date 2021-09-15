@@ -29,7 +29,7 @@ fixture `Settlement windows page`
   // isn't handled correctly, causing the root page (i.e. login) to load again.
   .page `${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: 15000 });
+    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [

@@ -15,6 +15,7 @@ const stateProps = (state: State) => ({
 const dispatchProps = (dispatch: Dispatch) => ({
   onMount: () => dispatch(actions.requestFinancialPositions()),
   onSelectFinancialPosition: (item: FinancialPosition) => dispatch(actions.selectFinancialPosition(item)),
+  onToggleCurrencyActive: (item: FinancialPosition) => dispatch(actions.toggleCurrencyActive(item)),
 });
 
 const connector = connect(stateProps, dispatchProps);

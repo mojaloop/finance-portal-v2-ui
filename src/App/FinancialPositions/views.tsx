@@ -3,9 +3,12 @@ import { Heading, Led, MessageBox, Spinner, DataList, Button } from 'components'
 import withMount from 'hocs';
 import connector, { ConnectorProps } from './connectors';
 import { FinancialPosition } from './types';
-import * as helpers from './helpers';
 import './FinancialPositions.css';
 import FinancialPositionUpdate from './FinancialPositionUpdate';
+
+function formatNum(num: number | string) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 
 function getLedColorByPerc(perc: number): string {
   if (perc < 1) {
@@ -35,22 +38,25 @@ const FinancialPositions: FC<ConnectorProps> = ({
 
   selectedFinancialPosition,
   onSelectFinancialPosition,
+
+  onToggleCurrencyActive,
 }) => {
   const columns = [
     { key: 'dfsp.name', label: 'DFSP' },
-    { key: 'balance', label: 'Balance', func: helpers.formatNumber },
-    { key: 'positions', label: 'Current Position', func: helpers.formatNumber },
-    { key: 'limits', label: 'NDC', func: helpers.formatNumber },
+    { key: 'currency', label: 'Currency' },
+    { key: 'settlementAccount.value', label: 'Balance', func: formatNum },
+    { key: 'positionAccount.value', label: 'Current Position', func: formatNum },
+    { key: 'ndc', label: 'NDC', func: (v: number) => (v === undefined ? 'Disabled' : formatNum(v)) },
     {
       key: '',
       sortable: false,
       searchable: false,
       label: '% NDC Used',
       func: (_: undefined, item: FinancialPosition) => {
-        if (!item.positions || !item.limits) {
+        if (!item.positionAccount.value || !item.ndc) {
           return '-';
         }
-        return <Perc perc={helpers.formatPerc(item.positions / item.limits)} />;
+        return <Perc perc={Math.floor(100 * (item.positionAccount.value / item.ndc))} />;
       },
     },
     {
@@ -58,17 +64,32 @@ const FinancialPositions: FC<ConnectorProps> = ({
       label: '',
       sortable: false,
       searchable: false,
-      func: (_: unknown, item: FinancialPosition) => {
-        return (
-          <Button
-            id={`btn__update_${item.dfsp.name}`}
-            label="Update"
-            size="s"
-            kind="secondary"
-            onClick={() => onSelectFinancialPosition(item)}
-          />
-        );
-      },
+      func: (_: unknown, item: FinancialPosition) => (
+        <Button
+          pending={item.positionAccount.updateInProgress}
+          id={`btn__update_${item.dfsp.name}`}
+          label="Update"
+          size="s"
+          kind="secondary"
+          onClick={() => onSelectFinancialPosition(item)}
+        />
+      ),
+    },
+    {
+      key: 'toggleActive',
+      label: '',
+      sortable: false,
+      searchable: false,
+      func: (_: unknown, item: FinancialPosition) => (
+        <Button
+          pending={item.positionAccount.updateInProgress}
+          id={`btn__setActive_${item.dfsp.name}`}
+          label={item.positionAccount.isActive ? 'Disable' : 'Enable'}
+          size="s"
+          kind="secondary"
+          onClick={() => onToggleCurrencyActive(item)}
+        />
+      ),
     },
   ];
 
