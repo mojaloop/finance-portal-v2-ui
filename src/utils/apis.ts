@@ -80,7 +80,7 @@ const participants: Endpoint = {
 const participantLimits: Endpoint = {
   service: services.ledgerService,
   url: (_, { participantName }) => `/participants/${participantName}/limits`,
-}
+};
 
 const participantAccounts: Endpoint = {
   service: services.ledgerService,
@@ -129,12 +129,6 @@ const settlement: Endpoint = {
   url: (_: State, { settlementId }: { settlementId: string }) => `/settlements/${settlementId}`,
 };
 
-const settlementsDetailPositions: Endpoint = {
-  service: services.portalBackendService,
-  url: (_: State, { settlementId, detailId }: { settlementId: string; detailId: string }) =>
-    `/settlements/${settlementId}/details/${detailId}/positions`,
-};
-
 const settleSettlementWindows: Endpoint = {
   service: services.settlementService,
   url: () => `/settlements`,
@@ -149,21 +143,6 @@ const closeSettlementWindow: Endpoint = {
 const dfsps: Endpoint = {
   service: services.portalBackendService,
   url: () => '/dfsps',
-};
-
-const previousWindow: Endpoint = {
-  service: services.portalBackendService,
-  url: (_: State, { dfspName }: { dfspName: string }) => `/previous-window/${dfspName}`,
-};
-
-const settlementAccount: Endpoint = {
-  service: services.portalBackendService,
-  url: (_: State, { dfspId }: { dfspId: string }) => `/settlement-account/${dfspId}`,
-};
-
-const position: Endpoint = {
-  service: services.portalBackendService,
-  url: (_: State, { dfspId }: { dfspId: string }) => `/positions/${dfspId}`,
 };
 
 const accounts: Endpoint = {
@@ -202,12 +181,8 @@ interface EndpointsMap {
   participantAccountTransfer: Endpoint;
   participantLimits: Endpoint;
   participants: Endpoint;
-  position: Endpoint;
-  previousWindow: Endpoint;
-  settlementAccount: Endpoint;
   settlement: Endpoint;
   settlementParticipantAccount: Endpoint;
-  settlementsDetailPositions: Endpoint;
   settlements: Endpoint;
   settlementWindow: Endpoint;
   settlementWindows: Endpoint;
@@ -231,13 +206,9 @@ const endpoints = {
   participantAccountTransfer,
   participantLimits,
   participants,
-  position,
-  previousWindow,
   settlement,
-  settlementAccount,
   settlementParticipantAccount,
   settlements,
-  settlementsDetailPositions,
   settlementWindow,
   settlementWindows,
   settleSettlementWindows,
