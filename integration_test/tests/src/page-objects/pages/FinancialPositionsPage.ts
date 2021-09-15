@@ -13,6 +13,7 @@ export type FinancialPositionsRow = {
   ndc: Selector,
   ndcUsed: Selector,
   updateButton: Selector,
+  enableDisableButton: Selector,
 }
 
 const finPosUpdateConfirmRoot = ReactSelector('FinancialPositionUpdateConfirm Modal');

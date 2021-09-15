@@ -81,6 +81,29 @@ test.meta({
   }
 )
 
+test(
+  'Enable/disable account works correctly',
+  async (t) => {
+    const dfspRows = await FinancialPositionsPage.getDfspRowMap();
+    const testRow = dfspRows.get(t.fixtureCtx.participants[0].name);
+    assert(testRow, 'Expected to find the participant we created in the list of financial positions');
+
+    await t
+      .expect(testRow.enableDisableButton.innerText)
+      .eql('Disable', 'Expected new test participant to have enabled account');
+    await t.click(testRow.enableDisableButton);
+
+    await t
+      .expect(testRow.enableDisableButton.innerText)
+      .eql('Enable', 'Expected test participant to have disabled account after disable selected');
+    await t.click(testRow.enableDisableButton);
+
+    await t
+      .expect(testRow.enableDisableButton.innerText)
+      .eql('Disable', 'Expected test participant to have disabled account after enable selected');
+  }
+)
+
 test.skip.meta({
   ID: 'MMD-T26',
   STORY: 'MMD-376',
