@@ -26,14 +26,25 @@ class PositiveNumber extends Number {
 
 // We're strict here about using positive number and forcing the user to specify funds in/out
 // because the sign of numbers in the system can be quite confusing.
-async function fundsInOut(
+async function fundsInOut({
+  t,
+  amount,
+  participantName,
+  action,
+  updateNDC = true,
+  runAssertion = true,
+  dismissConfirmationModal = true,
+  startingBalance = 0,
+}: {
   t: TestController,
   amount: PositiveNumber,
   participantName: string,
   action: FundsInOutAction,
-  updateNDC: boolean = true,
-  expectFailure: boolean = false,
-) {
+  startingBalance?: number,
+  updateNDC?: boolean,
+  runAssertion?: boolean,
+  dismissConfirmationModal?: boolean,
+}) {
   // Find our dfsp in the list and click the update button
   const testRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
     m.get(participantName)
@@ -51,23 +62,26 @@ async function fundsInOut(
   await t.typeText(FinancialPositionUpdateModal.amountInput, amount.toLocaleString('en'));
   await t.click(FinancialPositionUpdateModal.submitButton);
 
+  // Confirm and update NDC
   const confirmButton = updateNDC
     ? FinancialPositionUpdateConfirmModal.confirmUpdateNdcButton
     : FinancialPositionUpdateConfirmModal.confirmOnlyButton;
+  await t.click(confirmButton);
 
-  // If the funds in/out fails, the modal will disappear to display the error, so we won't need to
-  // press the cancel button.
-  if (!expectFailure) {
-    // Confirm and update NDC; close update modal
-    await t.click(confirmButton);
+  if (dismissConfirmationModal) {
+    // Close update modal
     await t.click(FinancialPositionUpdateModal.cancelButton);
+  }
 
-    // confirm the position is changed as we expect
+  if (runAssertion) {
+    // Assert the position is changed as we expect
     const changedRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
       m.get(t.fixtureCtx.participants[0].name)
     );
     assert(changedRow, 'Expected to find the participant we created in the list of financial positions');
-    const testAmount = action === FundsInOutAction.FundsOut ? amount : -amount;
+    const testAmount = action === FundsInOutAction.FundsOut
+      ? startingBalance + amount.valueOf()
+      : startingBalance - amount.valueOf();
     await t.expect(changedRow.balance.innerText).eql(testAmount.toLocaleString('en'));
   }
 }
@@ -113,8 +127,12 @@ test.meta({
 })(
   'Financial position updates after add funds',
   async (t) => {
-    const testAmount = new PositiveNumber(5555);
-    await fundsInOut(t, testAmount, t.fixtureCtx.participants[0].name, FundsInOutAction.FundsIn);
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(5555),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsIn,
+    });
   }
 )
 
@@ -205,27 +223,37 @@ test.meta({
   'Withdraw funds - positive',
   async (t) => {
     // First, process funds in so we have available funds for the withdrawal
-    // TODO: this is quite slow, if our helper is able to process funds in for us, we should
-    // leverage this
-    const testAmount = new PositiveNumber(1000);
-    await fundsInOut(t, testAmount, t.fixtureCtx.participants[0].name, FundsInOutAction.FundsIn);
+    // TODO: processing funds in through the UI is quite slow. If our helper is able to process
+    // funds in for us, we should leverage this.
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(1000),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsIn,
+    });
 
     // Now, withdraw
-    await fundsInOut(t, new PositiveNumber(999), t.fixtureCtx.participants[0].name, FundsInOutAction.FundsOut);
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(999),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsOut,
+      startingBalance: -1000,
+    });
   },
 );
 
 test(
-  'Attempt to withdraw funds exceeding available fails',
+  'Withdraw funds exceeding available fails',
   async (t) => {
-    await fundsInOut(
+    await fundsInOut({
       t,
-      new PositiveNumber(999),
-      t.fixtureCtx.participants[0].name,
-      FundsInOutAction.FundsOut,
-      true,
-      true,
-    );
+      amount: new PositiveNumber(999),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsOut,
+      dismissConfirmationModal: false,
+      runAssertion: false,
+    });
     await t.expect(FinancialPositionsPage.balanceInsufficientError).ok();
   },
 );
