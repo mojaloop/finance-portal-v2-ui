@@ -52,6 +52,8 @@ export const FinancialPositionsPage = {
     ));
   },
 
+  balanceInsufficientError: ReactSelector('FinancialPositions MessageBox').withText('Balance insufficient for this operation'),
+
   async getResultRows(): Promise<FinancialPositionsRow[]> {
     const rows = ReactSelector('FinancialPositions DataList Rows').findReact('RowItem');
     // This `expect` forces TestCafe to take a snapshot of the DOM. If we don't make this call,

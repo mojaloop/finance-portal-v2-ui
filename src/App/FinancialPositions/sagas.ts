@@ -98,7 +98,7 @@ function* updateFinancialPositionsParticipant() {
   const updateAmount = yield select(getFinancialPositionUpdateAmount);
   assert(updateAmount !== 0, 'Value 0 is not valid for Amount');
 
-  const position = yield select(getSelectedFinancialPosition);
+  const position: FinancialPosition = yield select(getSelectedFinancialPosition);
   const accounts = yield call(apis.accounts.read, { dfspName: position.dfsp.name });
   assert(accounts.status === 200, 'Unable to fetch DFSP data');
 
@@ -138,7 +138,14 @@ function* updateFinancialPositionsParticipant() {
         dfspName: position.dfsp.name,
         accountId: account.id,
       };
-      assert(position.balance + updateAmount < 0, 'Balance insufficient for this operation');
+      // The settlement account value will have a negative sign for a credit balance, and a
+      // positive sign for a debit balance. The "updateAmount" is a withdrawal amount, and will
+      // have a positive sign for a withdrawal. Therefore, if the sum of the two is greater than
+      // zero, that would result in a debit balance, and we prevent it. It is also prevented in the
+      // backend, but the backend processes a transfer through a sequence of states before
+      // rejecting, making failure tricky to track. This will probably be required in future but in
+      // the short term we simply reject the request here.
+      assert(position.settlementAccount.value + Number(updateAmount) <= 0, 'Balance insufficient for this operation');
       const response = yield call(apis.fundsOut.create, args);
 
       assert(response.status === 200, 'Unable to update Financial Position Balance');
@@ -158,6 +165,7 @@ function* submitFinancialPositionsUpdateParticipant() {
   } catch (e) {
     yield put(setFinancialPositionsError(e.message));
   } finally {
+    yield put(updateFinancialPositionNDCAfterConfirmModal()); // set action on Update Participant modal to update NDC
     yield put(closeFinancialPositionUpdateModal());
   }
 }

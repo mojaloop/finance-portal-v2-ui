@@ -12,6 +12,80 @@ import {
 } from '../page-objects/pages/FinancialPositionsPage';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 
+enum FundsInOutAction {
+  FundsIn,
+  FundsOut,
+}
+
+class PositiveNumber extends Number {
+  constructor(value: number) {
+    super(value);
+    assert(value > 0, 'Cannot construct positive number from negative number');
+  }
+}
+
+// We're strict here about using positive number and forcing the user to specify funds in/out
+// because the sign of numbers in the system can be quite confusing.
+async function fundsInOut({
+  t,
+  amount,
+  participantName,
+  action,
+  updateNDC = true,
+  runAssertion = true,
+  dismissConfirmationModal = true,
+  startingBalance = 0,
+}: {
+  t: TestController,
+  amount: PositiveNumber,
+  participantName: string,
+  action: FundsInOutAction,
+  startingBalance?: number,
+  updateNDC?: boolean,
+  runAssertion?: boolean,
+  dismissConfirmationModal?: boolean,
+}) {
+  // Find our dfsp in the list and click the update button
+  const testRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
+    m.get(participantName)
+  );
+  assert(testRow, 'Expected to find the participant we created in the list of financial positions');
+  await t.click(testRow.updateButton);
+
+  const radioButton = action === FundsInOutAction.FundsIn
+    ? FinancialPositionUpdateModal.addFundsRadioButton
+    : FinancialPositionUpdateModal.withdrawFundsRadioButton;
+
+  // Select to withdraw funds and submit
+  await FinancialPositionUpdateModal.selectAction(PositionUpdateAction.AddWithdrawFunds);
+  await t.click(radioButton);
+  await t.typeText(FinancialPositionUpdateModal.amountInput, amount.toLocaleString('en'));
+  await t.click(FinancialPositionUpdateModal.submitButton);
+
+  // Confirm and update NDC
+  const confirmButton = updateNDC
+    ? FinancialPositionUpdateConfirmModal.confirmUpdateNdcButton
+    : FinancialPositionUpdateConfirmModal.confirmOnlyButton;
+  await t.click(confirmButton);
+
+  if (dismissConfirmationModal) {
+    // Close update modal
+    await t.click(FinancialPositionUpdateModal.cancelButton);
+  }
+
+  if (runAssertion) {
+    // Assert the position is changed as we expect
+    const changedRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
+      m.get(t.fixtureCtx.participants[0].name)
+    );
+    assert(changedRow, 'Expected to find the participant we created in the list of financial positions');
+    const testAmount = action === FundsInOutAction.FundsOut
+      ? startingBalance + amount.valueOf()
+      : startingBalance - amount.valueOf();
+    await t.expect(changedRow.balance.innerText).eql(testAmount.toLocaleString('en'));
+  }
+}
+
 fixture`DFSPFinancialPositions`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
@@ -53,31 +127,12 @@ test.meta({
 })(
   'Financial position updates after add funds',
   async (t) => {
-    const testAmount = '5,555';
-
-    // Find our dfsp in the list and click the update button
-    const testRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
-      m.get(t.fixtureCtx.participants[0].name)
-    );
-    assert(testRow, 'Expected to find the participant we created in the list of financial positions');
-    await t.click(testRow.updateButton);
-
-    // Select to add funds and submit
-    await FinancialPositionUpdateModal.selectAction(PositionUpdateAction.AddWithdrawFunds);
-    await t.click(FinancialPositionUpdateModal.addFundsRadioButton);
-    await t.typeText(FinancialPositionUpdateModal.amountInput, testAmount);
-    await t.click(FinancialPositionUpdateModal.submitButton);
-
-    // Confirm and update NDC; close update modal
-    await t.click(FinancialPositionUpdateConfirmModal.confirmUpdateNdcButton);
-    await t.click(FinancialPositionUpdateModal.cancelButton);
-
-    // confirm the position is changed as we expect
-    const changedRow = await FinancialPositionsPage.getDfspRowMap().then((m) =>
-      m.get(t.fixtureCtx.participants[0].name)
-    );
-    assert(changedRow, 'Expected to find the participant we created in the list of financial positions');
-    await t.expect(changedRow.balance.innerText).eql(`-${testAmount}`);
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(5555),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsIn,
+    });
   }
 )
 
@@ -105,8 +160,6 @@ test(
 )
 
 test.skip.meta({
-  ID: 'MMD-T26',
-  STORY: 'MMD-376',
   description: 'Allow funds to add on payerfsp so that the transfers will not be blocked due to insufficient liquidity',
 })(
   'Add funds on payerfsp account - positive number',
@@ -123,8 +176,6 @@ test.skip.meta({
 );
 
 test.skip.meta({
-  ID: 'MMD-T28',
-  STORY: 'MMD-376',
 })(
   `Add Funds - "0".
   Add "0" funds is not acceptable.`,
@@ -139,8 +190,6 @@ test.skip.meta({
 );
 
 test.skip.meta({
-  ID: 'MMD-T29',
-  STORY: 'MMD-376',
 })(
   `Add Funds - Negative number.
   Supplying negative value to add funds input results in negative sign being ignored.`,
@@ -155,8 +204,6 @@ test.skip.meta({
 );
 
 test.skip.meta({
-  ID: 'MMD-T27',
-  STORY: 'MMD-414',
 })(
   `Withdraw funds - Negative number.
   Amount field should not allow "negative" number to withdraw.`,
@@ -170,38 +217,43 @@ test.skip.meta({
   },
 );
 
-test.skip.meta({
-  ID: 'MMD-T30',
-  STORY: 'MMD-414',
+test.meta({
+  description: 'Withdraw funds amount field should allow "positive" number to withdraw and position should be updated.'
 })(
-  `Withdraw funds - Positive number.
-  Amount field should allow "positive" number to withdraw.`,
+  'Withdraw funds - positive',
   async (t) => {
-    await t
-      .click(Selector('#select__action div').withText('Add / Withdraw Funds').nth(6))
-      .click(Selector('#select__add_withdraw_funds label').withText('Withdraw Funds'))
-      .typeText('#input__amount', '5000')
-      .click('#btn__submit_update_participant')
-      .click(Selector('#btn__confirm_upd_participant span').withText('Confirm Only'))
-      .expect(Selector('#btn__update_testfsp2').exists)
-      .ok();
+    // First, process funds in so we have available funds for the withdrawal
+    // TODO: processing funds in through the UI is quite slow. If our helper is able to process
+    // funds in for us, we should leverage this.
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(1000),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsIn,
+    });
+
+    // Now, withdraw
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(999),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsOut,
+      startingBalance: -1000,
+    });
   },
 );
 
-test.skip.meta({
-  ID: 'MMD-T31',
-  STORY: 'MMD-414',
-})(
-  `Withdraw funds - Higher than the available balance.
-  System should not allow withdraw of higher amount than the balance.`,
+test(
+  'Withdraw funds exceeding available fails',
   async (t) => {
-    await t
-      .click(Selector('#select__action div').withText('Add / Withdraw Funds').nth(6))
-      .click(Selector('#select__add_withdraw_funds label').withText('Withdraw Funds'))
-      .typeText('#input__amount', '999999999999999999')
-      .click(Selector('#btn__submit_update_participant span').withText('Submit'))
-      .click(Selector('#btn__confirm_upd_participant span').withText('Confirm Only'))
-      .expect(Selector('#msg_error__positions').textContent)
-      .contains('Unable to update Financial Position Balance');
+    await fundsInOut({
+      t,
+      amount: new PositiveNumber(999),
+      participantName: t.fixtureCtx.participants[0].name,
+      action: FundsInOutAction.FundsOut,
+      dismissConfirmationModal: false,
+      runAssertion: false,
+    });
+    await t.expect(FinancialPositionsPage.balanceInsufficientError).ok();
   },
 );
