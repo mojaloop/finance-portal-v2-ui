@@ -3,6 +3,17 @@ import { Menu, MenuItem, MenuSection } from 'components';
 import { useHistory, useLocation } from 'react-router-dom';
 import Loader from 'utils/loader';
 
+let remoteUrl1: string;
+let remoteUrl2: string;
+if (process.env.NODE_ENV === 'production') {
+  remoteUrl1 = window.portalEnv.REMOTE_1_URL;
+  remoteUrl2 = window.portalEnv.REMOTE_2_URL;
+} else {
+  // Hardcoding these for now
+  remoteUrl1 = 'http://localhost:3012';
+  remoteUrl2 = 'http://localhost:3013';
+}
+
 export const SideMenu: FC<unknown> = () => {
   const history = useHistory();
   const location = useLocation();
@@ -24,7 +35,7 @@ export const SideMenu: FC<unknown> = () => {
           <MenuItem key="/microiam" path="/microiam" label="Roles Microfrontend" partial>
             <Loader
               main={false}
-              url="http://localhost:3012/app.js"
+              url={`${remoteUrl1}/app.js`}
               appName="reporting_hub_bop_role_ui"
               component="Menu"
               pathname={location.pathname}
@@ -35,7 +46,7 @@ export const SideMenu: FC<unknown> = () => {
           <MenuItem key="/microtransfers" path="/microtransfers" label="Transfers Microfrontend" partial>
             <Loader
               main={false}
-              url="http://localhost:3013/app.js"
+              url={`${remoteUrl2}/app.js`}
               appName="reporting_hub_bop_trx_ui"
               component="Menu"
               pathname={location.pathname}

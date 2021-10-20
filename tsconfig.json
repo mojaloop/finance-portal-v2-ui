@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "lib": ["es5", "es2015", "es2016", "dom"],
+    "lib": ["esnext", "es5", "es2015", "es2016", "dom"],
     "rootDir": "src",
     "moduleResolution": "node",
     "module": "esnext",

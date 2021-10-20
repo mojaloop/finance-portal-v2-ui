@@ -2,7 +2,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 // TODO: probably only need `yarn install assert`
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
-const { DefinePlugin } = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const path = require('path');
@@ -79,8 +78,11 @@ module.exports = {
       },
       {
         test: /\.(ts|js)x?$/,
-        use: 'ts-loader',
+        loader: 'ts-loader',
         exclude: [/node_modules/, /integration_test/, /tests/],
+        options: {
+          transpileOnly: true,
+        },
       },
       {
         test: /\.css$/i,
@@ -116,12 +118,6 @@ module.exports = {
     }),
     new NodePolyfillPlugin(),
     new ModuleFederationPlugin({
-      name: 'app',
-      library: { type: 'var', name: 'app' },
-      filename: 'app.js',
-      exposes: {
-        './App': './src/App',
-      },
       shared: [
         'react',
         'react-dom',
