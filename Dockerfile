@@ -1,4 +1,4 @@
-FROM node:10.13-alpine
+FROM node:lts-alpine
 # First part, build the app
 WORKDIR /app
 COPY package.json /app/
@@ -16,6 +16,15 @@ ENV REACT_APP_COMMIT=$REACT_APP_COMMIT
 
 RUN yarn run build
 
-EXPOSE 8080
+# Copy over scripts that enable runtime configuration
+COPY docker/entrypoint.sh dist/entrypoint.sh
+COPY docker/loadRuntimeConfig.sh dist/loadRuntimeConfig.sh
 
-ENTRYPOINT [ "yarn", "serve:prod" ]
+# Make scripts executable
+RUN chmod +x dist/entrypoint.sh
+RUN chmod +x dist/loadRuntimeConfig.sh
+RUN ls dist/
+
+EXPOSE 8080
+ENTRYPOINT ["dist/entrypoint.sh"]
+CMD [ "yarn", "serve:prod" ]

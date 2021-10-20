@@ -56,7 +56,10 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    publicPath: '/', // Where it's going to be expected to be published for being externally loaded
+    // It automatically determines the public path from either
+    // `import.meta.url`, `document.currentScript`, `<script />`
+    // or `self.location`.
+    publicPath: 'auto',
   },
   resolve: {
     alias: {

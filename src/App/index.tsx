@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { Switch, Route, useLocation } from 'react-router-dom';
+import { Switch, Route } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import Loader from 'utils/loader';
 import { Navbar, Page, SideMenu, Content, Container } from './Layout';
@@ -21,12 +21,24 @@ const dispatchProps = (dispatch: Dispatch) => ({
 const connector = connect(stateProps, dispatchProps);
 type ConnectorProps = ConnectedProps<typeof connector>;
 
+// TODO: kratos endpoints need to be passed to microfrontends
 const auth = {
   loginEndpoint: '',
   logoutEndpoint: '',
   tokenEndpoint: '',
   isAuthEnabled: false,
 };
+
+let remoteUrl1: string;
+let remoteUrl2: string;
+if (process.env.NODE_ENV === 'production') {
+  remoteUrl1 = window.portalEnv.REMOTE_1_URL;
+  remoteUrl2 = window.portalEnv.REMOTE_2_URL;
+} else {
+  // Hardcoding these for now since more care about production
+  remoteUrl1 = 'http://localhost:3012';
+  remoteUrl2 = 'http://localhost:3013';
+}
 
 const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
   <Container>
@@ -41,7 +53,7 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
           <Route path="/microiam" key="/microiam">
             <Loader
               main
-              url="http://localhost:3012/app.js"
+              url={`${remoteUrl1}/app.js`}
               appName="reporting_hub_bop_role_ui"
               component="App"
               path="/microiam"
@@ -51,7 +63,7 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
           <Route path="/microtransfers" key="/microtransfers">
             <Loader
               main
-              url="http://localhost:3013/app.js"
+              url={`${remoteUrl2}/app.js`}
               appName="reporting_hub_bop_trx_ui"
               component="App"
               path="/microtransfers"
