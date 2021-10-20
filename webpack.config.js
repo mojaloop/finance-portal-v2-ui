@@ -4,6 +4,7 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
 const { DefinePlugin } = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 module.exports = {
@@ -95,9 +96,21 @@ module.exports = {
           },
         ],
       },
+      {
+        test: /\.svg$/,
+        loader: '@svgr/webpack',
+        options: {
+          svgoConfig: {
+            plugins: [{ removeViewBox: false }],
+          },
+        },
+      },
     ],
   },
   plugins: [
+    new CopyPlugin({
+      patterns: [{ from: 'public/runtime-env.js', to: 'runtime-env.js' }],
+    }),
     new NodePolyfillPlugin(),
     new ModuleFederationPlugin({
       name: 'app',

@@ -1,13 +1,9 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { Switch, Route, Redirect } from 'react-router-dom';
+import { Switch, Route, useLocation } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
+import Loader from 'utils/loader';
 import { Navbar, Page, SideMenu, Content, Container } from './Layout';
-import { Auth } from './Auth';
-import DFSPs from './DFSPs';
-import SettlementWindows from './SettlementWindows';
-import Settlements from './Settlements';
-import FinancialPositions from './FinancialPositions';
 import Transfers from './Transfers';
 
 import * as actions from './Auth/actions';
@@ -25,38 +21,47 @@ const dispatchProps = (dispatch: Dispatch) => ({
 const connector = connect(stateProps, dispatchProps);
 type ConnectorProps = ConnectedProps<typeof connector>;
 
+const auth = {
+  loginEndpoint: '',
+  logoutEndpoint: '',
+  tokenEndpoint: '',
+  isAuthEnabled: false,
+};
+
 const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
-  /* @ts-ignore */
-  <Auth>
-    {/* @ts-ignore */}
-    <DFSPs>
-      <Container>
-        <Navbar username={username} onLogoutClick={onLogoutClick} />
-        <Content>
-          <SideMenu />
-          <Page>
-            <Switch>
-              <Route path="/windows">
-                <SettlementWindows />
-              </Route>
-              <Route path="/settlements">
-                <Settlements />
-              </Route>
-              <Route path="/positions">
-                <FinancialPositions />
-              </Route>
-              <Route path="/transfers">
-                <Transfers />
-              </Route>
-              <Route>
-                <Redirect to="/windows" />
-              </Route>
-            </Switch>
-          </Page>
-        </Content>
-      </Container>
-    </DFSPs>
-  </Auth>
+  <Container>
+    <Navbar username={username} onLogoutClick={onLogoutClick} />
+    <Content>
+      <SideMenu />
+      <Page>
+        <Switch>
+          <Route path="/transfers">
+            <Transfers />
+          </Route>
+          <Route path="/microiam" key="/microiam">
+            <Loader
+              main
+              url="http://localhost:3012/app.js"
+              appName="reporting_hub_bop_role_ui"
+              component="App"
+              path="/microiam"
+              authConfig={auth}
+            />
+          </Route>
+          <Route path="/microtransfers" key="/microtransfers">
+            <Loader
+              main
+              url="http://localhost:3013/app.js"
+              appName="reporting_hub_bop_trx_ui"
+              component="App"
+              path="/microtransfers"
+              authConfig={auth}
+            />
+          </Route>
+        </Switch>
+      </Page>
+    </Content>
+  </Container>
 );
 
 const ConnectedApp = connector(App);

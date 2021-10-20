@@ -1,6 +1,7 @@
 import React, { PureComponent, ComponentType } from 'react';
 
 function withMount<Props>(Component: ComponentType<Props>, fnName: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return class MounterWrapper extends PureComponent {
     componentDidMount() {
       // select the mounting function and

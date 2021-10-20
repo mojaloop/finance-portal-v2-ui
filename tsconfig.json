@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
     "noImplicitAny": true,
+    "baseUrl": "src",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "lib": ["esnext", "dom"],
+    "lib": ["es5", "es2015", "es2016", "dom"],
     "rootDir": "src",
     "moduleResolution": "node",
     "module": "esnext",
@@ -14,7 +14,7 @@
     "jsx": "react",
     "sourceMap": true,
     "declaration": false,
-    "allowJs": true
+    "allowJs": true,
   },
   "exclude": [
     "integration_test",
