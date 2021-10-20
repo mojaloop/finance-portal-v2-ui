@@ -1,9 +1,14 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import Loader from 'utils/loader';
 import { Navbar, Page, SideMenu, Content, Container } from './Layout';
+import { Auth } from './Auth';
+import DFSPs from './DFSPs';
+import SettlementWindows from './SettlementWindows';
+import Settlements from './Settlements';
+import FinancialPositions from './FinancialPositions';
 import Transfers from './Transfers';
 
 import * as actions from './Auth/actions';
@@ -41,39 +46,57 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
-  <Container>
-    <Navbar username={username} onLogoutClick={onLogoutClick} />
-    <Content>
-      <SideMenu />
-      <Page>
-        <Switch>
-          <Route path="/transfers">
-            <Transfers />
-          </Route>
-          <Route path="/microiam" key="/microiam">
-            <Loader
-              main
-              url={`${remoteUrl1}/app.js`}
-              appName="reporting_hub_bop_role_ui"
-              component="App"
-              path="/microiam"
-              authConfig={auth}
-            />
-          </Route>
-          <Route path="/microtransfers" key="/microtransfers">
-            <Loader
-              main
-              url={`${remoteUrl2}/app.js`}
-              appName="reporting_hub_bop_trx_ui"
-              component="App"
-              path="/microtransfers"
-              authConfig={auth}
-            />
-          </Route>
-        </Switch>
-      </Page>
-    </Content>
-  </Container>
+  /* @ts-ignore */
+  <Auth>
+    {/* @ts-ignore */}
+    <DFSPs>
+      <Container>
+        <Navbar username={username} onLogoutClick={onLogoutClick} />
+        <Content>
+          <SideMenu />
+          <Page>
+            <Switch>
+              <Route path="/windows">
+                <SettlementWindows />
+              </Route>
+              <Route path="/settlements">
+                <Settlements />
+              </Route>
+              <Route path="/positions">
+                <FinancialPositions />
+              </Route>
+              <Route path="/transfers">
+                <Transfers />
+              </Route>
+              <Route>
+                <Redirect to="/windows" />
+              </Route>
+              <Route path="/microiam" key="/microiam">
+                <Loader
+                  main
+                  url={`${remoteUrl1}/app.js`}
+                  appName="reporting_hub_bop_role_ui"
+                  component="App"
+                  path="/microiam"
+                  authConfig={auth}
+                />
+              </Route>
+              <Route path="/microtransfers" key="/microtransfers">
+                <Loader
+                  main
+                  url={`${remoteUrl2}/app.js`}
+                  appName="reporting_hub_bop_trx_ui"
+                  component="App"
+                  path="/microtransfers"
+                  authConfig={auth}
+                />
+              </Route>
+            </Switch>
+          </Page>
+        </Content>
+      </Container>
+    </DFSPs>
+  </Auth>
 );
 
 const ConnectedApp = connector(App);
