@@ -121,74 +121,6 @@ interface ConnectorProps {
   onTransferSelect: (transfer: Transfer) => void;
   onFilterChange: (field: string, value: FilterChangeValue) => void;
 }
-
-const Transfers: FC<ConnectorProps> = ({
-  selectedTransfer,
-  transfers,
-  transfersError,
-  isTransfersPending,
-  isTransferDetailsPending,
-  filtersModel,
-  onFindTransfersClick,
-  onClearFiltersClick,
-  onTransferSelect,
-  onFilterChange,
-}) => {
-  let content = null;
-  let detailModal = null;
-
-  if (transfersError) {
-    content = <MessageBox kind="danger">Error fetching transfers: {transfersError}</MessageBox>;
-  } else if (isTransfersPending) {
-    content = <Spinner center />;
-  } else {
-    const selectTransfer = (t: Transfer) => {
-      detailModal = <TransferDetailsModal />;
-      onTransferSelect(t);
-    };
-
-    content = (
-      <DataList
-        columns={transfersColumns}
-        list={transfers}
-        pageSize={Number(20)}
-        paginatorSize={Number(7)}
-        flex={true}
-        onSelect={selectTransfer}
-      />
-    );
-  }
-
-  let warning = null;
-  if (transfers && transfers.length >= 500) {
-    warning = (
-      <MessageBox kind="warning">
-        Your search returned over 500 results. Only the first 1000 will be displayed. Try narrowing your search with the
-        available filters.
-      </MessageBox>
-    );
-  }
-
-  if (isTransferDetailsPending || selectedTransfer) {
-    detailModal = <TransferDetailsModal />;
-  }
-
-  return (
-    <div className="transfers">
-      <Heading size="3">Find Transfers</Heading>
-      <Filters
-        model={filtersModel}
-        onFilterChange={onFilterChange}
-        onClearFiltersClick={onClearFiltersClick}
-        onFindTransfersClick={onFindTransfersClick}
-      />
-      {warning}
-      {content}
-      {detailModal}
-    </div>
-  );
-};
-
 interface TransferFiltersProps {
   model: TransfersFilter;
   onFilterChange: (field: string, value: FilterChangeValue) => void;
@@ -306,6 +238,73 @@ const Filters: FC<TransferFiltersProps> = ({ model, onFilterChange, onClearFilte
           onClick={onClearFiltersClick}
         />
       </div>
+    </div>
+  );
+};
+
+const Transfers: FC<ConnectorProps> = ({
+  selectedTransfer,
+  transfers,
+  transfersError,
+  isTransfersPending,
+  isTransferDetailsPending,
+  filtersModel,
+  onFindTransfersClick,
+  onClearFiltersClick,
+  onTransferSelect,
+  onFilterChange,
+}) => {
+  let content = null;
+  let detailModal = null;
+
+  if (transfersError) {
+    content = <MessageBox kind="danger">Error fetching transfers: {transfersError}</MessageBox>;
+  } else if (isTransfersPending) {
+    content = <Spinner center />;
+  } else {
+    const selectTransfer = (t: Transfer) => {
+      detailModal = <TransferDetailsModal />;
+      onTransferSelect(t);
+    };
+
+    content = (
+      <DataList
+        columns={transfersColumns}
+        list={transfers}
+        pageSize={Number(20)}
+        paginatorSize={Number(7)}
+        flex={true}
+        onSelect={selectTransfer}
+      />
+    );
+  }
+
+  let warning = null;
+  if (transfers && transfers.length >= 500) {
+    warning = (
+      <MessageBox kind="warning">
+        Your search returned over 500 results. Only the first 1000 will be displayed. Try narrowing your search with the
+        available filters.
+      </MessageBox>
+    );
+  }
+
+  if (isTransferDetailsPending || selectedTransfer) {
+    detailModal = <TransferDetailsModal />;
+  }
+
+  return (
+    <div className="transfers">
+      <Heading size="3">Find Transfers</Heading>
+      <Filters
+        model={filtersModel}
+        onFilterChange={onFilterChange}
+        onClearFiltersClick={onClearFiltersClick}
+        onFindTransfersClick={onFindTransfersClick}
+      />
+      {warning}
+      {content}
+      {detailModal}
     </div>
   );
 };
