@@ -6,6 +6,7 @@ import { TransferDetail, QuoteRequest, QuoteResponse, TransferPrepare } from '..
 import * as actions from '../actions';
 import * as selectors from '../selectors';
 import './TransferDetails.css';
+import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   transferDetails: selectors.getSelectedTransfer(state),
@@ -240,4 +241,4 @@ const TransferDetails: FC<ConnectorProps> = ({ transferDetails, onModalCloseClic
   );
 };
 
-export default connect(stateProps, dispatchProps)(TransferDetails);
+export default connect(stateProps, dispatchProps, null, { context: ReduxContext })(TransferDetails);

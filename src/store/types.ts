@@ -1,23 +1,7 @@
 import { Dispatch as ReduxDispatch } from 'redux';
-import { RouterState } from 'connected-react-router';
-import { AuthState } from 'App/Auth/types';
-import { FinancialPositionsState } from 'App/FinancialPositions/types';
-import { SettlementWindowsState } from 'App/SettlementWindows/types';
-import { SettlementsState } from 'App/Settlements/types';
-import { TransfersState } from 'App/Transfers/types';
-import { DFSPsState } from 'App/DFSPs/types';
+import createReducer from './createReducer';
 
-export interface State {
-  router: RouterState;
-  subApp: {
-    auth: AuthState;
-    dfsps: DFSPsState;
-    financialPositions: FinancialPositionsState;
-    settlementWindows: SettlementWindowsState;
-    settlements: SettlementsState;
-    transfers: TransfersState;
-  };
-}
-export type PartialState = Partial<State>;
+const rootReducer = createReducer()();
 
+export type State = ReturnType<typeof rootReducer>;
 export type Dispatch = ReduxDispatch;

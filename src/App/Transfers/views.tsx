@@ -8,6 +8,7 @@ import * as actions from './actions';
 import * as selectors from './selectors';
 import './Transfers.css';
 import TransferDetailsModal from './TransferDetails';
+import { ReduxContext } from 'store';
 
 const transfersColumns = [
   {
@@ -309,4 +310,4 @@ const Transfers: FC<ConnectorProps> = ({
   );
 };
 
-export default connect(stateProps, dispatchProps)(withMount(Transfers, 'onMount'));
+export default connect(stateProps, dispatchProps, null, { context: ReduxContext })(withMount(Transfers, 'onMount'));

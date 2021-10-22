@@ -3,6 +3,7 @@ import { State, Dispatch } from 'store/types';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { Settlement, DateRanges, FilterValue } from './types';
+import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   selectedSettlement: selectors.getSelectedSettlement(state),
@@ -35,7 +36,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onSettlementSelect: (settlement: Settlement) => dispatch(actions.selectSettlement(settlement)),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

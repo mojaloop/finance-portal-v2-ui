@@ -1,23 +1,51 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Provider, ReactReduxContext } from 'react-redux';
+import { Provider } from 'react-redux';
 import { createBrowserHistory } from 'history';
 import { ConnectedRouter } from 'connected-react-router';
-import configureStore from './store';
+import configureStore, { ReduxContext } from './store';
+import getConfig from './Config';
 import App from './App';
+import { hocs as authHocs } from './KratosAuth';
 import './index.css';
 
-const history = createBrowserHistory();
-const store = configureStore(history, {
-  isDevelopment: process.env.NODE_ENV === 'development',
-});
+const AuthApp = authHocs.withAuth(App);
 
-const ConnectedApp = () => (
-  <Provider store={store}>
-    <ConnectedRouter history={history} context={ReactReduxContext}>
-      <App />
-    </ConnectedRouter>
-  </Provider>
-);
+async function boot() {
+  const config = await getConfig();
+  const history = createBrowserHistory();
+  const store = configureStore(
+    { isDevelopment: process.env.NODE_ENV === 'development', history },
+    {
+      config: {
+        app: {
+          basename: config.basename,
+        },
+        api: {
+          authApiBaseUrl: config.authApiBaseUrl,
+          authMockApi: config.authMockApi,
+          remoteApiBaseUrl: config.remoteApiBaseUrl,
+          remoteMockApi: config.remoteMockApi,
+        },
+        kratosAuth: {
+          loginEndpoint: config.loginEndpoint,
+          logoutEndpoint: config.logoutEndpoint,
+          authTokenEndpoint: config.authTokenEndpoint,
+          isAuthEnabled: config.isAuthEnabled,
+        },
+      },
+    },
+  );
 
-ReactDOM.render(<ConnectedApp />, document.getElementById('root'));
+  const ConnectedApp = () => (
+    <Provider store={store} context={ReduxContext}>
+      <ConnectedRouter history={history} context={ReduxContext}>
+        <AuthApp />
+      </ConnectedRouter>
+    </Provider>
+  );
+
+  ReactDOM.render(<ConnectedApp />, document.getElementById('root'));
+}
+
+boot();

@@ -3,6 +3,7 @@ import { State, Dispatch } from 'store/types';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { SettlementWindow, DateRanges, FilterValue } from './types';
+import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   selectedSettlementWindow: selectors.getSelectedSettlementWindow(state),
@@ -42,7 +43,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onCloseModalClick: () => dispatch(actions.closeSettlementWindowModal()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

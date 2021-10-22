@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
 import { Spinner } from 'components';
+import { ReduxContext } from 'store';
 import * as actions from './actions';
 import * as selectors from './selectors';
 import { UserInfo } from './types';
@@ -17,7 +18,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onMount: () => dispatch(actions.requestUserInfo()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 interface AuthRouterProps {
   userInfo?: UserInfo;

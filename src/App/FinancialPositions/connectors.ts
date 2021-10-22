@@ -3,6 +3,7 @@ import { State, Dispatch } from 'store/types';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { FinancialPosition } from './types';
+import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   financialPositions: selectors.getFinancialPositions(state),
@@ -18,7 +19,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onToggleCurrencyActive: (item: FinancialPosition) => dispatch(actions.toggleCurrencyActive(item)),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

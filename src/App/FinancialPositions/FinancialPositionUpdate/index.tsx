@@ -7,6 +7,7 @@ import * as actions from '../actions';
 import './FinancialPositionUpdate.css';
 import { FinancialPositionsUpdateAction, fundsOptions, updateOptions } from '../types';
 import FinancialPositionUpdateConfirm from '../FinancialPositionUpdateConfirm';
+import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   isSubmitPending: selectors.getIsFinancialPositionUpdateSubmitPending(state),
@@ -27,7 +28,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onSubmitModalClick: () => dispatch(actions.showFinancialPositionUpdateConfirmModal()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 type ConnectorProps = ConnectedProps<typeof connector>;
 
 const FinancialPositionUpdate: FC<ConnectorProps> = ({

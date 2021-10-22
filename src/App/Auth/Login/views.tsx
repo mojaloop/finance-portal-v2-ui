@@ -5,6 +5,7 @@ import { State, Dispatch } from 'store/types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
 import './Login.css';
+import { ReduxContext } from 'store';
 
 const loginStateProps = (state: State) => ({
   username: selectors.getUsername(state),
@@ -20,7 +21,7 @@ const loginDispatchProps = (dispatch: Dispatch) => ({
   onLoginSubmitClick: () => dispatch(actions.requestLogin()),
 });
 
-const loginConnector = connect(loginStateProps, loginDispatchProps);
+const loginConnector = connect(loginStateProps, loginDispatchProps, null, { context: ReduxContext });
 type LoginConnectorProps = ConnectedProps<typeof loginConnector>;
 
 const LoginImpl: FC<LoginConnectorProps> = ({

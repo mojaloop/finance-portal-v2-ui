@@ -5,6 +5,7 @@ const { ModuleFederationPlugin } = require('webpack').container;
 const TerserPlugin = require('terser-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const path = require('path');
+const DotenvPlugin = require('dotenv-webpack');
 
 module.exports = {
   optimization: {
@@ -115,6 +116,9 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [{ from: 'public/runtime-env.js', to: 'runtime-env.js' }],
+    }),
+    new DotenvPlugin({
+      systemvars: true,
     }),
     new NodePolyfillPlugin(),
     new ModuleFederationPlugin({
