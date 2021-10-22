@@ -1,9 +1,9 @@
 import { connect, ConnectedProps } from 'react-redux';
+import { ReduxContext } from 'store';
 import { State, Dispatch } from 'store/types';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { Settlement, DateRanges, FilterValue } from './types';
-import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   selectedSettlement: selectors.getSelectedSettlement(state),

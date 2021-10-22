@@ -36,7 +36,6 @@ async function boot() {
       },
     },
   );
-
   const ConnectedApp = () => (
     <Provider store={store} context={ReduxContext}>
       <ConnectedRouter history={history} context={ReduxContext}>

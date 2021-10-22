@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { DataLabel, Modal, Row, Column, Button } from '../../../components';
-import { State, Dispatch } from '../../../store/types';
+import { ReduxContext } from 'store';
+import { DataLabel, Modal, Row, Column, Button } from 'components';
+import { State, Dispatch } from 'store/types';
 import * as selectors from '../selectors';
 import * as actions from '../actions';
 import './FinancialPositionUpdateConfirm.css';
 import { FinancialPositionsUpdateAction } from '../types';
-import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   isSubmitPending: selectors.getIsFinancialPositionUpdateSubmitPending(state),

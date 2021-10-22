@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
 import { Modal, Tabs, Tab, TabList, TabPanels, TabPanel, FormInput, ScrollBox, Spinner } from 'components';
 import { connect } from 'react-redux';
+import { ReduxContext } from 'store';
 import { State, Dispatch } from 'store/types';
 import { TransferDetail, QuoteRequest, QuoteResponse, TransferPrepare } from '../types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
 import './TransferDetails.css';
-import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   transferDetails: selectors.getSelectedTransfer(state),

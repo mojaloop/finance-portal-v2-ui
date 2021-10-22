@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { connect, ConnectedProps } from 'react-redux';
+import { connect } from 'react-redux';
 import { Spinner } from 'components';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
@@ -17,8 +17,6 @@ const dispatchProps = (dispatch: Dispatch) => ({
 });
 
 const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
-type ConnectorProps = ConnectedProps<typeof connector>;
-
 // export default connector;
 
 interface DfspsProps {

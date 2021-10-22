@@ -1,9 +1,9 @@
 import { connect, ConnectedProps } from 'react-redux';
 import { State, Dispatch } from 'store/types';
+import { ReduxContext } from 'store';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { FinancialPosition } from './types';
-import { ReduxContext } from 'store';
 
 const stateProps = (state: State) => ({
   financialPositions: selectors.getFinancialPositions(state),

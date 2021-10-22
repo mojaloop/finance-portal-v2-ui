@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
+import { ReduxContext } from 'store';
 import { Button, TextField } from 'components';
 import { State, Dispatch } from 'store/types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
 import './Login.css';
-import { ReduxContext } from 'store';
 
 const loginStateProps = (state: State) => ({
   username: selectors.getUsername(state),

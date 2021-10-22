@@ -20,6 +20,95 @@ import { dateRanges, settlementWindowStatuses } from './constants';
 import * as helpers from './helpers';
 import './SettlementWindows.css';
 
+interface FiltersProps {
+  filters: SettlementWindowFilters;
+  onDateRangerFilterSelect: (payload: DateRanges) => void;
+  onDateFilterClearClick: () => void;
+  onStartDateRangeFilterSelect: (payload: number) => void;
+  onEndDateRangeFilterSelect: (payload: number) => void;
+  onStateFilterClearClick: () => void;
+  onFilterValueChange: (filter: string, value: FilterValue) => void;
+  onClearFiltersClick: () => void;
+}
+
+const Filters: FC<FiltersProps> = ({
+  filters,
+  onDateRangerFilterSelect,
+  onDateFilterClearClick,
+  onStartDateRangeFilterSelect,
+  onEndDateRangeFilterSelect,
+  onStateFilterClearClick,
+  onFilterValueChange,
+  onClearFiltersClick,
+}) => (
+  <div className="settlement-windows__filters">
+    <div className="settlement-windows__filters__filter-row">
+      <Select
+        className="settlement-windows__filters__date-filter"
+        size="s"
+        id="filter_date"
+        placeholder="Date"
+        options={dateRanges}
+        selected={filters?.range}
+        onChange={onDateRangerFilterSelect}
+        onClear={onDateFilterClearClick}
+      />
+
+      <DatePicker
+        className="settlement-windows__filters__date-filter"
+        size="s"
+        id="filter_date_from"
+        format="x"
+        onSelect={onStartDateRangeFilterSelect}
+        value={filters?.start}
+        placeholder="From"
+        dateFormat="MM/DD/YYYY HH:mm:SS"
+        defaultHour={0}
+        defaultMinute={0}
+        defaultSecond={0}
+        hideIcon
+        withTime
+      />
+
+      <DatePicker
+        className="settlement-windows__filters__date-filter"
+        size="s"
+        id="filter_date_to"
+        format="x"
+        initialMonth={filters?.start}
+        onSelect={onEndDateRangeFilterSelect}
+        value={filters?.end}
+        placeholder="To"
+        dateFormat="MM/DD/YYYY HH:mm:SS"
+        defaultHour={23}
+        defaultMinute={59}
+        defaultSecond={59}
+        hideIcon
+        withTime
+      />
+    </div>
+    <div className="settlement-windows__filters__filter-row">
+      <Select
+        className="settlement-windows__filters__date-filter"
+        size="s"
+        placeholder="State"
+        selected={filters?.state}
+        options={settlementWindowStatuses}
+        onChange={(value: string) => onFilterValueChange('state', value)}
+        onClear={onStateFilterClearClick}
+      />
+      <Button
+        noFill
+        className="settlement-windows__filters__date-filter"
+        size="s"
+        kind="danger"
+        label="Clear Filters"
+        onClick={onClearFiltersClick}
+      />
+    </div>
+  </div>
+);
+
 function renderStatus(state: SettlementWindowStatus) {
   const statusLabels = {
     [SettlementWindowStatus.Open]: { color: 'orange', label: 'Open' },
@@ -36,6 +125,56 @@ function renderStatus(state: SettlementWindowStatus) {
     </>
   );
 }
+
+interface SettlementWindowModalProps {
+  onClose: () => void;
+  isPending: boolean;
+  error: string | null;
+  id: number | null;
+}
+
+const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ id, isPending, error, onClose }) => {
+  const history = useHistory();
+  let content = null;
+  let title;
+  if (isPending) {
+    title = 'Submitting Settlement(s)';
+    content = <Spinner center />;
+  } else if (error) {
+    title = 'Failed Settlement Submit';
+    content = <MessageBox kind="danger">There was an error settling the windows</MessageBox>;
+  } else {
+    title = 'Settlement Submitted';
+    content = (
+      <>
+        <div>
+          <Column>
+            <DataLabel size="s" light>
+              Settlement IDs
+            </DataLabel>
+            <DataLabel size="m">{id || ''}</DataLabel>
+          </Column>
+        </div>
+        <div className="settlements-windows__modal__row">
+          <Button
+            noFill
+            kind="secondary"
+            label="View Submitted Settlements"
+            onClick={() => history.push('/settlements')}
+          />
+        </div>
+        <div className="settlements-windows__modal__row">
+          <Button noFill kind="secondary" label="Continue Viewing Windows" onClick={onClose} />
+        </div>
+      </>
+    );
+  }
+  return (
+    <Modal title={title} onClose={onClose} noFooter>
+      {content}
+    </Modal>
+  );
+};
 
 const SettlementWindows: FC<ConnectorProps> = ({
   settlementWindows,
@@ -148,145 +287,6 @@ const SettlementWindows: FC<ConnectorProps> = ({
         />
       )}
     </div>
-  );
-};
-
-interface FiltersProps {
-  filters: SettlementWindowFilters;
-  onDateRangerFilterSelect: (payload: DateRanges) => void;
-  onDateFilterClearClick: () => void;
-  onStartDateRangeFilterSelect: (payload: number) => void;
-  onEndDateRangeFilterSelect: (payload: number) => void;
-  onStateFilterClearClick: () => void;
-  onFilterValueChange: (filter: string, value: FilterValue) => void;
-  onClearFiltersClick: () => void;
-}
-
-const Filters: FC<FiltersProps> = ({
-  filters,
-  onDateRangerFilterSelect,
-  onDateFilterClearClick,
-  onStartDateRangeFilterSelect,
-  onEndDateRangeFilterSelect,
-  onStateFilterClearClick,
-  onFilterValueChange,
-  onClearFiltersClick,
-}) => (
-  <div className="settlement-windows__filters">
-    <div className="settlement-windows__filters__filter-row">
-      <Select
-        className="settlement-windows__filters__date-filter"
-        size="s"
-        id="filter_date"
-        placeholder="Date"
-        options={dateRanges}
-        selected={filters?.range}
-        onChange={onDateRangerFilterSelect}
-        onClear={onDateFilterClearClick}
-      />
-
-      <DatePicker
-        className="settlement-windows__filters__date-filter"
-        size="s"
-        id="filter_date_from"
-        format="x"
-        onSelect={onStartDateRangeFilterSelect}
-        value={filters?.start}
-        placeholder="From"
-        dateFormat="MM/DD/YYYY HH:mm:SS"
-        defaultHour={0}
-        defaultMinute={0}
-        defaultSecond={0}
-        hideIcon
-        withTime
-      />
-
-      <DatePicker
-        className="settlement-windows__filters__date-filter"
-        size="s"
-        id="filter_date_to"
-        format="x"
-        initialMonth={filters?.start}
-        onSelect={onEndDateRangeFilterSelect}
-        value={filters?.end}
-        placeholder="To"
-        dateFormat="MM/DD/YYYY HH:mm:SS"
-        defaultHour={23}
-        defaultMinute={59}
-        defaultSecond={59}
-        hideIcon
-        withTime
-      />
-    </div>
-    <div className="settlement-windows__filters__filter-row">
-      <Select
-        className="settlement-windows__filters__date-filter"
-        size="s"
-        placeholder="State"
-        selected={filters?.state}
-        options={settlementWindowStatuses}
-        onChange={(value: string) => onFilterValueChange('state', value)}
-        onClear={onStateFilterClearClick}
-      />
-      <Button
-        noFill
-        className="settlement-windows__filters__date-filter"
-        size="s"
-        kind="danger"
-        label="Clear Filters"
-        onClick={onClearFiltersClick}
-      />
-    </div>
-  </div>
-);
-
-interface SettlementWindowModalProps {
-  onClose: () => void;
-  isPending: boolean;
-  error: string | null;
-  id: number | null;
-}
-
-const SettlementWindowModal: FC<SettlementWindowModalProps> = ({ id, isPending, error, onClose }) => {
-  const history = useHistory();
-  let content = null;
-  let title;
-  if (isPending) {
-    title = 'Submitting Settlement(s)';
-    content = <Spinner center />;
-  } else if (error) {
-    title = 'Failed Settlement Submit';
-    content = <MessageBox kind="danger">There was an error settling the windows</MessageBox>;
-  } else {
-    title = 'Settlement Submitted';
-    content = (
-      <>
-        <div>
-          <Column>
-            <DataLabel size="s" light>
-              Settlement IDs
-            </DataLabel>
-            <DataLabel size="m">{id || ''}</DataLabel>
-          </Column>
-        </div>
-        <div className="settlements-windows__modal__row">
-          <Button
-            noFill
-            kind="secondary"
-            label="View Submitted Settlements"
-            onClick={() => history.push('/settlements')}
-          />
-        </div>
-        <div className="settlements-windows__modal__row">
-          <Button noFill kind="secondary" label="Continue Viewing Windows" onClick={onClose} />
-        </div>
-      </>
-    );
-  }
-  return (
-    <Modal title={title} onClose={onClose} noFooter>
-      {content}
-    </Modal>
   );
 };
 
