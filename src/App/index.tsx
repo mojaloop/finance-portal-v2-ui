@@ -34,16 +34,10 @@ const auth = {
   isAuthEnabled: false,
 };
 
-let remoteUrl1: string;
-let remoteUrl2: string;
-if (process.env.NODE_ENV === 'production') {
-  remoteUrl1 = window.portalEnv.REMOTE_1_URL;
-  remoteUrl2 = window.portalEnv.REMOTE_2_URL;
-} else {
-  // Hardcoding these for now since more care about production
-  remoteUrl1 = 'http://localhost:3012';
-  remoteUrl2 = 'http://localhost:3013';
-}
+const [remoteUrl1, remoteUrl2] =
+  process.env.NODE_ENV === 'production'
+    ? [window.portalEnv.REMOTE_1_URL, window.portalEnv.REMOTE_2_URL]
+    : ['http://localhost:3012', 'http://localhost:3013'];
 
 const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
   /* @ts-ignore */
