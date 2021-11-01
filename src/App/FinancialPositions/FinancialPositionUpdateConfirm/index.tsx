@@ -1,7 +1,8 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { DataLabel, Modal, Row, Column, Button } from '../../../components';
-import { State, Dispatch } from '../../../store/types';
+import { ReduxContext } from 'store';
+import { DataLabel, Modal, Row, Column, Button } from 'components';
+import { State, Dispatch } from 'store/types';
 import * as selectors from '../selectors';
 import * as actions from '../actions';
 import './FinancialPositionUpdateConfirm.css';
@@ -21,7 +22,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onSubmitModalAndUpdNDCClick: () => dispatch(actions.submitFinancialPositionUpdateConfirmModal()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 type ConnectorProps = ConnectedProps<typeof connector>;
 
 const FinancialPositionUpdateConfirm: FC<ConnectorProps> = ({

@@ -1,8 +1,9 @@
 import React, { FC } from 'react';
-import { connect, ConnectedProps } from 'react-redux';
+import { connect } from 'react-redux';
 import { Spinner } from 'components';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
+import { ReduxContext } from 'store';
 import * as actions from './actions';
 import * as selectors from './selectors';
 
@@ -15,9 +16,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onMount: () => dispatch(actions.requestDfsps()),
 });
 
-const connector = connect(stateProps, dispatchProps);
-type ConnectorProps = ConnectedProps<typeof connector>;
-
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 // export default connector;
 
 interface DfspsProps {

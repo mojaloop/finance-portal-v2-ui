@@ -6,7 +6,7 @@ import Loader from 'utils/loader';
 const [remoteUrl1, remoteUrl2] =
   process.env.NODE_ENV === 'production'
     ? [window.portalEnv.REMOTE_1_URL, window.portalEnv.REMOTE_2_URL]
-    : ['http://localhost:3012', 'http://localhost:3013'];
+    : [process.env.REMOTE_1_URL, process.env.REMOTE_2_URL];
 
 export const SideMenu: FC<unknown> = () => {
   const history = useHistory();

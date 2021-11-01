@@ -19,6 +19,95 @@ function renderStatus(state: SettlementStatus) {
   );
 }
 
+interface FiltersProps {
+  filters: SettlementFilters;
+  onDateRangerFilterSelect: (payload: DateRanges) => void;
+  onDateFilterClearClick: () => void;
+  onStateFilterClearClick: () => void;
+  onStartDateRangeFilterSelect: (payload: number) => void;
+  onEndDateRangeFilterSelect: (payload: number) => void;
+  onFilterValueChange: (filter: string, value: FilterValue) => void;
+  onClearFiltersClick: () => void;
+}
+
+const Filters: FC<FiltersProps> = ({
+  filters,
+  onDateRangerFilterSelect,
+  onDateFilterClearClick,
+  onStateFilterClearClick,
+  onStartDateRangeFilterSelect,
+  onEndDateRangeFilterSelect,
+  onFilterValueChange,
+  onClearFiltersClick,
+}) => (
+  <div className="settlements__filters">
+    <div className="settlements__filters__filter-row">
+      <Select
+        className="settlements__filters__date-filter"
+        size="s"
+        id="filter_date"
+        placeholder="Date"
+        options={dateRanges}
+        selected={filters?.range}
+        onChange={onDateRangerFilterSelect}
+        onClear={onDateFilterClearClick}
+      />
+
+      <DatePicker
+        className="settlements__filters__date-filter"
+        size="s"
+        id="filter_date_from"
+        format="x"
+        onSelect={onStartDateRangeFilterSelect}
+        value={filters?.start}
+        placeholder="From"
+        dateFormat="MM/DD/YYYY HH:mm:SS"
+        defaultHour={0}
+        defaultMinute={0}
+        defaultSecond={0}
+        hideIcon
+        withTime
+      />
+
+      <DatePicker
+        className="settlements__filters__date-filter"
+        size="s"
+        id="filter_date_to"
+        format="x"
+        initialMonth={filters?.start}
+        onSelect={onEndDateRangeFilterSelect}
+        value={filters?.end}
+        placeholder="To"
+        dateFormat="MM/DD/YYYY HH:mm:SS"
+        defaultHour={23}
+        defaultMinute={59}
+        defaultSecond={59}
+        hideIcon
+        withTime
+      />
+    </div>
+    <div className="settlements__filters__filter-row">
+      <Select
+        className="settlements__filters__date-filter"
+        size="s"
+        placeholder="State"
+        selected={filters?.state}
+        options={settlementStatuses}
+        onChange={(value: string) => onFilterValueChange('state', value)}
+        onClear={onStateFilterClearClick}
+      />
+      <Button
+        noFill
+        className="settlements__filters__date-filter"
+        size="s"
+        kind="danger"
+        label="Clear Filters"
+        onClick={onClearFiltersClick}
+      />
+    </div>
+  </div>
+);
+
 const Settlements: FC<ConnectorProps> = ({
   settlements,
   settlementsError,
@@ -113,91 +202,4 @@ const Settlements: FC<ConnectorProps> = ({
   );
 };
 
-interface FiltersProps {
-  filters: SettlementFilters;
-  onDateRangerFilterSelect: (payload: DateRanges) => void;
-  onDateFilterClearClick: () => void;
-  onStateFilterClearClick: () => void;
-  onStartDateRangeFilterSelect: (payload: number) => void;
-  onEndDateRangeFilterSelect: (payload: number) => void;
-  onFilterValueChange: (filter: string, value: FilterValue) => void;
-  onClearFiltersClick: () => void;
-}
-const Filters: FC<FiltersProps> = ({
-  filters,
-  onDateRangerFilterSelect,
-  onDateFilterClearClick,
-  onStateFilterClearClick,
-  onStartDateRangeFilterSelect,
-  onEndDateRangeFilterSelect,
-  onFilterValueChange,
-  onClearFiltersClick,
-}) => (
-  <div className="settlements__filters">
-    <div className="settlements__filters__filter-row">
-      <Select
-        className="settlements__filters__date-filter"
-        size="s"
-        id="filter_date"
-        placeholder="Date"
-        options={dateRanges}
-        selected={filters?.range}
-        onChange={onDateRangerFilterSelect}
-        onClear={onDateFilterClearClick}
-      />
-
-      <DatePicker
-        className="settlements__filters__date-filter"
-        size="s"
-        id="filter_date_from"
-        format="x"
-        onSelect={onStartDateRangeFilterSelect}
-        value={filters?.start}
-        placeholder="From"
-        dateFormat="MM/DD/YYYY HH:mm:SS"
-        defaultHour={0}
-        defaultMinute={0}
-        defaultSecond={0}
-        hideIcon
-        withTime
-      />
-
-      <DatePicker
-        className="settlements__filters__date-filter"
-        size="s"
-        id="filter_date_to"
-        format="x"
-        initialMonth={filters?.start}
-        onSelect={onEndDateRangeFilterSelect}
-        value={filters?.end}
-        placeholder="To"
-        dateFormat="MM/DD/YYYY HH:mm:SS"
-        defaultHour={23}
-        defaultMinute={59}
-        defaultSecond={59}
-        hideIcon
-        withTime
-      />
-    </div>
-    <div className="settlements__filters__filter-row">
-      <Select
-        className="settlements__filters__date-filter"
-        size="s"
-        placeholder="State"
-        selected={filters?.state}
-        options={settlementStatuses}
-        onChange={(value: string) => onFilterValueChange('state', value)}
-        onClear={onStateFilterClearClick}
-      />
-      <Button
-        noFill
-        className="settlements__filters__date-filter"
-        size="s"
-        kind="danger"
-        label="Clear Filters"
-        onClick={onClearFiltersClick}
-      />
-    </div>
-  </div>
-);
 export default connector(withMount(Settlements, 'onMount'));

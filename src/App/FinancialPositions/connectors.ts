@@ -1,5 +1,6 @@
 import { connect, ConnectedProps } from 'react-redux';
 import { State, Dispatch } from 'store/types';
+import { ReduxContext } from 'store';
 import * as selectors from './selectors';
 import * as actions from './actions';
 import { FinancialPosition } from './types';
@@ -18,7 +19,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onToggleCurrencyActive: (item: FinancialPosition) => dispatch(actions.toggleCurrencyActive(item)),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

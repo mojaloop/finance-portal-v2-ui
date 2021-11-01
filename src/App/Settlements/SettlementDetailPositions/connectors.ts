@@ -1,6 +1,7 @@
 import { connect, ConnectedProps } from 'react-redux';
 import { State, Dispatch } from 'store/types';
 import { getDfsps } from 'App/DFSPs/selectors';
+import { ReduxContext } from 'store';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
 import { SettlementDetail } from '../types';
@@ -18,7 +19,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onModalCloseClick: () => dispatch(actions.closeSettlementDetailPositionsModal()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

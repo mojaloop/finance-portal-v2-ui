@@ -3,6 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import { State, Dispatch } from 'store/types';
 import Loader from 'utils/loader';
+import ReduxContext from 'store/context';
 import { Navbar, Page, SideMenu, Content, Container } from './Layout';
 import { Auth } from './Auth';
 import DFSPs from './DFSPs';
@@ -10,20 +11,25 @@ import SettlementWindows from './SettlementWindows';
 import Settlements from './Settlements';
 import FinancialPositions from './FinancialPositions';
 import Transfers from './Transfers';
+import { actions as authActions } from '../KratosAuth/slice';
 
 import * as actions from './Auth/actions';
 import * as selectors from './Auth/selectors';
+import * as authSelectors from '../KratosAuth/selectors';
 
 const stateProps = (state: State) => ({
   // Auth should never succeed and fail to set userInfo
   username: selectors.getUserInfo(state)?.username as string,
+  isLoggedIn: authSelectors.getIsLoggedIn(state),
+  userEmail: authSelectors.getUserEmail(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
   onLogoutClick: () => dispatch(actions.requestLogout()),
+  kratosLogout: () => dispatch(authActions.logout()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 type ConnectorProps = ConnectedProps<typeof connector>;
 
 // TODO: kratos endpoints need to be passed to microfrontends
@@ -37,15 +43,21 @@ const auth = {
 const [remoteUrl1, remoteUrl2] =
   process.env.NODE_ENV === 'production'
     ? [window.portalEnv.REMOTE_1_URL, window.portalEnv.REMOTE_2_URL]
-    : ['http://localhost:3012', 'http://localhost:3013'];
+    : [process.env.REMOTE_1_URL, process.env.REMOTE_2_URL];
 
-const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
+const App: FC<ConnectorProps> = ({ username, onLogoutClick, kratosLogout }) => (
   /* @ts-ignore */
   <Auth>
     {/* @ts-ignore */}
     <DFSPs>
       <Container>
-        <Navbar username={username} onLogoutClick={onLogoutClick} />
+        <Navbar
+          username={username}
+          onLogoutClick={() => {
+            onLogoutClick();
+            kratosLogout();
+          }}
+        />
         <Content>
           <SideMenu />
           <Page>
@@ -61,9 +73,6 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
               </Route>
               <Route path="/transfers">
                 <Transfers />
-              </Route>
-              <Route>
-                <Redirect to="/windows" />
               </Route>
               <Route path="/microiam" key="/microiam">
                 <Loader
@@ -84,6 +93,9 @@ const App: FC<ConnectorProps> = ({ username, onLogoutClick }) => (
                   path="/microtransfers"
                   authConfig={auth}
                 />
+              </Route>
+              <Route>
+                <Redirect to="/windows" />
               </Route>
             </Switch>
           </Page>

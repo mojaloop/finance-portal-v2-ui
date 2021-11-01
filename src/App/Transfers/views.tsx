@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import { Heading, Button, MessageBox, Spinner, DataList, DatePicker, TextField, Select } from 'components';
 import { connect } from 'react-redux';
 import withMount from 'hocs';
+import { ReduxContext } from 'store';
 import { State, Dispatch } from 'store/types';
 import { TransfersFilter, FilterChangeValue, Transfer, TransferDetail } from './types';
 import * as actions from './actions';
@@ -309,4 +310,4 @@ const Transfers: FC<ConnectorProps> = ({
   );
 };
 
-export default connect(stateProps, dispatchProps)(withMount(Transfers, 'onMount'));
+export default connect(stateProps, dispatchProps, null, { context: ReduxContext })(withMount(Transfers, 'onMount'));

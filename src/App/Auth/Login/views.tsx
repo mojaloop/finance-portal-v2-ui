@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
+import { ReduxContext } from 'store';
 import { Button, TextField } from 'components';
 import { State, Dispatch } from 'store/types';
 import * as actions from '../actions';
@@ -20,7 +21,7 @@ const loginDispatchProps = (dispatch: Dispatch) => ({
   onLoginSubmitClick: () => dispatch(actions.requestLogin()),
 });
 
-const loginConnector = connect(loginStateProps, loginDispatchProps);
+const loginConnector = connect(loginStateProps, loginDispatchProps, null, { context: ReduxContext });
 type LoginConnectorProps = ConnectedProps<typeof loginConnector>;
 
 const LoginImpl: FC<LoginConnectorProps> = ({

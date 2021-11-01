@@ -1,4 +1,5 @@
 import { connect, ConnectedProps } from 'react-redux';
+import { ReduxContext } from 'store';
 import { State, Dispatch } from 'store/types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
@@ -20,7 +21,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   },
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 
 export type ConnectorProps = ConnectedProps<typeof connector>;
 

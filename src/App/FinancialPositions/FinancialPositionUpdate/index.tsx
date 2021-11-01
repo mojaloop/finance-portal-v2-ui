@@ -1,7 +1,8 @@
 import React, { ChangeEvent, FC } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
-import { DataLabel, Modal, Row, Select, RadioGroup } from '../../../components';
-import { State, Dispatch } from '../../../store/types';
+import { ReduxContext } from 'store';
+import { DataLabel, Modal, Row, Select, RadioGroup } from 'components';
+import { State, Dispatch } from 'store/types';
 import * as selectors from '../selectors';
 import * as actions from '../actions';
 import './FinancialPositionUpdate.css';
@@ -27,7 +28,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onSubmitModalClick: () => dispatch(actions.showFinancialPositionUpdateConfirmModal()),
 });
 
-const connector = connect(stateProps, dispatchProps);
+const connector = connect(stateProps, dispatchProps, null, { context: ReduxContext });
 type ConnectorProps = ConnectedProps<typeof connector>;
 
 const FinancialPositionUpdate: FC<ConnectorProps> = ({
