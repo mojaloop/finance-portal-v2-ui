@@ -16,8 +16,8 @@ References for those unfamiliar with page models:
 
 #### Get a Kubernetes cluster
 
-You'll probably want at least four cores and 8gb mem. This is left as an exercise for the reader.
-Some suggestions:
+Kubernetes 1.17 to 1.21 should work. You'll probably want at least four cores and 8gb mem. This is
+left as an exercise for the reader. Some suggestions:
 1. [Minikube](https://minikube.sigs.k8s.io/docs/)
 2. [k3d](https://k3d.io/)
 3. [KinD](https://kind.sigs.k8s.io/docs/)
@@ -52,6 +52,17 @@ In the project root:
 ```sh
 skaffold run -p backend
 ```
+You'll need to wait a few minutes until the wso2is-populate job has completed. You can view its status
+with:
+```sh
+kubectl get jobs
+```
+When it's completed, it'll look like this:
+```
+NAME              COMPLETIONS   DURATION   AGE
+wso2is-populate   1/1           2m35s      6h26m
+```
+Specifically, `COMPLETIONS` will be `1/1`
 
 #### Port-forward the ingress and support service
 ```sh
