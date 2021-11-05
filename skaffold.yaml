@@ -7,6 +7,12 @@ metadata:
 # bakend.
 profiles:
 - name: backend
+  build:
+    artifacts:
+    - image: mojaloop/central-settlement
+      context: /home/msk/projects/github.com/mojaloop/central-settlement
+      docker:
+        dockerfile: Dockerfile
   deploy:
     statusCheckDeadlineSeconds: 600
     kustomize:

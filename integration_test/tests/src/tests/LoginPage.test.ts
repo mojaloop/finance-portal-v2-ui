@@ -9,10 +9,7 @@ fixture`Login Feature`
     await waitForReact();
   });
 
-test.meta({
-  ID: 'MMD-T11',
-  STORY: 'MP-440',
-})('Log in with valid credentials', async (t) => {
+test('Log in with valid credentials', async (t) => {
   await t
     .typeText(LoginPage.userName, config.credentials.admin.username)
     .typeText(LoginPage.password, config.credentials.admin.password)

@@ -1,5 +1,56 @@
 export type ErrorMessage = string | null;
 
+export enum SettlementStatus {
+  PendingSettlement = 'PENDING_SETTLEMENT',
+  PsTransfersRecorded = 'PS_TRANSFERS_RECORDED',
+  PsTransfersReserved = 'PS_TRANSFERS_RESERVED',
+  PsTransfersCommitted = 'PS_TRANSFERS_COMMITTED',
+  Settling = 'SETTLING',
+  Settled = 'SETTLED',
+  Aborted = 'ABORTED',
+}
+
+export type HubLedgerAccountType = |
+  "HUB_MULTILATERAL_SETTLEMENT" |
+  "HUB_RECONCILIATION";
+
+export type ParticipantLedgerAccountType = |
+  "POSITION" |
+  "SETTLEMENT";
+
+export type LedgerAccountType = ParticipantLedgerAccountType | HubLedgerAccountType;
+
+export interface ParticipantAccount {
+  id: number;
+  currency: Currency;
+  ledgerAccountType: ParticipantLedgerAccountType;
+}
+
+export interface DFSP {
+  name: string;
+  accounts: ParticipantAccount[];
+}
+
+export interface SettlementParticipantAccount {
+  id: number;
+  netSettlementAmount: { amount: number, currency: Currency };
+  reason: string;
+  state: SettlementStatus;
+}
+
+export interface SettlementParticipant {
+  id: number;
+  accounts: SettlementParticipantAccount[];
+}
+
+export interface Settlement {
+  id: number;
+  participants: SettlementParticipant[];
+  reason: string;
+  settlementModel: string;
+  state: SettlementStatus;
+}
+
 export type Currency =
   | 'AED'
   | 'AFA'

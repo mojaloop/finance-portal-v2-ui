@@ -43,6 +43,17 @@ fixture `Settlement windows page`
       },
     ];
     await cli.createHubAccounts(hubAccounts);
+    await cli.createSettlementModel({
+      autoPositionReset: true,
+      ledgerAccountType: "POSITION",
+      settlementAccountType: "SETTLEMENT",
+      name: "DEFERREDNET",
+      requireLiquidityCheck: true,
+      settlementDelay: "DEFERRED",
+      settlementGranularity: "NET",
+      settlementInterchange: "MULTILATERAL",
+      currency: "MMK",
+    });
 
     const accounts: protocol.AccountInitialization[] = [
       { currency: 'MMK', initial_position: '0', ndc: 10000 },

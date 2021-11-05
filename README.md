@@ -287,7 +287,6 @@ To test the built image you should deploy and run it in a kubernetes cluster via
 
 Before merging any PR, make sure that:
 - the version is incremented. the command `yarn version` should be used for this purpose.
-- every changed line followes the styleguide pattern; the command `yarn prettier` should be used for this purpose.
 - there are no linting issues; the command `yarn lint` should be used for this purpose.
 
 ## Available Scripts
@@ -326,10 +325,6 @@ If you aren’t satisfied with the build tool and configuration choices, you can
 Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-### `yarn prettier`
-
-Runs prettier on the project source files.
 
 ### `yarn lint`
 

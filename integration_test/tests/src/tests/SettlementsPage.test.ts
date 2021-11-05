@@ -23,6 +23,17 @@ fixture `Settlements Feature`
       },
     ];
     await cli.createHubAccounts(hubAccounts);
+    await cli.createSettlementModel({
+      autoPositionReset: true,
+      ledgerAccountType: "POSITION",
+      settlementAccountType: "SETTLEMENT",
+      name: "DEFERREDNET",
+      requireLiquidityCheck: true,
+      settlementDelay: "DEFERRED",
+      settlementGranularity: "NET",
+      settlementInterchange: "MULTILATERAL",
+      currency: "MMK",
+    });
     ctx.cli = cli;
   })
   .beforeEach(async (t) => {

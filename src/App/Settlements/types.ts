@@ -1,4 +1,6 @@
-import { ErrorMessage, Currency } from 'App/types';
+import { ErrorMessage, Currency, SettlementStatus } from '../types';
+
+export { SettlementStatus } from '../types';
 
 export const REQUEST_SETTLEMENTS = 'Settlements / Request Settlements';
 export const SET_SETTLEMENTS = 'Settlements / Set Settlements';
@@ -118,16 +120,6 @@ export interface SettlementDetailPosition {
   dfsp: string;
   debit: number;
   credit: number;
-}
-
-export enum SettlementStatus {
-  PendingSettlement = 'PENDING_SETTLEMENT',
-  PsTransfersRecorded = 'PS_TRANSFERS_RECORDED',
-  PsTransfersReserved = 'PS_TRANSFERS_RESERVED',
-  PsTransfersCommitted = 'PS_TRANSFERS_COMMITTED',
-  Settling = 'SETTLING',
-  Settled = 'SETTLED',
-  Aborted = 'ABORTED',
 }
 
 export enum DateRanges {
