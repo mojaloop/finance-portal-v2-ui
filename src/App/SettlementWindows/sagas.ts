@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import apis from 'utils/apis';
-import { SettlementStatus, DFSP, Settlement, Currency } from '../types';
+import { SettlementStatus, DFSP, Settlement, ParticipantAccount, Currency } from '../types';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
 import {
@@ -33,6 +33,12 @@ function* fetchSettlementWindows() {
     const filters = yield select(getSettlementWindowsFilters);
     const params = helpers.buildFiltersParams(filters);
 
+    console.log('fetchSettlementWindows 0');
+
+    const thing = yield call(setNdcToNetLiquidity);
+
+    console.log('fetchSettlementWindows 1');
+
     const response = yield call(apis.settlementWindows.read, {
       params,
     });
@@ -58,6 +64,7 @@ function* fetchSettlementWindows() {
       yield put(setSettlementWindows(response.data));
     }
   } catch (e) {
+    console.error(e);
     yield put(setSettlementWindowsError(e.message));
   }
 }
@@ -89,14 +96,27 @@ export function* FetchSettlementWindowsAfterFiltersChangeSaga(): Generator {
 }
 
 function* setNdcToNetLiquidity() {
-  // The net liquidity amount is defined as the balance in the settlement/liquidity account less
-  // the sum of all unsettled amounts
-
-  // Get settlement/liquidity account balances for participants in this settlement. Because the
-  // settlement service API works with participant IDs instead of participant names, we have to
-  // work backwards from account IDs.
-  const participants = yield call(apis.participants.read);
-
+  interface FullAccount extends ParticipantAccount {
+    value: number;
+  }
+  const participantsResponse = yield call(apis.participants.read, {});
+  assert(participantsResponse.status === 200, 'Failed to retrieve participants');
+  const participantsSimple = participantsResponse.data;
+  const participantAccounts = new Map<string, FullAccount[]>(yield all(
+    participantsSimple.map((p: DFSP) => call(function* () {
+      const accountsResponse = yield call(apis.participantAccounts.read, { participantName: p.name });
+      assert(accountsResponse.status === 200, 'Failed to retrieve participant accounts');
+      return yield all([
+        p.name,
+        accountsResponse.data,
+      ]);
+    }))
+  ));
+  console.log(participantAccounts);
+  const accountParticipants = new Map(
+    [...participantAccounts.entries()].flatMap(([name, accounts]) => accounts.map((acc) => [acc.id, name]))
+  )
+  console.log(accountParticipants);
   // Get all outstanding settlements
   const state = [
     SettlementStatus.PendingSettlement,
@@ -110,6 +130,9 @@ function* setNdcToNetLiquidity() {
       state,
     }
   });
+
+  console.log('Set NDC to net liquidity 1');
+  console.log(unsettledSettlementsResponse);
 
   // Because when we call
   //   GET /v2/settlements?some=filters
@@ -126,67 +149,69 @@ function* setNdcToNetLiquidity() {
   // In this case, we have nothing to do; so we return.
   if (
     unsettledSettlementsResponse.status === 400 &&
-    /Generic validation error.*not found/.test(unsettledSettlementsResponse.data?.errorInformation?.errorDescription)
+    /generic validation error.*not found/i.test(unsettledSettlementsResponse.data?.errorInformation?.errorDescription)
   ) {
     return;
   }
 
   const unsettledSettlements: Settlement[] = unsettledSettlementsResponse.data;
-
-  interface ParticipantUnsettledDebit {
-    name: string;
-    outstanding: { currency: Currency; amount: number; }[];
-  }
-
-  // Correlate unsettled settlement accounts to participants
-  // This is quite awkward because central ledger returns participants with a `.name` identifier,
-  // but no `.id` identified, whereas central settlement returns participants with a `.id`
-  // identifier, and no `.name` identifier. See:
-  // https://github.com/mojaloop/project/issues/2408
-  const participantsUnsettledDebits =
-    participants
-      .map((p: DFSP): ParticipantUnsettledDebit => {
-        const participantAccounts = new Map(p.accounts.map((a) => ([a.id, a])));
-        const allUnsettledAccounts = unsettledSettlements.flatMap((s) =>
-          s.participants.flatMap((sp) => sp.accounts.filter((spa) =>
-            participantAccounts.has(spa.id)))
+  console.log(unsettledSettlements);
+  const unsettledAccounts = unsettledSettlements.flatMap((s) => s.participants.flatMap((p) => p.accounts));
+  console.log(unsettledAccounts);
+  const unsettledParticipants = new Set(unsettledAccounts.map((acc) => accountParticipants.get(acc.id)));
+  console.log(unsettledParticipants);
+  const participantUnsettledAmounts = new Map(
+    [...unsettledParticipants.keys()].map(
+      (p) => {
+        assert(p !== undefined);
+        const thisParticipantAccounts = participantAccounts.get(p);
+        assert(thisParticipantAccounts !== undefined, 'Couldn\'t find participant accounts');
+        const thisParticipantUnsettledAccounts = unsettledAccounts.filter(
+          (acc) => thisParticipantAccounts.find((pa) => pa.id === acc.id)
         );
-        const currencies = new Set(allUnsettledAccounts.map((a) => a.netSettlementAmount.currency));
-        const outstanding = [...currencies.values()].map((currency) => ({
-          currency,
-          amount: allUnsettledAccounts
-            .filter((a) => a.netSettlementAmount.currency === currency)
-            .reduce((accum, account) => accum + account.netSettlementAmount.amount, 0)
-        })).filter(({ amount }) => amount > 0);
-        return {
-          name: p.name,
-          outstanding,
-        };
-      })
-      .filter(({ outstanding }: ParticipantUnsettledDebit) => outstanding.length > 0)
-      // .flatMap(({ name, outstanding }: ParticipantUnsettledDebit) => outstanding.map((os) => ({
-      //   name,
-      //   ...os
-      // })));
-
-  const participantSettlementAccounts = new Map(
-    (yield all(
-      participantsUnsettledDebits.map((p: ParticipantUnsettledDebit) => call(
-        apis.participantAccounts.read, { participantName: p.name }
-      ))
-    )).map( => )
+        const thisParticipantUnsettledCurrencies = new Set(thisParticipantUnsettledAccounts.map((acc) => acc.netSettlementAmount.currency));
+        const thisParticipantUnsettledCurrencyValues = new Map([...thisParticipantUnsettledCurrencies]
+          .map((curr) => [
+            curr,
+            thisParticipantUnsettledAccounts.reduce((sum, acc) => sum + (acc.netSettlementAmount.currency === curr ? acc.netSettlementAmount.amount : 0), 0)
+          ]));
+        return [
+          p,
+          thisParticipantUnsettledCurrencyValues,
+        ]
+      }
+    )
   );
+  console.log(participantUnsettledAmounts);
 
-  const participantSettlementAccountBalances = new Map(participants.map((p) => ([
-    p.name,
-    new Map(p.accounts.filter((a) => a.ledgerAccountType !== 'POSITION').map((a) => ([a.currency, a])))
-  ])))
-
-  yield all(participantsUnsettledDebits.map(({ name, currency, amount }) => {
-    call(apis.netdebitcap.create, {
-      body: { newValue:  }
-    })
+  // For each participant, for each unsettled (currency, amount), find the relevant
+  // settlement/liquidity account balance to calculate the net liquidity
+  const participantNetLiquidities = new Map([...participantUnsettledAmounts.entries()].map(([name, currencies]) => {
+    const thisParticipantAccounts = participantAccounts.get(name);
+    assert(thisParticipantAccounts !== undefined, 'Couldn\'t find participant accounts');
+    const thisParticipantNetLiquidities = new Map([...currencies.entries()].map(([currency, unsettledAmount]) => {
+      const liquidityBalance = thisParticipantAccounts.find(
+        (pa) => pa.currency === currency && pa.ledgerAccountType === 'SETTLEMENT'
+      )?.value;
+      assert(
+        liquidityBalance !== undefined,
+        `Unable to retrieve ${currency} liquidity account balance for participant ${name}`,
+      );
+      return [currency, liquidityBalance - unsettledAmount];
+    }));
+    return [name, thisParticipantNetLiquidities];
   }))
+  console.log(participantNetLiquidities);
+
+  // Flatten, then call
+  yield all([...participantNetLiquidities.entries()].flatMap(([name, netLiquidities]) =>
+    [...netLiquidities.entries()].map(([currency, netLiquidityAmount]) =>
+      call(apis.netdebitcap.create, {
+        dfspName: name,
+        body: { newValue: netLiquidityAmount, currency },
+      })
+    )
+  ));
 }
 
 function* settleWindows() {
@@ -204,6 +229,7 @@ function* settleWindows() {
 
     yield put(setSettleSettlementWindowsFinished(settlementResponse.id));
   } catch (e) {
+    console.error(e);
     yield put(setSettleSettlementWindowsError(e.message));
   }
 }
@@ -234,6 +260,7 @@ function* closeSettlementWindow(action: PayloadAction<SettlementWindow>) {
     yield put(setCloseSettlementWindowFinished());
     yield put(requestSettlementWindows());
   } catch (e) {
+    console.error(e);
     yield put(setSettlementWindowsError(e.message));
   }
 }
