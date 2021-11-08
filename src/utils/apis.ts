@@ -77,6 +77,11 @@ const participants: Endpoint = {
   url: () => '/participants',
 };
 
+const participantsLimits: Endpoint = {
+  service: services.ledgerService,
+  url: () => `/participants/limits`,
+}
+
 const participantLimits: Endpoint = {
   service: services.ledgerService,
   url: (_, { participantName }) => `/participants/${participantName}/limits`,
@@ -180,6 +185,7 @@ interface EndpointsMap {
   participantAccounts: Endpoint;
   participantAccountTransfer: Endpoint;
   participantLimits: Endpoint;
+  participantsLimits: Endpoint;
   participants: Endpoint;
   settlement: Endpoint;
   settlementParticipantAccount: Endpoint;
@@ -205,6 +211,7 @@ const endpoints = {
   participantAccounts,
   participantAccountTransfer,
   participantLimits,
+  participantsLimits,
   participants,
   settlement,
   settlementParticipantAccount,

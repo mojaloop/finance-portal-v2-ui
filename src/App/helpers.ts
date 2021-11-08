@@ -2,7 +2,7 @@ import { strict as assert } from 'assert';
 import { all, call } from 'redux-saga/effects';
 import apis from '../utils/apis';
 
-import { ParticipantAccount, Currency, SettlementStatus, DFSP, Settlement } from './types';
+import { ParticipantAccount, Currency, SettlementStatus, DFSP, Settlement, ParticipantLimit } from './types';
 
 export interface FullAccount extends ParticipantAccount {
   value: number;
@@ -130,13 +130,32 @@ export function* setNdcToNetLiquidity() {
   const unsettledSettlements: Settlement[] = unsettledSettlementsResponse.data;
   console.log(unsettledSettlements);
 
+  const currentLimitsResponse = yield call(apis.participantsLimits.read, {});
+  assert(currentLimitsResponse.status === 200, 'Failed to retrieve participants limits');
+  const currentLimits = new Map([...participantAccounts.keys()].map((name) => ([
+    name,
+    currentLimitsResponse.data
+      .filter((lim: ParticipantLimit) => lim.name === name)
+      .reduce(
+        (map: Map<Currency, ParticipantLimit>, limit: ParticipantLimit) => map.set(limit.currency, limit),
+        new Map<Currency, ParticipantLimit>()
+      ),
+  ])));
+
   yield all(calculateNetLiquidity(unsettledSettlements, participantAccounts).map(
-    ({ name, currency, amount }) => call(apis.netdebitcap.create, {
-      dfspName: name,
-      body: {
-        currency,
-        newValue: amount,
-      },
-    })
+    ({ name, currency, amount }) => {
+      const currentNdc = currentLimits.get(name)?.get(currency);
+      assert(currentNdc !== undefined, `Failed to retrieve current NDC for ${name}`);
+      return call(apis.participantLimits.update, {
+        participantName: name,
+        body: {
+          currency,
+          limit: {
+            ...currentNdc.limit,
+            value: amount,
+          },
+        },
+      })
+    }
   ));
 }

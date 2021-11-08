@@ -51,6 +51,18 @@ export interface Settlement {
   state: SettlementStatus;
 }
 
+export type LimitType = "NET_DEBIT_CAP";
+
+export interface ParticipantLimit {
+  name: string;
+  currency: Currency;
+  limit: {
+    type: LimitType;
+    value: number;
+    alarmPercentage: number;
+  };
+}
+
 export type Currency =
   | 'AED'
   | 'AFA'
