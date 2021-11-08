@@ -9,7 +9,8 @@
     "build": "export NODE_ENV=production; webpack --mode production",
     "serve": "serve dist -s -p 3002",
     "serve:prod": "serve -s dist -l 8080 --cors",
-    "lint": "eslint --ext .js,.jsx,.ts,.tsx src --color"
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src --color",
+    "test:unit": "jest"
   },
   "authors": [
     "Ivan Annovazzi <ivan@modusbox.com>",
@@ -82,5 +83,8 @@
     "webpack": "5.0.0-beta.29",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^27.3.1"
   }
 }
