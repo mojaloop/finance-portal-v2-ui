@@ -33,11 +33,7 @@ function* fetchSettlementWindows() {
     const filters = yield select(getSettlementWindowsFilters);
     const params = helpers.buildFiltersParams(filters);
 
-    console.log('fetchSettlementWindows 0');
-
     const thing = yield call(setNdcToNetLiquidity);
-
-    console.log('fetchSettlementWindows 1');
 
     const response = yield call(apis.settlementWindows.read, {
       params,
@@ -95,67 +91,18 @@ export function* FetchSettlementWindowsAfterFiltersChangeSaga(): Generator {
   );
 }
 
-function* setNdcToNetLiquidity() {
-  interface FullAccount extends ParticipantAccount {
-    value: number;
-  }
-  const participantsResponse = yield call(apis.participants.read, {});
-  assert(participantsResponse.status === 200, 'Failed to retrieve participants');
-  const participantsSimple = participantsResponse.data;
-  const participantAccounts = new Map<string, FullAccount[]>(yield all(
-    participantsSimple.map((p: DFSP) => call(function* () {
-      const accountsResponse = yield call(apis.participantAccounts.read, { participantName: p.name });
-      assert(accountsResponse.status === 200, 'Failed to retrieve participant accounts');
-      return yield all([
-        p.name,
-        accountsResponse.data,
-      ]);
-    }))
-  ));
-  console.log(participantAccounts);
+interface FullAccount extends ParticipantAccount {
+  value: number;
+}
+type FspId = string;
+function calculateNetLiquidity(
+  unsettledSettlements: Settlement[],
+  participantAccounts: Map<FspId, FullAccount[]>
+): { name: FspId, currency: Currency, amount: number }[] {
   const accountParticipants = new Map(
     [...participantAccounts.entries()].flatMap(([name, accounts]) => accounts.map((acc) => [acc.id, name]))
   )
   console.log(accountParticipants);
-  // Get all outstanding settlements
-  const state = [
-    SettlementStatus.PendingSettlement,
-    SettlementStatus.PsTransfersCommitted,
-    SettlementStatus.PsTransfersRecorded,
-    SettlementStatus.PsTransfersReserved,
-    SettlementStatus.Settling,
-  ].join(',');
-  const unsettledSettlementsResponse = yield call(apis.settlements.read, {
-    params: {
-      state,
-    }
-  });
-
-  console.log('Set NDC to net liquidity 1');
-  console.log(unsettledSettlementsResponse);
-
-  // Because when we call
-  //   GET /v2/settlements?some=filters
-  // and there are no settlements, central settlement returns
-  //   400 Bad Request
-  //   {
-  //     "errorInformation": {
-  //       "errorCode": "3100",
-  //       "errorDescription": "Generic validation error - Settlements not found"
-  //     }
-  //   }
-  // Source here:
-  //   https://github.com/mojaloop/central-settlement/blob/45ecfe32d1039870aa9572e23747c24cd6d53c86/src/domain/settlement/index.js#L218
-  // In this case, we have nothing to do; so we return.
-  if (
-    unsettledSettlementsResponse.status === 400 &&
-    /generic validation error.*not found/i.test(unsettledSettlementsResponse.data?.errorInformation?.errorDescription)
-  ) {
-    return;
-  }
-
-  const unsettledSettlements: Settlement[] = unsettledSettlementsResponse.data;
-  console.log(unsettledSettlements);
   const unsettledAccounts = unsettledSettlements.flatMap((s) => s.participants.flatMap((p) => p.accounts));
   console.log(unsettledAccounts);
   const unsettledParticipants = new Set(unsettledAccounts.map((acc) => accountParticipants.get(acc.id)));
@@ -203,14 +150,79 @@ function* setNdcToNetLiquidity() {
   }))
   console.log(participantNetLiquidities);
 
-  // Flatten, then call
-  yield all([...participantNetLiquidities.entries()].flatMap(([name, netLiquidities]) =>
-    [...netLiquidities.entries()].map(([currency, netLiquidityAmount]) =>
-      call(apis.netdebitcap.create, {
-        dfspName: name,
-        body: { newValue: netLiquidityAmount, currency },
-      })
-    )
+  return [...participantNetLiquidities.entries()].flatMap(([name, netLiquidities]) =>
+    [...netLiquidities.entries()].map(([currency, netLiquidityAmount]) => ({
+      name,
+      currency,
+      amount: netLiquidityAmount,
+    }))
+  );
+}
+
+function* setNdcToNetLiquidity() {
+  const participantsResponse = yield call(apis.participants.read, {});
+  assert(participantsResponse.status === 200, 'Failed to retrieve participants');
+  const participantsSimple = participantsResponse.data;
+  const participantAccounts = new Map<string, FullAccount[]>(yield all(
+    participantsSimple.map((p: DFSP) => call(function* () {
+      const accountsResponse = yield call(apis.participantAccounts.read, { participantName: p.name });
+      assert(accountsResponse.status === 200, 'Failed to retrieve participant accounts');
+      return yield all([
+        p.name,
+        accountsResponse.data,
+      ]);
+    }))
+  ));
+  console.log(participantAccounts);
+
+  // Get all outstanding settlements
+  const state = [
+    SettlementStatus.PendingSettlement,
+    SettlementStatus.PsTransfersCommitted,
+    SettlementStatus.PsTransfersRecorded,
+    SettlementStatus.PsTransfersReserved,
+    SettlementStatus.Settling,
+  ].join(',');
+  const unsettledSettlementsResponse = yield call(apis.settlements.read, {
+    params: {
+      state,
+    }
+  });
+
+  console.log('Set NDC to net liquidity 1');
+  console.log(unsettledSettlementsResponse);
+
+  // Because when we call
+  //   GET /v2/settlements?some=filters
+  // and there are no settlements, central settlement returns
+  //   400 Bad Request
+  //   {
+  //     "errorInformation": {
+  //       "errorCode": "3100",
+  //       "errorDescription": "Generic validation error - Settlements not found"
+  //     }
+  //   }
+  // Source here:
+  //   https://github.com/mojaloop/central-settlement/blob/45ecfe32d1039870aa9572e23747c24cd6d53c86/src/domain/settlement/index.js#L218
+  // In this case, we have nothing to do; so we return.
+  if (
+    unsettledSettlementsResponse.status === 400 &&
+    /generic validation error.*not found/i.test(unsettledSettlementsResponse.data?.errorInformation?.errorDescription)
+  ) {
+    return;
+  }
+
+  const unsettledSettlements: Settlement[] = unsettledSettlementsResponse.data;
+  console.log(unsettledSettlements);
+
+  yield all(calculateNetLiquidity(unsettledSettlements, participantAccounts).map(
+    ({ name, currency, amount }) => call(apis.netdebitcap.create, {
+      dfspName: name,
+      body: {
+        currency,
+        newValue: amount,
+      },
+    })
   ));
 }
 
