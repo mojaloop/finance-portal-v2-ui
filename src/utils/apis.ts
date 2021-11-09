@@ -80,7 +80,7 @@ const participants: Endpoint = {
 const participantsLimits: Endpoint = {
   service: services.ledgerService,
   url: () => `/participants/limits`,
-}
+};
 
 const participantLimits: Endpoint = {
   service: services.ledgerService,

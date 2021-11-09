@@ -10,13 +10,9 @@ export enum SettlementStatus {
   Aborted = 'ABORTED',
 }
 
-export type HubLedgerAccountType = |
-  "HUB_MULTILATERAL_SETTLEMENT" |
-  "HUB_RECONCILIATION";
+export type HubLedgerAccountType = 'HUB_MULTILATERAL_SETTLEMENT' | 'HUB_RECONCILIATION';
 
-export type ParticipantLedgerAccountType = |
-  "POSITION" |
-  "SETTLEMENT";
+export type ParticipantLedgerAccountType = 'POSITION' | 'SETTLEMENT';
 
 export type LedgerAccountType = ParticipantLedgerAccountType | HubLedgerAccountType;
 
@@ -33,7 +29,7 @@ export interface DFSP {
 
 export interface SettlementParticipantAccount {
   id: number;
-  netSettlementAmount: { amount: number, currency: Currency };
+  netSettlementAmount: { amount: number; currency: Currency };
   reason: string;
   state: SettlementStatus;
 }
@@ -51,7 +47,7 @@ export interface Settlement {
   state: SettlementStatus;
 }
 
-export type LimitType = "NET_DEBIT_CAP";
+export type LimitType = 'NET_DEBIT_CAP';
 
 export interface ParticipantLimit {
   name: string;
