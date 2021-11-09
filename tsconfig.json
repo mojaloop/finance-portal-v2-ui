@@ -18,7 +18,6 @@
   },
   "exclude": [
     "integration_test",
-    "tests",
     "dist",
     "node_modules",
     "webpack.config.js"
