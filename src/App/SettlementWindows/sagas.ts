@@ -33,7 +33,7 @@ function* fetchSettlementWindows() {
     const filters = yield select(getSettlementWindowsFilters);
     const params = helpers.buildFiltersParams(filters);
 
-    yield call(setNdcToNetLiquidity);
+    // yield call(setNdcToNetLiquidity);
 
     const response = yield call(apis.settlementWindows.read, {
       params,
