@@ -17,6 +17,7 @@
     "allowJs": true
   },
   "exclude": [
+    "tests",
     "integration_test",
     "dist",
     "node_modules",
