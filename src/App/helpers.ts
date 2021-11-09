@@ -10,21 +10,32 @@ export interface FullAccount extends ParticipantAccount {
 
 export type FspId = string;
 
+export interface NetLiquidityParams {
+  name: FspId;
+  currency: Currency;
+  amount: number;
+}
+
 export function calculateNetLiquidity(
   unsettledSettlements: Settlement[],
   participantAccounts: Map<FspId, FullAccount[]>,
-): { name: FspId; currency: Currency; amount: number }[] {
+): NetLiquidityParams[] {
   const accountParticipants = new Map(
     [...participantAccounts.entries()].flatMap(([name, accounts]) => accounts.map((acc) => [acc.id, name])),
   );
   console.log(accountParticipants);
   const unsettledAccounts = unsettledSettlements.flatMap((s) => s.participants.flatMap((p) => p.accounts));
   console.log(unsettledAccounts);
-  const unsettledParticipants = new Set(unsettledAccounts.map((acc) => accountParticipants.get(acc.id)));
+  const unsettledParticipants = new Set<FspId>(
+    unsettledAccounts.map((acc) => {
+      const result = accountParticipants.get(acc.id);
+      assert(result !== undefined, `Couldn't find participant for account ${acc.id}`);
+      return result;
+    }),
+  );
   console.log(unsettledParticipants);
   const participantUnsettledAmounts = new Map(
     [...unsettledParticipants.keys()].map((p) => {
-      assert(p !== undefined);
       const thisParticipantAccounts = participantAccounts.get(p);
       assert(thisParticipantAccounts !== undefined, "Couldn't find participant accounts");
       const thisParticipantUnsettledAccounts = unsettledAccounts.filter((acc) =>
@@ -37,7 +48,11 @@ export function calculateNetLiquidity(
         [...thisParticipantUnsettledCurrencies].map((curr) => [
           curr,
           thisParticipantUnsettledAccounts.reduce(
-            (sum, acc) => sum + (acc.netSettlementAmount.currency === curr ? acc.netSettlementAmount.amount : 0),
+            (sum, acc) =>
+              sum +
+              (acc.netSettlementAmount.currency === curr && acc.state !== SettlementStatus.Settled
+                ? acc.netSettlementAmount.amount
+                : 0),
             0,
           ),
         ]),
@@ -110,7 +125,6 @@ export function* setNdcToNetLiquidity() {
     },
   });
 
-  console.log('Set NDC to net liquidity 1');
   console.log(unsettledSettlementsResponse);
 
   // Because when we call

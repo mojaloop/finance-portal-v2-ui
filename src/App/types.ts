@@ -1,5 +1,6 @@
 export type ErrorMessage = string | null;
 
+// TODO: this would be better as a union type
 export enum SettlementStatus {
   PendingSettlement = 'PENDING_SETTLEMENT',
   PsTransfersRecorded = 'PS_TRANSFERS_RECORDED',
@@ -43,8 +44,9 @@ export interface Settlement {
   id: number;
   participants: SettlementParticipant[];
   reason: string;
-  settlementModel: string;
   state: SettlementStatus;
+  createdDate: string;
+  changedDate: string;
 }
 
 export type LimitType = 'NET_DEBIT_CAP';
