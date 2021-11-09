@@ -51,13 +51,6 @@ const FinancialPositions: FC<ConnectorProps> = ({
       key: '',
       sortable: false,
       searchable: false,
-      label: 'Recommended NDC',
-      func: () => 10,
-    },
-    {
-      key: '',
-      sortable: false,
-      searchable: false,
       label: '% NDC Used',
       func: (_: undefined, item: FinancialPosition) => {
         if (!item.positionAccount.value || !item.ndc) {
