@@ -50,6 +50,7 @@ module.exports = {
     'react/destructuring-assignment': 'off',
     'react/require-default-props': 'off',
     'max-len': [1, 120],
+    "no-console": ["warn", { allow: ["error"] }]
   },
   overrides: [
     {
