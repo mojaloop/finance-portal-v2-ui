@@ -84,6 +84,12 @@ In the `integration_test/tests` directory:
 $BROWSER results.html
 ```
 
+#### Debug tests
+Add a call to `await t.debug()` in your test. This will trigger a breakpoint in the browser while
+the tests are executing, at which point you can step through the test and/or interact with the UI.
+
+See: https://testcafe.io/documentation/402835/guides/basic-guides/debug#client-side-debugging
+
 #### Run a single test
 ```sh
 npm run test -- -t 'name of test'
