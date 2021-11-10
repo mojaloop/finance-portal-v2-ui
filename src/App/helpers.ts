@@ -174,7 +174,7 @@ export function* setNdcToNetLiquidity() {
           currency,
           limit: {
             ...currentNdc.limit,
-            value: amount,
+            value: Math.max(amount, 0),
           },
         },
       });
