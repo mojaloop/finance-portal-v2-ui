@@ -354,7 +354,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.Settled,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 100,
+                    amount: 333,
                     currency: 'MMK',
                   },
                 },
@@ -368,7 +368,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.PsTransfersReserved,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 500,
+                    amount: -333,
                     currency: 'MMK',
                   },
                 },
@@ -395,7 +395,7 @@ const testCases: TestCase[] = [
       ]),
       expected: [
         {
-          amount: 500,
+          amount: 1333,
           currency: 'MMK',
           name: 'testmmk2',
         },
@@ -408,7 +408,7 @@ const testCases: TestCase[] = [
     },
   ],
   [
-    'should be calculated correctly for more complex scenarios',
+    'should be calculated correctly for a more complex single-currency scenario',
     {
       unsettledSettlements: [
         {
@@ -426,7 +426,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.PendingSettlement,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 100,
+                    amount: 250,
                     currency: 'MMK',
                   },
                 },
@@ -440,7 +440,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.PendingSettlement,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 500,
+                    amount: -750,
                     currency: 'MMK',
                   },
                 },
@@ -454,7 +454,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.PendingSettlement,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 500,
+                    amount: 1000,
                     currency: 'MMK',
                   },
                 },
@@ -468,7 +468,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.PendingSettlement,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 500,
+                    amount: -500,
                     currency: 'MMK',
                   },
                 },
@@ -483,6 +483,20 @@ const testCases: TestCase[] = [
           createdDate: '2021-11-05T11:49:15.000Z',
           changedDate: '2021-11-05T14:26:43.000Z',
           participants: [
+            {
+              id: 26,
+              accounts: [
+                {
+                  id: 47,
+                  state: SettlementStatus.Settling,
+                  reason: 'Business Operations Portal request',
+                  netSettlementAmount: {
+                    amount: -400,
+                    currency: 'MMK',
+                  },
+                },
+              ],
+            },
             {
               id: 24,
               accounts: [
@@ -505,7 +519,7 @@ const testCases: TestCase[] = [
                   state: SettlementStatus.Settling,
                   reason: 'Business Operations Portal request',
                   netSettlementAmount: {
-                    amount: 500,
+                    amount: 300,
                     currency: 'MMK',
                   },
                 },
@@ -515,6 +529,20 @@ const testCases: TestCase[] = [
         },
       ],
       participantAccounts: new Map([
+        [
+          'testmmk4',
+          [
+            { id: 49, currency: 'MMK', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 50, currency: 'MMK', ledgerAccountType: 'SETTLEMENT', value: 4000 },
+          ],
+        ],
+        [
+          'testmmk3',
+          [
+            { id: 47, currency: 'MMK', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 48, currency: 'MMK', ledgerAccountType: 'SETTLEMENT', value: 20 },
+          ],
+        ],
         [
           'testmmk2',
           [
@@ -532,14 +560,128 @@ const testCases: TestCase[] = [
       ]),
       expected: [
         {
-          amount: 0,
+          amount: 4500,
+          currency: 'MMK',
+          name: 'testmmk4',
+        },
+        {
+          amount: -580,
+          currency: 'MMK',
+          name: 'testmmk3',
+        },
+        {
+          amount: 1450,
           currency: 'MMK',
           name: 'testmmk2',
         },
         {
-          amount: 800,
+          amount: 650,
           currency: 'MMK',
           name: 'testmmk1',
+        },
+      ],
+    },
+  ],
+  [
+    'Should be calculated correctly for multiple currency scenarios',
+    {
+      unsettledSettlements: [
+        {
+          id: 1,
+          state: SettlementStatus.PendingSettlement,
+          reason: 'Business Operations Portal request',
+          createdDate: '2021-11-05T11:49:15.000Z',
+          changedDate: '2021-11-05T14:26:43.000Z',
+          participants: [
+            {
+              id: 24,
+              accounts: [
+                {
+                  id: 41,
+                  state: SettlementStatus.PendingSettlement,
+                  reason: 'Business Operations Portal request',
+                  netSettlementAmount: {
+                    amount: -332,
+                    currency: 'EUR',
+                  },
+                },
+                {
+                  id: 43,
+                  state: SettlementStatus.PendingSettlement,
+                  reason: 'Business Operations Portal request',
+                  netSettlementAmount: {
+                    amount: 500,
+                    currency: 'MMK',
+                  },
+                },
+              ],
+            },
+            {
+              id: 25,
+              accounts: [
+                {
+                  id: 47,
+                  state: SettlementStatus.PendingSettlement,
+                  reason: 'Business Operations Portal request',
+                  netSettlementAmount: {
+                    amount: 332,
+                    currency: 'EUR',
+                  },
+                },
+                {
+                  id: 45,
+                  state: SettlementStatus.PendingSettlement,
+                  reason: 'Business Operations Portal request',
+                  netSettlementAmount: {
+                    amount: -500,
+                    currency: 'MMK',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      participantAccounts: new Map([
+        [
+          'test2',
+          [
+            { id: 47, currency: 'EUR', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 48, currency: 'EUR', ledgerAccountType: 'SETTLEMENT', value: 0 },
+            { id: 45, currency: 'MMK', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 46, currency: 'MMK', ledgerAccountType: 'SETTLEMENT', value: 9847 },
+          ],
+        ],
+        [
+          'test1',
+          [
+            { id: 41, currency: 'EUR', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 42, currency: 'EUR', ledgerAccountType: 'SETTLEMENT', value: 998 },
+            { id: 43, currency: 'MMK', ledgerAccountType: 'POSITION', value: 10 },
+            { id: 44, currency: 'MMK', ledgerAccountType: 'SETTLEMENT', value: 33312 },
+          ],
+        ],
+      ]),
+      expected: [
+        {
+          amount: -332,
+          currency: 'EUR',
+          name: 'test2',
+        },
+        {
+          amount: 1330,
+          currency: 'EUR',
+          name: 'test1',
+        },
+        {
+          amount: 10347,
+          currency: 'MMK',
+          name: 'test2',
+        },
+        {
+          amount: 32812,
+          currency: 'MMK',
+          name: 'test1',
         },
       ],
     },
