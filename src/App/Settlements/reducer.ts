@@ -29,6 +29,7 @@ import {
   closeSettlementDetailPositionsModal,
   setFinalizeSettlementError,
   setFinalizingSettlement,
+  setSettlementReport,
   showFinalizeSettlementModal,
   hideFinalizeSettlementModal,
 } from './actions';
@@ -58,6 +59,7 @@ const initialState: SettlementsState = {
   settlementDetailPositionsError: null,
 
   showFinalizeSettlementModal: false,
+  settlementReport: null,
   finalizingSettlement: null,
   finalizingSettlementError: null,
 };
@@ -207,5 +209,9 @@ export default createReducer(initialState, (builder) =>
     .addCase(showFinalizeSettlementModal, (state: SettlementsState) => ({
       ...state,
       showFinalizeSettlementModal: true,
+    }))
+    .addCase(setSettlementReport, (state: SettlementsState, action: PayloadAction<File>) => ({
+      ...state,
+      settlementReport: action.payload,
     })),
 );

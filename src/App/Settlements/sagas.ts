@@ -1,5 +1,6 @@
 import { strict as assert } from 'assert';
 import { PayloadAction } from '@reduxjs/toolkit';
+import ExcelJS from 'exceljs';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
 import {
@@ -63,20 +64,66 @@ function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, sta
   };
 }
 
-function* finalizeSettlement(action: PayloadAction<Settlement>) {
+function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    // TODO: better investigate usage of 'as ArrayBuffer'
+    reader.onload = () => res(reader.result as ArrayBuffer);
+    reader.onerror = rej;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+interface SettlementReport {
+  settlementId: number;
+  entries: { participant: { id: number, name: string }; balance: number; transferAmount: number };
+}
+
+function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
+  return new Promise((res, rej) => {
+    const wb = new ExcelJS.Workbook();
+    wb.xlsx.load(buf).then(() => {
+      const ws = wb.getWorksheet(1);
+      const startOfData = 7;
+      let endOfData = 7;
+      while (ws.getCell(`A${endOfData}`).text !== '') {
+        endOfData += 1;
+      }
+      const ensure = (row: number, col: number, data: string | undefined) => {
+        assert(data !== '' && data !== undefined, `No data found at row ${row}, column ${col}`);
+        return data;
+      };
+      const entries = ws.getRows(7, endOfData - startOfData)?.map((r) => ({
+        participant: {
+          id: ensure(r.number, 1, r.getCell(1).text.split(' ')[0]),
+          name: ensure(r.number, 1, r.getCell(1).text.split(' ')[1]),
+        },
+        balance: ensure(r.number, 3, r.getCell(3).text),
+        transferAmount: ensure(r.number, 4, r.getCell(4).text),
+      })) || [];
+    })
+  })
+}
+
+function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
   // TODO: timeout
+  const { settlement, report: reportFile } = action.payload;
   try {
-    switch (action.payload.state) {
+    const fileBuf = yield call(readFileAsArrayBuffer, reportFile);
+    console.log(fileBuf);
+    // const rows = reader.worksheets[0].getRows(0, Infinity);
+    // console.log(rows);
+    switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.PendingSettlement,
           }),
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersRecorded),
+          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
         );
         assert.strictEqual(
           result.status,
@@ -91,13 +138,13 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       case SettlementStatus.PsTransfersRecorded: {
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.PsTransfersRecorded,
           }),
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersReserved),
+          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
         );
         assert.strictEqual(
           result.status,
@@ -112,13 +159,13 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       case SettlementStatus.PsTransfersReserved: {
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.PsTransfersReserved,
           }),
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(action.payload, SettlementStatus.PsTransfersCommitted),
+          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersCommitted),
         );
         assert.strictEqual(
           result.status,
@@ -137,7 +184,7 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       case SettlementStatus.Settling: {
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.Settling,
           }),
         );
@@ -154,18 +201,18 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
         // result of accountParticipantsMap.get will not be undefined for any of our accounts. It
         // lets us safely use accountParticipantsMap.get without checking the result.
         assert(
-          action.payload.participants
+          settlement.participants
             .flatMap((p: SettlementParticipant) => p.accounts)
             .every((a: SettlementPositionAccount) => accountParticipantMap.has(a.id)),
           'Expected every account id present in settlement to be returned by GET /participants',
         );
 
-        const requests = action.payload.participants.flatMap((p: SettlementParticipant) =>
+        const requests = settlement.participants.flatMap((p: SettlementParticipant) =>
           p.accounts
             .filter((a: SettlementPositionAccount) => a.state !== SettlementStatus.Settled)
             .map((a: SettlementPositionAccount) => ({
               request: {
-                settlementId: action.payload.id,
+                settlementId: settlement.id,
                 participantId: p.id,
                 accountId: a.id,
                 body: {
@@ -202,18 +249,18 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
         );
 
         let result: { data: Settlement; status: number } = yield call(apis.settlement.read, {
-          settlementId: action.payload.id,
+          settlementId: settlement.id,
         });
         while (result.data.state !== SettlementStatus.Settled) {
           yield delay(5000);
-          result = yield call(apis.settlement.read, { settlementId: action.payload.id });
+          result = yield call(apis.settlement.read, { settlementId: settlement.id });
         }
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settled:
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.Settled,
           }),
         );
@@ -221,7 +268,7 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       case SettlementStatus.Aborted:
         yield put(
           setFinalizingSettlement({
-            ...action.payload,
+            ...settlement,
             state: SettlementStatus.Settled,
           }),
         );
@@ -229,7 +276,7 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       default: {
         // Did you get a compile error here? This code is written such that if every
         // case in the above switch state is not handled, compilation will fail.
-        const exhaustiveCheck: never = action.payload.state;
+        const exhaustiveCheck: never = settlement.state;
         throw new Error(`Unhandled settlement status: ${exhaustiveCheck}`);
       }
     }

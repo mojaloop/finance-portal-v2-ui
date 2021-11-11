@@ -3,6 +3,7 @@ import { State } from 'store/types';
 export const getSettlements = (state: State) => state.subApp.settlements.settlements;
 export const getSettlementsError = (state: State) => state.subApp.settlements.settlementsError;
 export const getIsSettlementsPending = (state: State) => state.subApp.settlements.isSettlementsPending;
+export const getSettlementReport = (state: State) => state.subApp.settlements.settlementReport;
 
 export const getSettlementsFilters = (state: State) => state.subApp.settlements.filters;
 

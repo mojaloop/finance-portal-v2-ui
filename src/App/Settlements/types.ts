@@ -24,6 +24,7 @@ export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail'
 export const SET_SETTLEMENT_DETAIL_POSITIONS = 'Settlements / Set Settlement Detail Positions';
 export const SET_SETTLEMENT_DETAIL_POSITIONS_ERROR = 'Settlements / Set Settlement Detail Positions Error';
 export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Settlement Detail Positions Modal';
+export const SET_SETTLEMENT_REPORT = 'Settlements / Set Settlement Report';
 
 export type IsActive = 1 | 0;
 
@@ -164,6 +165,7 @@ export interface SettlementsState {
   finalizingSettlement: null | Settlement;
   showFinalizeSettlementModal: boolean;
   finalizingSettlementError: null | FinalizeSettlementError;
+  settlementReport: null | File;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;
