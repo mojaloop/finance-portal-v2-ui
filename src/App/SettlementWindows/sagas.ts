@@ -1,3 +1,4 @@
+import { strict as assert } from 'assert';
 import apis from 'utils/apis';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
@@ -56,6 +57,7 @@ function* fetchSettlementWindows() {
       yield put(setSettlementWindows(response.data));
     }
   } catch (e) {
+    console.error(e);
     yield put(setSettlementWindowsError(e.message));
   }
 }
@@ -97,12 +99,11 @@ function* settleWindows() {
       },
     });
 
-    if (settlementResponse.status !== 200) {
-      throw new Error('Unable to settle settlement window');
-    }
+    assert.equal(settlementResponse.status, 200, 'Unable to settle settlement window');
 
     yield put(setSettleSettlementWindowsFinished(settlementResponse.id));
   } catch (e) {
+    console.error(e);
     yield put(setSettleSettlementWindowsError(e.message));
   }
 }
@@ -133,6 +134,7 @@ function* closeSettlementWindow(action: PayloadAction<SettlementWindow>) {
     yield put(setCloseSettlementWindowFinished());
     yield put(requestSettlementWindows());
   } catch (e) {
+    console.error(e);
     yield put(setSettlementWindowsError(e.message));
   }
 }

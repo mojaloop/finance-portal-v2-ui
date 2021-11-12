@@ -1,4 +1,4 @@
-FROM node:10.13-alpine
+FROM node:16.13-alpine
 # First part, build the app
 WORKDIR /app
 COPY package.json /app/

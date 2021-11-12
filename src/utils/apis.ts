@@ -162,6 +162,11 @@ const fundsIn: Endpoint = {
     `/funds-in/${dfspName}/${accountId}`,
 };
 
+const participantsLimits: Endpoint = {
+  service: services.ledgerService,
+  url: () => `/participants/limits`,
+};
+
 const netdebitcap: Endpoint = {
   service: services.portalBackendService,
   url: (_: State, { dfspName }: { dfspName: string }) => `/netdebitcap/${dfspName}`,
@@ -180,6 +185,7 @@ interface EndpointsMap {
   participantAccounts: Endpoint;
   participantAccountTransfer: Endpoint;
   participantLimits: Endpoint;
+  participantsLimits: Endpoint;
   participants: Endpoint;
   settlement: Endpoint;
   settlementParticipantAccount: Endpoint;
@@ -205,6 +211,7 @@ const endpoints = {
   participantAccounts,
   participantAccountTransfer,
   participantLimits,
+  participantsLimits,
   participants,
   settlement,
   settlementParticipantAccount,

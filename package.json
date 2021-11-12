@@ -10,7 +10,8 @@
     "serve": "serve dist -s -p 3002",
     "serve:prod": "serve -s dist -l 8080 --cors",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src --color",
-    "prettier": "prettier --write 'src/**/*.{ts,tsx,js,scss,css,json}' 'webpack.*.js'"
+    "prettier": "prettier --write 'src/**/*.{ts,tsx,js,scss,css,json}' 'webpack.*.js'",
+    "test:unit": "jest --testMatch **/tests/unit/*.ts"
   },
   "authors": [
     "Ivan Annovazzi <ivan@modusbox.com>",
@@ -89,5 +90,10 @@
     "webpack": "5.0.0-beta.29",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "3.11.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "babel-jest": "^27.3.1",
+    "jest": "^27.3.1"
   }
 }

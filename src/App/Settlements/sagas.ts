@@ -3,6 +3,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import ExcelJS from 'exceljs';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
+import { Currency } from '../types';
 import {
   REQUEST_SETTLEMENTS,
   SELECT_SETTLEMENT,
@@ -74,14 +75,25 @@ function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
   });
 }
 
+type FspId = number;
+type FspName = string;
+type AccountId = number;
+type SettlementId = number;
+
+interface Limit {
+  type: 'NET_DEBIT_CAP';
+  value: number;
+  alarmPercentage: number;
+}
+
 interface SettlementReport {
-  settlementId: number;
+  settlementId: SettlementId;
   entries: {
     participant: {
-      id: number;
-      name: string;
+      id: FspId;
+      name: FspName;
     };
-    accountId: number;
+    accountId: AccountId;
     balance: number;
     transferAmount: number;
   }[];
@@ -156,14 +168,189 @@ function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
   });
 }
 
+// function validateSettlementReportAgainstSettlement(settlement: Settlement, report: SettlementReport) {
+//     assert.equal(
+//       settlement.id,
+//       report.settlementId,
+//       `Selected settlement ID is ${settlement.id}. File uploaded is for settlement ${report.settlementId}`,
+//     );
+// // Check:
+// // Warn (because a participant can withdraw funds from these accounts, so some things might line
+// // up funny):
+// // - all transfers add to 0
+// // - transfers correspond to net settlement amounts
+// // - previous balances + transfers correspond to current balances
+// // Error:
+// // - account ID, participant ID, participant name correspond correctly
+// }
+
+interface ApiResponse {
+  status: number;
+  data: any;
+}
+function ensureResponse(response: ApiResponse, status: number, msg: string) {
+  assert.equal(response.status, status, msg);
+  return response.data;
+}
+
+interface ResponseData {
+  name: FspName;
+  currency: Currency;
+  limit: Limit;
+}
+function transformParticipantsLimits(limits: ResponseData[]): Map<FspName, Map<Currency, Limit>> {
+  return limits.reduce((result, e) => {
+    if (result.get(e.name)?.set(e.currency, e.limit) === undefined) {
+      result.set(e.name, new Map([[e.currency, e.limit]]));
+    }
+    return result;
+  }, new Map<FspName, Map<Currency, Limit>>());
+}
+
+interface AccountParticipant {
+  participant: LedgerParticipant;
+  account: LedgerAccount;
+}
+type AccountsParticipants = Map<AccountId, AccountParticipant>;
+function transformParticipantsAccounts(participants: LedgerParticipant[]): AccountsParticipants {
+  return participants
+    .filter((fsp) => !/hub/i.test(fsp.name))
+    .reduce(
+      (result, fsp) => fsp.accounts.reduce((map, acc) => map.set(acc.id, { participant: fsp, account: acc }), result),
+      new Map<AccountId, AccountParticipant>(),
+    );
+}
+
 function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
   // TODO: timeout
   const { settlement, report: reportFile } = action.payload;
   try {
     const fileBuf = yield call(readFileAsArrayBuffer, reportFile);
     console.log(fileBuf);
-    const data = yield call(loadWorksheetData, fileBuf);
-    console.log(data);
+    const report: SettlementReport = yield call(loadWorksheetData, fileBuf);
+    console.log(report);
+    // We need to get limits before we can set limits, because `alarmPercentage` is a required
+    // field when we set a limit, and we don't want to change that here.
+    const participantsLimits = transformParticipantsLimits(
+      ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
+    );
+    console.log(participantsLimits);
+    const accountsParticipants = transformParticipantsAccounts(
+      ensureResponse(yield call(apis.participants.read, {}), 200, 'Failed to retrieve participants'),
+    );
+    console.log(accountsParticipants);
+
+    // Get the participants current positions such that we can determine which will decrease and
+    // which will increase
+    interface AccountWithPosition extends LedgerAccount {
+      value: number;
+    }
+    const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
+      report.entries.map(function* ({ accountId }) {
+        const participantName = accountsParticipants.get(accountId)?.participant.name;
+        assert(participantName, `Couldn't find participant for account ${accountId}`);
+        const result = yield call(apis.participantAccounts.read, { participantName });
+        return [participantName, result];
+      }),
+    ))
+      .flatMap(([participantName, result]: [FspName, ApiResponse]) =>
+        ensureResponse(result, 200, `Failed to retrieve accounts for participant ${participantName}`),
+      )
+      .reduce(
+        (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
+        new Map<AccountId, AccountWithPosition>(),
+      );
+
+    console.log(accountsPositions);
+
+    // TODO: amount, settlementBankBalance, etc. should be MLNumbers
+    interface Adjustment {
+      account: LedgerAccount;
+      participant: LedgerParticipant;
+      amount: number;
+      settlementBankBalance: number;
+    }
+    const adjustments: Adjustment[] = report.entries.map(
+      // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
+      ({ accountId, balance: settlementBankBalance }): Adjustment => {
+        const switchBalance = accountsPositions.get(accountId)?.value;
+        assert(switchBalance !== undefined, `Failed to retrieve position for account ${accountId}`);
+        // TODO: Mojaloop arithmetic?
+        const amount = settlementBankBalance - switchBalance;
+        const accountParticipant = accountsParticipants.get(accountId);
+        assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${accountId}`);
+        const { account, participant } = accountParticipant;
+        // TODO: uncomment before release
+        // assert.equal(
+        //   reportParticipant.name,
+        //   participant.name,
+        //   `Report participant ${reportParticipant.name} did not match switch participant ${participant.name} for account ${accountId}`,
+        // );
+        return {
+          settlementBankBalance,
+          account,
+          participant,
+          amount,
+        };
+      },
+    );
+
+    console.log(adjustments);
+
+    const [debits, credits] = adjustments.reduce(
+      ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
+      [new Set<Adjustment>(), new Set<Adjustment>()],
+    );
+
+    console.log(debits, credits);
+
+    // TODO: is there a problem here when the settlement bank transfer amounts don't correspond
+    // correctly to the netSettlementAmount? I.e. when the position accounts are adjusted, will
+    // they subsequently be correct? I expect so, because this is merely saying "this set of
+    // transfers is no longer relevant to the position account", and the NDC and
+    // settlement/liquidity account balances are decoupled from the position account.
+    //
+    // Process in this order:
+    // 1. apply the new debit NDCs
+    // 2. process the debit funds out
+    // 3. progress the settlement state to PS_TRANSFERS_RESERVED, this will modify the debtors
+    //    positions by the net settlement amount
+    //    TODO: can we now modify the settlement participant accounts to SETTLED state?
+    // 4. process the credit funds in
+    // 5. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
+    //    positions by the corresponding net settlement amounts
+    //    TODO: can we now modify the settlement participant accounts to SETTLED state?
+    // 6. apply the new credit NDCs
+    // TODO: swap 3 and 5, or similar?
+    // Because (2) and (4) do not have any effect on the ability of a participant to make transfers
+    // but (1) and (5) reduce the switch's exposure to unfunded transfers and (3) and (6) increase the
+    // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
+    // processing in this order means we're least likely to leave the switch in a risky state.
+
+    const debtorsNdcResults = yield all(
+      [...debits.values()].map((dr) => {
+        const currentLimit = participantsLimits.get(dr.participant.name)?.get(dr.account.currency);
+        assert(
+          currentLimit !== undefined,
+          `Failed to retrieve current limit for ${dr.participant.name} ${dr.account.currency} account`,
+        );
+        return call(apis.participantLimits.update, {
+          participantName: dr.participant.name,
+          body: {
+            currency: dr.account.currency,
+            limit: {
+              ...currentLimit,
+              value: dr.settlementBankBalance,
+            },
+          },
+        });
+      }),
+    );
+
+    console.log(debtorsNdcResults);
+
+    assert(!participantsLimits, 'fail deliberately');
+    assert(participantsLimits, 'fail deliberately');
     // const rows = reader.worksheets[0].getRows(0, Infinity);
     // console.log(rows);
     switch (settlement.state) {

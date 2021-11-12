@@ -49,7 +49,8 @@ module.exports = {
     'react/jsx-wrap-multilines': 'off',
     'react/destructuring-assignment': 'off',
     'react/require-default-props': 'off',
-    'max-len': [1, 120],
+    'max-len': ['warn', { 'code': 120, 'ignoreUrls': true }],
+    'no-console': ['warn', { allow: ['error'] }]
   },
   overrides: [
     {
