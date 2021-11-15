@@ -3,6 +3,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import ExcelJS from 'exceljs';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
+import { v4 as uuidv4 } from 'uuid';
 import { Currency } from '../types';
 import {
   REQUEST_SETTLEMENTS,
@@ -17,6 +18,8 @@ import {
   FINALIZE_SETTLEMENT,
   FinalizeSettlementError,
   FinalizeSettlementErrorKind,
+  FinalizeSettlementProcessAdjustmentsError,
+  FinalizeSettlementProcessAdjustmentsErrorKind,
   Settlement,
   SettlementDetail,
   SettlementStatus,
@@ -24,6 +27,10 @@ import {
   LedgerAccount,
   SettlementParticipant,
   SettlementPositionAccount,
+  AccountId,
+  FspName,
+  SettlementId,
+  FspId,
 } from './types';
 import {
   setFinalizeSettlementError,
@@ -74,11 +81,6 @@ function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
     reader.readAsArrayBuffer(file);
   });
 }
-
-type FspId = number;
-type FspName = string;
-type AccountId = number;
-type SettlementId = number;
 
 interface Limit {
   type: 'NET_DEBIT_CAP';
@@ -193,12 +195,9 @@ function ensureResponse(response: ApiResponse, status: number, msg: string) {
   return response.data;
 }
 
-interface ResponseData {
-  name: FspName;
-  currency: Currency;
-  limit: Limit;
-}
-function transformParticipantsLimits(limits: ResponseData[]): Map<FspName, Map<Currency, Limit>> {
+function transformParticipantsLimits(
+  limits: { name: FspName; currency: Currency; limit: Limit }[],
+): Map<FspName, Map<Currency, Limit>> {
   return limits.reduce((result, e) => {
     if (result.get(e.name)?.set(e.currency, e.limit) === undefined) {
       result.set(e.name, new Map([[e.currency, e.limit]]));
@@ -219,6 +218,97 @@ function transformParticipantsAccounts(participants: LedgerParticipant[]): Accou
       (result, fsp) => fsp.accounts.reduce((map, acc) => map.set(acc.id, { participant: fsp, account: acc }), result),
       new Map<AccountId, AccountParticipant>(),
     );
+}
+
+interface AccountWithPosition extends LedgerAccount {
+  value: number;
+}
+
+enum ResultStatus {
+  Ok,
+  Err,
+}
+interface Result<T> {
+  status: ResultStatus;
+  value: T;
+}
+interface Adjustment {
+  participant: LedgerParticipant;
+  amount: number;
+  settlementBankBalance: number;
+  account: AccountWithPosition;
+  currentLimit: Limit;
+}
+function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) {
+  yield all(
+    adjustments.map((adj) => {
+      const errorInfo = {
+        participant: adj.participant.name,
+        targetValue: adj.settlementBankBalance,
+        accountId: adj.account.id,
+      };
+      return function* processAdjustment() {
+        const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
+          participantName: adj.participant.name,
+          body: {
+            currency: adj.account.currency,
+            limit: {
+              ...adj.currentLimit,
+              value: adj.settlementBankBalance,
+            },
+          },
+        });
+        if (ndcResult.status !== 200) {
+          return {
+            type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
+            value: errorInfo,
+          };
+        }
+        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
+        // Make the call to process funds out, then poll the balance until it's reduced
+        const fundsOutResult: ApiResponse = yield call(apis.participantAccount.create, {
+          participantName: adj.participant.name,
+          accountId: adj.account.id,
+          body: {
+            externalReference: description,
+            action: adj.amount > 0 ? 'recordFundsIn' : 'recordFundsOutPrepareReserve',
+            reason: description,
+            amount: Math.abs(adj.amount), // TODO: MLNumber
+            transferId: uuidv4(),
+          },
+        });
+        if (fundsOutResult.status !== 200) {
+          return {
+            type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+            value: errorInfo,
+          };
+        }
+        for (let i = 0; i < 5; i++) {
+          const SECONDS = 1000;
+          yield delay(2 * SECONDS);
+          const newBalanceResult: ApiResponse = yield call(apis.participantAccounts.read, {
+            participantName: adj.participant.name,
+            accountId: adj.account.id,
+          });
+          // If the call fails, we'll just try again- so don't handle it
+          const newBalance = newBalanceResult?.data.value;
+          if (newBalanceResult.status === 200 && newBalance && newBalance !== adj.account.value) {
+            if (newBalance !== adj.settlementBankBalance) {
+              return {
+                type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
+                value: errorInfo,
+              };
+            }
+            return 'OK';
+          }
+        }
+        return {
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
+          value: errorInfo,
+        };
+      };
+    }),
+  );
 }
 
 function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
@@ -242,11 +332,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
 
     // Get the participants current positions such that we can determine which will decrease and
     // which will increase
-    interface AccountWithPosition extends LedgerAccount {
-      value: number;
-    }
     const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
-      report.entries.map(function* ({ accountId }) {
+      report.entries.map(function* getParticipantAccount({ accountId }) {
         const participantName = accountsParticipants.get(accountId)?.participant.name;
         assert(participantName, `Couldn't find participant for account ${accountId}`);
         const result = yield call(apis.participantAccounts.read, { participantName });
@@ -264,12 +351,6 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     console.log(accountsPositions);
 
     // TODO: amount, settlementBankBalance, etc. should be MLNumbers
-    interface Adjustment {
-      account: LedgerAccount;
-      participant: LedgerParticipant;
-      amount: number;
-      settlementBankBalance: number;
-    }
     const adjustments: Adjustment[] = report.entries.map(
       // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
       ({ accountId, balance: settlementBankBalance }): Adjustment => {
@@ -279,7 +360,14 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         const amount = settlementBankBalance - switchBalance;
         const accountParticipant = accountsParticipants.get(accountId);
         assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${accountId}`);
-        const { account, participant } = accountParticipant;
+        const { participant } = accountParticipant;
+        const account = accountsPositions.get(accountId);
+        assert(account !== undefined, `Failed to retrieve position for account ${accountId}`);
+        const currentLimit = participantsLimits.get(participant.name)?.get(account.currency);
+        assert(
+          currentLimit !== undefined,
+          `Failed to retrieve limit for participant ${participant.name} currency ${account.currency}`,
+        );
         // TODO: uncomment before release
         // assert.equal(
         //   reportParticipant.name,
@@ -288,9 +376,10 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         // );
         return {
           settlementBankBalance,
-          account,
           participant,
           amount,
+          account,
+          currentLimit,
         };
       },
     );
@@ -312,11 +401,11 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     //
     // Process in this order:
     // 1. apply the new debit NDCs
-    // 2. process the debit funds out
+    // 2. process the debit funds out, reducing the debtors liquidity account balances
     // 3. progress the settlement state to PS_TRANSFERS_RESERVED, this will modify the debtors
     //    positions by the net settlement amount
     //    TODO: can we now modify the settlement participant accounts to SETTLED state?
-    // 4. process the credit funds in
+    // 4. process the credit funds in, increasing the creditors liquidity account balances
     // 5. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
     //    positions by the corresponding net settlement amounts
     //    TODO: can we now modify the settlement participant accounts to SETTLED state?
@@ -327,32 +416,33 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
 
-    const debtorsNdcResults = yield all(
-      [...debits.values()].map((dr) => {
-        const currentLimit = participantsLimits.get(dr.participant.name)?.get(dr.account.currency);
-        assert(
-          currentLimit !== undefined,
-          `Failed to retrieve current limit for ${dr.participant.name} ${dr.account.currency} account`,
-        );
-        return call(apis.participantLimits.update, {
-          participantName: dr.participant.name,
-          body: {
-            currency: dr.account.currency,
-            limit: {
-              ...currentLimit,
-              value: dr.settlementBankBalance,
-            },
-          },
-        });
+    const debtorsResults = yield call(processAdjustments, settlement, [...debits.values()]);
+
+    console.log(debtorsResults);
+
+    const debtorsErrors = debtorsResults.filter((e) => e !== 'OK') as FinalizeSettlementProcessAdjustmentsError[];
+    assert(
+      debtorsErrors.length === 0,
+      new FinalizeSettlementAssertionError({
+        type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
+        value: debtorsErrors,
       }),
     );
 
-    console.log(debtorsNdcResults);
+    const creditorsResults = yield call(processAdjustments, settlement, [...credits.values()]);
+
+    const creditorsErrors = creditorsResults.filter((e) => e !== 'OK') as FinalizeSettlementProcessAdjustmentsError[];
+    assert(
+      creditorsErrors.length === 0,
+      new FinalizeSettlementAssertionError({
+        type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
+        value: creditorsErrors,
+      }),
+    );
 
     assert(!participantsLimits, 'fail deliberately');
     assert(participantsLimits, 'fail deliberately');
-    // const rows = reader.worksheets[0].getRows(0, Infinity);
-    // console.log(rows);
+
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
         yield put(

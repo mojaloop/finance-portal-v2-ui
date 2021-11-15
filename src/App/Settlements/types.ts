@@ -30,26 +30,33 @@ export type IsActive = 1 | 0;
 
 export type LedgerAccountType = 'INTERCHANGE_FEE' | 'POSITION' | 'SETTLEMENT';
 
+export type FspId = number;
+export type FspName = string;
+export type AccountId = number;
+export type SettlementId = number;
+
 export interface LedgerAccount {
-  id: number;
+  id: AccountId;
   ledgerAccountType: LedgerAccountType;
   currency: Currency;
   isActive: IsActive;
 }
 
 export interface LedgerParticipant {
-  name: string;
+  name: FspName;
   id: string;
   created: string; // This is an annoyingly nested json string. I.e. { "created": "\"2021-08-20T08:27:30.000Z\"" }
   isActive: IsActive;
   accounts: LedgerAccount[];
 }
 
+// prettier-ignore
 export enum FinalizeSettlementErrorKind {
-  SET_SETTLEMENT_PS_TRANSFERS_RECORDED = 'Error attempting to set settlement state to PS_TRANSFERS_RECORDED',
-  SET_SETTLEMENT_PS_TRANSFERS_RESERVED = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
+  PROCESS_ADJUSTMENTS                   = 'Error processing adjustments',
+  SET_SETTLEMENT_PS_TRANSFERS_RECORDED  = 'Error attempting to set settlement state to PS_TRANSFERS_RECORDED',
+  SET_SETTLEMENT_PS_TRANSFERS_RESERVED  = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
   SET_SETTLEMENT_PS_TRANSFERS_COMMITTED = 'Error attempting to set settlement state to PS_TRANSFERS_COMMITTED',
-  SETTLE_ACCOUNTS = 'Errors attempting to settle accounts',
+  SETTLE_ACCOUNTS                       = 'Errors attempting to settle accounts',
 }
 
 export interface FinalizeSettlementTransferError {
@@ -65,7 +72,23 @@ export interface FinalizeSettlementSettleAccountError {
   account: SettlementPositionAccount;
 }
 
+// prettier-ignore
+export enum FinalizeSettlementProcessAdjustmentsErrorKind {
+  SET_NDC_FAILED          = 'Error attempting to set NDC',
+  FUNDS_PROCESSING_FAILED = 'Error attempting to process funds in/out',
+  BALANCE_UNCHANGED       = 'Balance unchanged after processing funds in/out',
+  BALANCE_INCORRECT       = 'Incorrect resulting balance after processing funds in/out',
+}
+
+export interface FinalizeSettlementProcessAdjustmentsError {
+  type: FinalizeSettlementProcessAdjustmentsErrorKind;
+  participant: FspName;
+  accountId: AccountId;
+  targetValue: number; // TODO: MLNumber?
+}
+
 export type FinalizeSettlementError =
+  | { type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS; value: FinalizeSettlementProcessAdjustmentsError[] }
   | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }

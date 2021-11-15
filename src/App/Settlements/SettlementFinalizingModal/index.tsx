@@ -48,6 +48,9 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         }));
         return <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />;
       }
+      case FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS: {
+        return 'TODO'; // TODO
+      }
       default: {
         // Did you get a compile error here? This code is written such that if every
         // case in the above switch state is not handled, compilation will fail.
