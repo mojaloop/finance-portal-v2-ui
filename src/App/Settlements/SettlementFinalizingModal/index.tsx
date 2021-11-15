@@ -49,7 +49,8 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         return <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />;
       }
       case FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS: {
-        return 'TODO'; // TODO
+        // TODO: better error message
+        return <div>'Error processing adjustments'</div>;
       }
       default: {
         // Did you get a compile error here? This code is written such that if every
@@ -101,7 +102,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   const content = finalizingSettlementError ? (
     <ErrorBox>
       <div>'Errors finalizing settlement'</div>
-      {computeErrorDetails}
+      {computeErrorDetails(finalizingSettlementError)}
     </ErrorBox>
   ) : (
     <div>

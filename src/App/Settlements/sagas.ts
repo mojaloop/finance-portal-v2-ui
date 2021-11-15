@@ -182,6 +182,7 @@ function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
 // // - previous balances + transfers correspond to current balances
 // // Error:
 // // - account ID, participant ID, participant name correspond correctly
+// // - account is POSITION type
 // }
 
 interface ApiResponse {
@@ -327,6 +328,106 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
   return results.filter((res) => res !== 'OK');
 }
 
+interface SettlementFinalizeData {
+  participantsLimits: Map<FspName, Map<Currency, Limit>>;
+  accountsParticipants: Map<AccountId, AccountParticipant>;
+  participantsAccounts: ParticipantsAccounts;
+  accountsPositions: Map<AccountId, AccountWithPosition>;
+}
+
+function* collectSettlementFinalizeData(report: SettlementReport) {
+  // We need to get limits before we can set limits, because `alarmPercentage` is a required
+  // field when we set a limit, and we don't want to change that here.
+  const participantsLimits = transformParticipantsLimits(
+    ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
+  );
+  console.log(participantsLimits);
+  const participantsAccountsRaw = ensureResponse(
+    yield call(apis.participants.read, {}),
+    200,
+    'Failed to retrieve participants',
+  );
+  const participantsAccounts = getParticipantsAccounts(participantsAccountsRaw);
+  const accountsParticipants = getAccountsParticipants(participantsAccountsRaw);
+  console.log(accountsParticipants);
+
+  // Get the participants current positions such that we can determine which will decrease and
+  // which will increase
+  const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
+    report.entries.map(function* getParticipantAccount({ positionAccountId }) {
+      const participantName = accountsParticipants.get(positionAccountId)?.participant.name;
+      assert(participantName, `Couldn't find participant for account ${positionAccountId}`);
+      const result = yield call(apis.participantAccounts.read, { participantName });
+      return [participantName, result];
+    }),
+  ))
+    .flatMap(([participantName, result]: [FspName, ApiResponse]) =>
+      ensureResponse(result, 200, `Failed to retrieve accounts for participant ${participantName}`),
+    )
+    .reduce(
+      (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
+      new Map<AccountId, AccountWithPosition>(),
+    );
+
+  console.log(accountsPositions);
+
+  return {
+    participantsLimits,
+    accountsParticipants,
+    participantsAccounts,
+    accountsPositions,
+  };
+}
+
+function buildAdjustments(
+  report: SettlementReport,
+  { participantsLimits, accountsParticipants, participantsAccounts, accountsPositions }: SettlementFinalizeData,
+): Adjustment[] {
+  return report.entries.map(
+    // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
+    ({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
+      const switchBalance = accountsPositions.get(positionAccountId)?.value;
+      assert(switchBalance !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
+      // TODO: Mojaloop arithmetic?
+      const amount = settlementBankBalance - switchBalance;
+      const accountParticipant = accountsParticipants.get(positionAccountId);
+      assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
+      const { participant } = accountParticipant;
+      const positionAccount = accountsPositions.get(positionAccountId);
+      assert(positionAccount !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
+      const { currency } = positionAccount;
+      const currentLimit = participantsLimits.get(participant.name)?.get(currency);
+      assert(
+        currentLimit !== undefined,
+        `Failed to retrieve limit for participant ${participant.name} currency ${currency}`,
+      );
+      const settlementAccountId = participantsAccounts.get(participant.name)?.get(currency)?.get('SETTLEMENT')
+        ?.account?.id;
+      assert(settlementAccountId, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
+      const settlementAccount = accountsPositions.get(settlementAccountId);
+      assert(settlementAccount, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
+      assert(
+        settlementAccount.currency === positionAccount.currency,
+        `Unexpected data validation error: position account and settlement account currencies are not equal for ${participant.name}. This is most likely a bug.`,
+      );
+      // TODO: uncomment before release
+      // assert.equal(
+      //   reportParticipant.name,
+      //   participant.name,
+      //   `Report participant ${reportParticipant.name} did not match switch participant ${participant.name} for account ${accountId}`,
+      // );
+      return {
+        settlementBankBalance,
+        participant,
+        amount,
+        positionAccount,
+        settlementAccount,
+        currentLimit,
+      };
+    },
+  );
+}
+
 function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
   // TODO: timeout
   const { settlement, report: reportFile } = action.payload;
@@ -335,81 +436,12 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     console.log(fileBuf);
     const report: SettlementReport = yield call(loadWorksheetData, fileBuf);
     console.log(report);
-    // We need to get limits before we can set limits, because `alarmPercentage` is a required
-    // field when we set a limit, and we don't want to change that here.
-    const participantsLimits = transformParticipantsLimits(
-      ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
-    );
-    console.log(participantsLimits);
-    const participantsAccountsRaw = ensureResponse(
-      yield call(apis.participants.read, {}),
-      200,
-      'Failed to retrieve participants',
-    );
-    const participantsAccounts = getParticipantsAccounts(participantsAccountsRaw);
-    const accountsParticipants = getAccountsParticipants(participantsAccountsRaw);
-    console.log(accountsParticipants);
 
-    // Get the participants current positions such that we can determine which will decrease and
-    // which will increase
-    const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
-      report.entries.map(function* getParticipantAccount({ positionAccountId }) {
-        const participantName = accountsParticipants.get(positionAccountId)?.participant.name;
-        assert(participantName, `Couldn't find participant for account ${positionAccountId}`);
-        const result = yield call(apis.participantAccounts.read, { participantName });
-        return [participantName, result];
-      }),
-    ))
-      .flatMap(([participantName, result]: [FspName, ApiResponse]) =>
-        ensureResponse(result, 200, `Failed to retrieve accounts for participant ${participantName}`),
-      )
-      .reduce(
-        (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
-        new Map<AccountId, AccountWithPosition>(),
-      );
+    const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report);
 
-    console.log(accountsPositions);
+    const adjustments = buildAdjustments(report, finalizeData);
 
     // TODO: amount, settlementBankBalance, etc. should be MLNumbers
-    const adjustments: Adjustment[] = report.entries.map(
-      // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
-      ({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
-        const switchBalance = accountsPositions.get(positionAccountId)?.value;
-        assert(switchBalance !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
-        // TODO: Mojaloop arithmetic?
-        const amount = settlementBankBalance - switchBalance;
-        const accountParticipant = accountsParticipants.get(positionAccountId);
-        assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
-        const { participant } = accountParticipant;
-        const positionAccount = accountsPositions.get(positionAccountId);
-        assert(positionAccount !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
-        const { currency } = positionAccount;
-        const currentLimit = participantsLimits.get(participant.name)?.get(currency);
-        assert(
-          currentLimit !== undefined,
-          `Failed to retrieve limit for participant ${participant.name} currency ${currency}`,
-        );
-        const settlementAccountId = participantsAccounts.get(participant.name)?.get(currency)?.get('SETTLEMENT')
-          ?.account?.id;
-        assert(settlementAccountId, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
-        const settlementAccount = accountsPositions.get(settlementAccountId);
-        assert(settlementAccount, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
-        // TODO: uncomment before release
-        // assert.equal(
-        //   reportParticipant.name,
-        //   participant.name,
-        //   `Report participant ${reportParticipant.name} did not match switch participant ${participant.name} for account ${accountId}`,
-        // );
-        return {
-          settlementBankBalance,
-          participant,
-          amount,
-          positionAccount,
-          settlementAccount,
-          currentLimit,
-        };
-      },
-    );
 
     console.log(adjustments);
 
@@ -471,8 +503,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }),
     );
 
-    assert(!participantsLimits, 'fail deliberately');
-    assert(participantsLimits, 'fail deliberately');
+    assert(creditorsErrors, 'fail deliberately');
+    assert(!creditorsErrors, 'fail deliberately');
 
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
@@ -642,6 +674,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }
     }
   } catch (err) {
+    console.error(err);
     if (!(err instanceof FinalizeSettlementAssertionError)) {
       throw err;
     }
