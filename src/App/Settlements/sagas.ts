@@ -267,6 +267,7 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
             },
           };
         }
+
         const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         // Make the call to process funds out, then poll the balance until it's reduced
         const fundsInOutResult: ApiResponse = yield call(apis.participantAccount.create, {
@@ -278,6 +279,9 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
             reason: description,
             amount: {
               amount: Math.abs(adjustment.amount), // TODO: MLNumber
+              // TODO: I think the transfer fails if currency is missing, but it is advertised as
+              // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
+              currency: adjustment.settlementAccount.currency,
             },
             transferId: uuidv4(),
           },
@@ -291,6 +295,7 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
             },
           };
         }
+
         for (let i = 0; i < 5; i++) {
           const SECONDS = 1000;
           yield delay(2 * SECONDS);
@@ -298,13 +303,20 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
             participantName: adjustment.participant.name,
             accountId: adjustment.settlementAccount.id,
           });
-          // If the call fails, we'll just try again- so don't handle it
-          const newBalance = newBalanceResult?.data.value;
+
+          // If the call fails, we'll just try again- so don't handle a failure status code
+          const newBalance = newBalanceResult?.data?.find(
+            (acc: AccountWithPosition) => acc.id === adjustment.settlementAccount.id,
+          )?.value;
+          console.log('newBalance', newBalance);
+
           // TODO: we don't check anywhere first that the settlement amount is non-zero. This means
           // that the check here that compares newBalance against the settlement account balance
           // could fail if we're processing zero-value funds in/out. This probably isn't possible,
           // but we probably should guard against this.
-          if (newBalanceResult.status === 200 && newBalance && newBalance !== adjustment.settlementAccount.value) {
+          // We use "negative" newBalance because the switch returns a negative value for credit
+          // balances. The switch doesn't have a concept of debit balances for settlement accounts.
+          if (newBalanceResult.status === 200 && newBalance && -newBalance !== adjustment.settlementAccount.value) {
             if (newBalance !== adjustment.settlementBankBalance) {
               return {
                 type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
