@@ -224,14 +224,6 @@ interface AccountWithPosition extends LedgerAccount {
   value: number;
 }
 
-enum ResultStatus {
-  Ok,
-  Err,
-}
-interface Result<T> {
-  status: ResultStatus;
-  value: T;
-}
 interface Adjustment {
   participant: LedgerParticipant;
   amount: number;
@@ -239,8 +231,9 @@ interface Adjustment {
   account: AccountWithPosition;
   currentLimit: Limit;
 }
+
 function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) {
-  yield all(
+  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
     adjustments.map((adj) => {
       const errorInfo = {
         participant: adj.participant.name,
@@ -309,6 +302,7 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
       };
     }),
   );
+  return results.filter((res) => res !== 'OK');
 }
 
 function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
@@ -416,11 +410,12 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
 
-    const debtorsResults = yield call(processAdjustments, settlement, [...debits.values()]);
+    const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
+      ...debits.values(),
+    ]);
 
-    console.log(debtorsResults);
+    console.log(debtorsErrors);
 
-    const debtorsErrors = debtorsResults.filter((e) => e !== 'OK') as FinalizeSettlementProcessAdjustmentsError[];
     assert(
       debtorsErrors.length === 0,
       new FinalizeSettlementAssertionError({
@@ -429,9 +424,12 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }),
     );
 
-    const creditorsResults = yield call(processAdjustments, settlement, [...credits.values()]);
+    const creditorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
+      ...credits.values(),
+    ]);
 
-    const creditorsErrors = creditorsResults.filter((e) => e !== 'OK') as FinalizeSettlementProcessAdjustmentsError[];
+    console.log(creditorsErrors);
+
     assert(
       creditorsErrors.length === 0,
       new FinalizeSettlementAssertionError({
