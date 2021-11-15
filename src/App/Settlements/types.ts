@@ -42,6 +42,25 @@ export interface LedgerAccount {
   isActive: IsActive;
 }
 
+export interface AccountWithPosition extends LedgerAccount {
+  value: number;
+}
+
+export interface Limit {
+  type: 'NET_DEBIT_CAP';
+  value: number;
+  alarmPercentage: number;
+}
+
+export interface Adjustment {
+  participant: LedgerParticipant;
+  amount: number;
+  settlementBankBalance: number;
+  positionAccount: AccountWithPosition;
+  settlementAccount: AccountWithPosition;
+  currentLimit: Limit;
+}
+
 export interface LedgerParticipant {
   name: FspName;
   id: string;
@@ -80,12 +99,32 @@ export enum FinalizeSettlementProcessAdjustmentsErrorKind {
   BALANCE_INCORRECT       = 'Incorrect resulting balance after processing funds in/out',
 }
 
-export interface FinalizeSettlementProcessAdjustmentsError {
-  type: FinalizeSettlementProcessAdjustmentsErrorKind;
-  participant: FspName;
-  accountId: AccountId;
-  targetValue: number; // TODO: MLNumber?
+export interface FinalizeSettlementProcessAdjustmentsBaseError {
+  adjustment: Adjustment;
 }
+
+export interface FinalizeSettlementProcessAdjustmentsRequestError
+  extends FinalizeSettlementProcessAdjustmentsBaseError {
+  error: MojaloopError;
+}
+
+export type FinalizeSettlementProcessAdjustmentsError =
+  | {
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT;
+      value: FinalizeSettlementProcessAdjustmentsBaseError;
+    }
+  | {
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED;
+      value: FinalizeSettlementProcessAdjustmentsBaseError;
+    }
+  | {
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED;
+      value: FinalizeSettlementProcessAdjustmentsRequestError;
+    }
+  | {
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED;
+      value: FinalizeSettlementProcessAdjustmentsRequestError;
+    };
 
 export type FinalizeSettlementError =
   | { type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS; value: FinalizeSettlementProcessAdjustmentsError[] }

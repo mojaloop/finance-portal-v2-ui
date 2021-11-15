@@ -25,12 +25,16 @@ import {
   SettlementStatus,
   LedgerParticipant,
   LedgerAccount,
+  LedgerAccountType,
   SettlementParticipant,
   SettlementPositionAccount,
   AccountId,
   FspName,
   SettlementId,
   FspId,
+  Adjustment,
+  Limit,
+  AccountWithPosition,
 } from './types';
 import {
   setFinalizeSettlementError,
@@ -82,12 +86,6 @@ function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
   });
 }
 
-interface Limit {
-  type: 'NET_DEBIT_CAP';
-  value: number;
-  alarmPercentage: number;
-}
-
 interface SettlementReport {
   settlementId: SettlementId;
   entries: {
@@ -95,7 +93,7 @@ interface SettlementReport {
       id: FspId;
       name: FspName;
     };
-    accountId: AccountId;
+    positionAccountId: AccountId;
     balance: number;
     transferAmount: number;
   }[];
@@ -128,9 +126,9 @@ function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
         ws.getRows(7, endOfData - startOfData)?.map((r) => {
           const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
           const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
-          const [id, accountId] = [Number(idText), Number(accountIdText)];
+          const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
           assert(
-            id && accountId && name,
+            id && positionAccountId && name,
             `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
           );
 
@@ -156,7 +154,7 @@ function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
               id,
               name,
             },
-            accountId,
+            positionAccountId,
             balance,
             transferAmount,
           };
@@ -211,7 +209,7 @@ interface AccountParticipant {
   account: LedgerAccount;
 }
 type AccountsParticipants = Map<AccountId, AccountParticipant>;
-function transformParticipantsAccounts(participants: LedgerParticipant[]): AccountsParticipants {
+function getAccountsParticipants(participants: LedgerParticipant[]): AccountsParticipants {
   return participants
     .filter((fsp) => !/hub/i.test(fsp.name))
     .reduce(
@@ -220,76 +218,98 @@ function transformParticipantsAccounts(participants: LedgerParticipant[]): Accou
     );
 }
 
-interface AccountWithPosition extends LedgerAccount {
-  value: number;
-}
+type ParticipantsAccounts = Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>;
 
-interface Adjustment {
-  participant: LedgerParticipant;
-  amount: number;
-  settlementBankBalance: number;
-  account: AccountWithPosition;
-  currentLimit: Limit;
+function getParticipantsAccounts(participants: LedgerParticipant[]): ParticipantsAccounts {
+  return participants
+    .filter((fsp) => !/hub/i.test(fsp.name))
+    .reduce(
+      (result, fsp) =>
+        fsp.accounts.reduce((map, acc) => {
+          const leaf = { participant: fsp, account: acc };
+          const fspNode = map.get(fsp.name);
+          if (fspNode) {
+            const currencyNode = fspNode.get(acc.currency);
+            if (currencyNode) {
+              currencyNode.set(acc.ledgerAccountType, leaf);
+              return map;
+            }
+            fspNode.set(acc.currency, new Map([[acc.ledgerAccountType, leaf]]));
+            return map;
+          }
+          return map.set(fsp.name, new Map([[acc.currency, new Map([[acc.ledgerAccountType, leaf]])]]));
+        }, result),
+      new Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>(),
+    );
 }
 
 function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) {
   const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
-    adjustments.map((adj) => {
-      const errorInfo = {
-        participant: adj.participant.name,
-        targetValue: adj.settlementBankBalance,
-        accountId: adj.account.id,
-      };
-      return function* processAdjustment() {
+    adjustments.map((adjustment) => {
+      return call(function* processAdjustment() {
         const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
-          participantName: adj.participant.name,
+          participantName: adjustment.participant.name,
           body: {
-            currency: adj.account.currency,
+            currency: adjustment.positionAccount.currency,
             limit: {
-              ...adj.currentLimit,
-              value: adj.settlementBankBalance,
+              ...adjustment.currentLimit,
+              value: adjustment.settlementBankBalance,
             },
           },
         });
         if (ndcResult.status !== 200) {
           return {
             type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
-            value: errorInfo,
+            value: {
+              adjustment,
+              error: ndcResult.data,
+            },
           };
         }
         const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         // Make the call to process funds out, then poll the balance until it's reduced
-        const fundsOutResult: ApiResponse = yield call(apis.participantAccount.create, {
-          participantName: adj.participant.name,
-          accountId: adj.account.id,
+        const fundsInOutResult: ApiResponse = yield call(apis.participantAccount.create, {
+          participantName: adjustment.participant.name,
+          accountId: adjustment.settlementAccount.id,
           body: {
             externalReference: description,
-            action: adj.amount > 0 ? 'recordFundsIn' : 'recordFundsOutPrepareReserve',
+            action: adjustment.amount > 0 ? 'recordFundsIn' : 'recordFundsOutPrepareReserve',
             reason: description,
-            amount: Math.abs(adj.amount), // TODO: MLNumber
+            amount: {
+              amount: Math.abs(adjustment.amount), // TODO: MLNumber
+            },
             transferId: uuidv4(),
           },
         });
-        if (fundsOutResult.status !== 200) {
+        if (fundsInOutResult.status !== 202) {
           return {
             type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
-            value: errorInfo,
+            value: {
+              adjustment,
+              error: fundsInOutResult.data,
+            },
           };
         }
         for (let i = 0; i < 5; i++) {
           const SECONDS = 1000;
           yield delay(2 * SECONDS);
           const newBalanceResult: ApiResponse = yield call(apis.participantAccounts.read, {
-            participantName: adj.participant.name,
-            accountId: adj.account.id,
+            participantName: adjustment.participant.name,
+            accountId: adjustment.settlementAccount.id,
           });
           // If the call fails, we'll just try again- so don't handle it
           const newBalance = newBalanceResult?.data.value;
-          if (newBalanceResult.status === 200 && newBalance && newBalance !== adj.account.value) {
-            if (newBalance !== adj.settlementBankBalance) {
+          // TODO: we don't check anywhere first that the settlement amount is non-zero. This means
+          // that the check here that compares newBalance against the settlement account balance
+          // could fail if we're processing zero-value funds in/out. This probably isn't possible,
+          // but we probably should guard against this.
+          if (newBalanceResult.status === 200 && newBalance && newBalance !== adjustment.settlementAccount.value) {
+            if (newBalance !== adjustment.settlementBankBalance) {
               return {
                 type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
-                value: errorInfo,
+                value: {
+                  adjustment,
+                },
               };
             }
             return 'OK';
@@ -297,9 +317,11 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
         }
         return {
           type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
-          value: errorInfo,
+          value: {
+            adjustment,
+          },
         };
-      };
+      });
     }),
   );
   return results.filter((res) => res !== 'OK');
@@ -319,17 +341,21 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
     );
     console.log(participantsLimits);
-    const accountsParticipants = transformParticipantsAccounts(
-      ensureResponse(yield call(apis.participants.read, {}), 200, 'Failed to retrieve participants'),
+    const participantsAccountsRaw = ensureResponse(
+      yield call(apis.participants.read, {}),
+      200,
+      'Failed to retrieve participants',
     );
+    const participantsAccounts = getParticipantsAccounts(participantsAccountsRaw);
+    const accountsParticipants = getAccountsParticipants(participantsAccountsRaw);
     console.log(accountsParticipants);
 
     // Get the participants current positions such that we can determine which will decrease and
     // which will increase
     const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
-      report.entries.map(function* getParticipantAccount({ accountId }) {
-        const participantName = accountsParticipants.get(accountId)?.participant.name;
-        assert(participantName, `Couldn't find participant for account ${accountId}`);
+      report.entries.map(function* getParticipantAccount({ positionAccountId }) {
+        const participantName = accountsParticipants.get(positionAccountId)?.participant.name;
+        assert(participantName, `Couldn't find participant for account ${positionAccountId}`);
         const result = yield call(apis.participantAccounts.read, { participantName });
         return [participantName, result];
       }),
@@ -347,21 +373,27 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // TODO: amount, settlementBankBalance, etc. should be MLNumbers
     const adjustments: Adjustment[] = report.entries.map(
       // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
-      ({ accountId, balance: settlementBankBalance }): Adjustment => {
-        const switchBalance = accountsPositions.get(accountId)?.value;
-        assert(switchBalance !== undefined, `Failed to retrieve position for account ${accountId}`);
+      ({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
+        const switchBalance = accountsPositions.get(positionAccountId)?.value;
+        assert(switchBalance !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
         // TODO: Mojaloop arithmetic?
         const amount = settlementBankBalance - switchBalance;
-        const accountParticipant = accountsParticipants.get(accountId);
-        assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${accountId}`);
+        const accountParticipant = accountsParticipants.get(positionAccountId);
+        assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
         const { participant } = accountParticipant;
-        const account = accountsPositions.get(accountId);
-        assert(account !== undefined, `Failed to retrieve position for account ${accountId}`);
-        const currentLimit = participantsLimits.get(participant.name)?.get(account.currency);
+        const positionAccount = accountsPositions.get(positionAccountId);
+        assert(positionAccount !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
+        const { currency } = positionAccount;
+        const currentLimit = participantsLimits.get(participant.name)?.get(currency);
         assert(
           currentLimit !== undefined,
-          `Failed to retrieve limit for participant ${participant.name} currency ${account.currency}`,
+          `Failed to retrieve limit for participant ${participant.name} currency ${currency}`,
         );
+        const settlementAccountId = participantsAccounts.get(participant.name)?.get(currency)?.get('SETTLEMENT')
+          ?.account?.id;
+        assert(settlementAccountId, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
+        const settlementAccount = accountsPositions.get(settlementAccountId);
+        assert(settlementAccount, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
         // TODO: uncomment before release
         // assert.equal(
         //   reportParticipant.name,
@@ -372,7 +404,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           settlementBankBalance,
           participant,
           amount,
-          account,
+          positionAccount,
+          settlementAccount,
           currentLimit,
         };
       },
