@@ -2,7 +2,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import { State, Dispatch } from 'store/types';
 import * as actions from '../actions';
 import * as selectors from '../selectors';
-import { Settlement } from '../types';
+import { Settlement, SettlementReport } from '../types';
 
 const stateProps = (state: State) => ({
   settlementReport: selectors.getSettlementReport(state),
@@ -24,10 +24,9 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.hideFinalizeSettlementModal());
     dispatch(actions.requestSettlements());
   },
-  onProcessButtonClick: (report: File, settlement: Settlement) =>
+  onProcessButtonClick: (report: SettlementReport, settlement: Settlement) =>
     dispatch(actions.finalizeSettlement({ report, settlement })),
-  onSelectSettlementReport: (e: React.ChangeEvent<HTMLInputElement>) =>
-    dispatch(actions.setSettlementReport(e.target.files?.[0] || null)),
+  onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
 });
 
 const connector = connect(stateProps, dispatchProps);

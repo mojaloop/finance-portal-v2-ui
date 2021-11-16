@@ -1,7 +1,8 @@
 import { strict as assert } from 'assert';
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import { Button, ErrorBox, Modal, Spinner, DataList } from 'components';
 import connector, { ConnectorProps } from './connectors';
+import { readFileAsArrayBuffer, loadWorksheetData } from '../helpers';
 import { SettlementStatus, FinalizeSettlementError, FinalizeSettlementErrorKind } from '../types';
 
 import './SettlementFinalizingModal.css';
@@ -14,6 +15,8 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   onProcessButtonClick,
   onSelectSettlementReport,
 }) => {
+  const [controller, setController] = useState<AbortController | undefined>(undefined);
+
   function computeErrorDetails(err: FinalizeSettlementError) {
     switch (err.type) {
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
@@ -106,7 +109,55 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     </ErrorBox>
   ) : (
     <div>
-      <input type="file" onChange={onSelectSettlementReport} />
+      <input
+        type="file"
+        // disabled={true}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          // This is a little bit funky: we don't want to put any non-serializable state in the
+          // store, but redux-saga makes this rather tricky. So we do this transformation here.
+          // The problem with this is that the user could, for example, accidentally select a very
+          // large file that spends a long time in readFileAsArrayBuffer. Upon noticing their
+          // error, the user might then select a much smaller file, triggering this function again,
+          // while the previous invocation is still busy in readFileAsArrayBuffer. So we handle
+          // cancellation ourselves here.
+          // TODO: test this; probably by extracting the function processSelectedReportFile
+          if (controller !== undefined) {
+            controller.abort();
+          }
+          const newController = new AbortController();
+          setController(newController);
+          if (e.target.files?.[0]) {
+            (function processSelectedReportFile(signal, file) {
+              return new Promise((resolve, reject) => {
+                signal.addEventListener('abort', () => reject(new Error('aborted')));
+                readFileAsArrayBuffer(file)
+                  .then((fileBuf) => loadWorksheetData(fileBuf))
+                  .then(resolve);
+              })
+                .catch((err) => {
+                  // if aborted, ignore, we're not bothered
+                  if (err.message !== 'aborted') {
+                    throw err;
+                  }
+                })
+                .then(onSelectSettlementReport);
+            })(newController.signal, e.target.files[0]);
+          }
+          // (async function processSelectedReportFile(signal) {
+          //   if (e.target.files?.[0]) {
+          //     signal.addEventListener('abort', () => {
+          //       throw new Error('Aborted');
+          //     });
+          //     const fileBuf = await readFileAsArrayBuffer(e.target.files[0]);
+          //     const report = await loadWorksheetData(fileBuf);
+          //     onSelectSettlementReport(report);
+          //     setController(undefined);
+          //   }
+          // })(newController.signal).catch((err) => {
+          //   console.error(err);
+          // });
+        }}
+      />
       <Button
         kind="secondary"
         noFill
@@ -116,24 +167,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           if (settlementReport !== null) {
-            console.log('Settlement report non-null');
-            console.log(settlementReport);
             onProcessButtonClick(settlementReport, finalizingSettlement);
-            // const wb = new ExcelJS.Workbook();
-            // console.log(wb);
-            // wb.xlsx.load(settlementReport).then(() => {
-            //   // yield call(wb.xlsx.load, reportFile);
-            //   console.log('Loaded settlement report into workbook');
-            //   console.log(wb);
-            //   const ws = wb.getWorksheet(1);
-            //   console.log('Loaded worksheet maybe');
-            //   console.log(ws);
-            //   const report = {
-            //     settlementId: ws.getCell('C3'),
-            //     contents: ws.getRows(7, Infinity),
-            //   };
-            //   console.log(report);
-            // });
           }
         }}
       />

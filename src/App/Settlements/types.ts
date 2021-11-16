@@ -193,6 +193,19 @@ export enum SettlementStatus {
   Aborted = 'ABORTED',
 }
 
+export interface SettlementReport {
+  settlementId: SettlementId;
+  entries: {
+    participant: {
+      id: FspId;
+      name: FspName;
+    };
+    positionAccountId: AccountId;
+    balance: number;
+    transferAmount: number;
+  }[];
+}
+
 export enum DateRanges {
   Today = 'Today',
   TwoDays = 'Past 48 Hours',
@@ -227,7 +240,7 @@ export interface SettlementsState {
   finalizingSettlement: null | Settlement;
   showFinalizeSettlementModal: boolean;
   finalizingSettlementError: null | FinalizeSettlementError;
-  settlementReport: null | File;
+  settlementReport: null | SettlementReport;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;

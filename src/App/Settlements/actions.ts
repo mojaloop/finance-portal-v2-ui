@@ -27,6 +27,7 @@ import {
   Settlement,
   SettlementDetail,
   SettlementDetailPosition,
+  SettlementReport,
   DateRanges,
   FilterNameValue,
 } from './types';
@@ -49,8 +50,9 @@ export const selectSettlement = createAction<Settlement>(SELECT_SETTLEMENT);
 export const setSettlementDetails = createAction<SettlementDetail[]>(SET_SETTLEMENT_DETAILS);
 export const setSettlementDetailsError = createAction<string>(SET_SETTLEMENT_DETAILS_ERROR);
 export const closeSettlementDetailsModal = createAction(CLOSE_SETTLEMENT_DETAIL_MODAL);
-export const finalizeSettlement = createAction<{ settlement: Settlement; report: File }>(FINALIZE_SETTLEMENT);
-export const setSettlementReport = createAction<null | File>(SET_SETTLEMENT_REPORT);
+export const finalizeSettlement =
+  createAction<{ settlement: Settlement; report: SettlementReport }>(FINALIZE_SETTLEMENT);
+export const setSettlementReport = createAction<null | SettlementReport>(SET_SETTLEMENT_REPORT);
 export const setFinalizeSettlementError = createAction<null | FinalizeSettlementError>(FINALIZE_SETTLEMENT_ERROR);
 export const setFinalizingSettlement = createAction<null | Settlement>(FINALIZING_SETTLEMENT);
 export const hideFinalizeSettlementModal = createAction(HIDE_FINALIZE_SETTLEMENT_MODAL);

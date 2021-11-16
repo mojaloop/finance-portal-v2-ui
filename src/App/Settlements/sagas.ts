@@ -1,40 +1,38 @@
 import { strict as assert } from 'assert';
 import { PayloadAction } from '@reduxjs/toolkit';
-import ExcelJS from 'exceljs';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
 import { v4 as uuidv4 } from 'uuid';
 import { Currency } from '../types';
 import {
-  REQUEST_SETTLEMENTS,
-  SELECT_SETTLEMENT,
-  SELECT_SETTLEMENT_DETAIL,
-  SELECT_SETTLEMENTS_FILTER_DATE_RANGE,
-  SELECT_SETTLEMENTS_FILTER_DATE_VALUE,
+  AccountId,
+  AccountWithPosition,
+  Adjustment,
   CLEAR_SETTLEMENTS_FILTER_DATE_RANGE,
-  CLEAR_SETTLEMENTS_FILTER_STATE,
-  SET_SETTLEMENTS_FILTER_VALUE,
   CLEAR_SETTLEMENTS_FILTERS,
+  CLEAR_SETTLEMENTS_FILTER_STATE,
   FINALIZE_SETTLEMENT,
   FinalizeSettlementError,
   FinalizeSettlementErrorKind,
   FinalizeSettlementProcessAdjustmentsError,
   FinalizeSettlementProcessAdjustmentsErrorKind,
-  Settlement,
-  SettlementDetail,
-  SettlementStatus,
-  LedgerParticipant,
+  FspName,
   LedgerAccount,
   LedgerAccountType,
+  LedgerParticipant,
+  Limit,
+  REQUEST_SETTLEMENTS,
+  SELECT_SETTLEMENT,
+  SELECT_SETTLEMENT_DETAIL,
+  SELECT_SETTLEMENTS_FILTER_DATE_RANGE,
+  SELECT_SETTLEMENTS_FILTER_DATE_VALUE,
+  SET_SETTLEMENTS_FILTER_VALUE,
+  Settlement,
+  SettlementDetail,
   SettlementParticipant,
   SettlementPositionAccount,
-  AccountId,
-  FspName,
-  SettlementId,
-  FspId,
-  Adjustment,
-  Limit,
-  AccountWithPosition,
+  SettlementReport,
+  SettlementStatus,
 } from './types';
 import {
   setFinalizeSettlementError,
@@ -74,98 +72,6 @@ function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, sta
       })),
     },
   };
-}
-
-function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    // TODO: better investigate usage of 'as ArrayBuffer'
-    reader.onload = () => res(reader.result as ArrayBuffer);
-    reader.onerror = rej;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-interface SettlementReport {
-  settlementId: SettlementId;
-  entries: {
-    participant: {
-      id: FspId;
-      name: FspName;
-    };
-    positionAccountId: AccountId;
-    balance: number;
-    transferAmount: number;
-  }[];
-}
-
-function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
-  return new Promise((res) => {
-    const wb = new ExcelJS.Workbook();
-    wb.xlsx.load(buf).then(() => {
-      const SETTLEMENT_ID_CELL = 'B1';
-      const PARTICIPANT_INFO_COL = 'A';
-      const BALANCE_COL = 'C';
-      const TRANSFER_AMOUNT_COL = 'D';
-
-      const ws = wb.getWorksheet(1);
-      const settlementIdText = ws.getCell(SETTLEMENT_ID_CELL).text;
-      const settlementId = Number(settlementIdText);
-      assert(
-        settlementId,
-        `Unable to extract settlement ID from cell ${SETTLEMENT_ID_CELL}. Found: ${settlementIdText}`,
-      );
-
-      const startOfData = 7;
-      let endOfData = 7;
-      while (ws.getCell(`A${endOfData}`).text !== '') {
-        endOfData += 1;
-      }
-
-      const entries =
-        ws.getRows(7, endOfData - startOfData)?.map((r) => {
-          const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
-          const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
-          const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
-          assert(
-            id && positionAccountId && name,
-            `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
-          );
-
-          const balanceText = r.getCell(BALANCE_COL).text;
-          const balance = Number(balanceText);
-          assert(
-            balance,
-            `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
-          );
-
-          const isNegative = /^\(\d+\)\)$/;
-          const transferAmountText = r.getCell(TRANSFER_AMOUNT_COL).text.replace(',', '');
-          const transferAmount = isNegative.test(transferAmountText)
-            ? -Number(transferAmountText.replace(/(^\(|\)$)/g, ''))
-            : Number(transferAmountText);
-          assert(
-            transferAmount,
-            `Unable to extract transfer amount from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
-          );
-
-          return {
-            participant: {
-              id,
-              name,
-            },
-            positionAccountId,
-            balance,
-            transferAmount,
-          };
-        }) || [];
-
-      res({
-        settlementId,
-        entries,
-      });
-    });
-  });
 }
 
 // function validateSettlementReportAgainstSettlement(settlement: Settlement, report: SettlementReport) {
@@ -445,15 +351,10 @@ function buildAdjustments(
   );
 }
 
-function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: File }>) {
+function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: SettlementReport }>) {
   // TODO: timeout
-  const { settlement, report: reportFile } = action.payload;
+  const { settlement, report } = action.payload;
   try {
-    const fileBuf = yield call(readFileAsArrayBuffer, reportFile);
-    console.log(fileBuf);
-    const report: SettlementReport = yield call(loadWorksheetData, fileBuf);
-    console.log(report);
-
     const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report);
 
     const adjustments = buildAdjustments(report, finalizeData);

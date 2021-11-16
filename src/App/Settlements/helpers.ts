@@ -1,5 +1,7 @@
+import { strict as assert } from 'assert';
 import moment from 'moment';
-import { DateRanges, SettlementStatus, SettlementFilters } from './types';
+import ExcelJS from 'exceljs';
+import { SettlementReport, DateRanges, SettlementStatus, SettlementFilters } from './types';
 
 const getDateRangesTimestamps = {
   Any: () => ({
@@ -103,4 +105,83 @@ export function mapApiToModel(item: any): Settlement {
     }, 0),
     totalVolume: (Math.random() * 1000000).toFixed(2),
   };
+}
+
+export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    // TODO: better investigate usage of 'as ArrayBuffer'
+    reader.onload = () => res(reader.result as ArrayBuffer);
+    reader.onerror = rej;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
+  return new Promise((res) => {
+    const wb = new ExcelJS.Workbook();
+    wb.xlsx.load(buf).then(() => {
+      const SETTLEMENT_ID_CELL = 'B1';
+      const PARTICIPANT_INFO_COL = 'A';
+      const BALANCE_COL = 'C';
+      const TRANSFER_AMOUNT_COL = 'D';
+
+      const ws = wb.getWorksheet(1);
+      const settlementIdText = ws.getCell(SETTLEMENT_ID_CELL).text;
+      const settlementId = Number(settlementIdText);
+      assert(
+        settlementId,
+        `Unable to extract settlement ID from cell ${SETTLEMENT_ID_CELL}. Found: ${settlementIdText}`,
+      );
+
+      const startOfData = 7;
+      let endOfData = 7;
+      while (ws.getCell(`A${endOfData}`).text !== '') {
+        endOfData += 1;
+      }
+
+      const entries =
+        ws.getRows(7, endOfData - startOfData)?.map((r) => {
+          const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
+          const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
+          const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
+          assert(
+            id && positionAccountId && name,
+            `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
+          );
+
+          const balanceText = r.getCell(BALANCE_COL).text;
+          const balance = Number(balanceText);
+          assert(
+            balance,
+            `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
+          );
+
+          const isNegative = /^\(\d+\)\)$/;
+          const transferAmountText = r.getCell(TRANSFER_AMOUNT_COL).text.replace(',', '');
+          const transferAmount = isNegative.test(transferAmountText)
+            ? -Number(transferAmountText.replace(/(^\(|\)$)/g, ''))
+            : Number(transferAmountText);
+          assert(
+            transferAmount,
+            `Unable to extract transfer amount from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
+          );
+
+          return {
+            participant: {
+              id,
+              name,
+            },
+            positionAccountId,
+            balance,
+            transferAmount,
+          };
+        }) || [];
+
+      res({
+        settlementId,
+        entries,
+      });
+    });
+  });
 }

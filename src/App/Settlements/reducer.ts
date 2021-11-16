@@ -1,12 +1,13 @@
 import { createReducer, PayloadAction } from '@reduxjs/toolkit';
 import {
+  DateRanges,
+  FilterNameValue,
   FinalizeSettlementError,
-  SettlementsState,
   Settlement,
   SettlementDetail,
   SettlementDetailPosition,
-  DateRanges,
-  FilterNameValue,
+  SettlementReport,
+  SettlementsState,
 } from './types';
 import { getDateRangeTimestamp } from './helpers';
 import {
@@ -210,7 +211,7 @@ export default createReducer(initialState, (builder) =>
       ...state,
       showFinalizeSettlementModal: true,
     }))
-    .addCase(setSettlementReport, (state: SettlementsState, action: PayloadAction<File>) => ({
+    .addCase(setSettlementReport, (state: SettlementsState, action: PayloadAction<SettlementReport>) => ({
       ...state,
       settlementReport: action.payload,
     })),
