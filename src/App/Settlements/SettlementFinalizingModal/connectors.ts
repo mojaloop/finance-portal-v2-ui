@@ -8,6 +8,7 @@ const stateProps = (state: State) => ({
   settlementReport: selectors.getSettlementReport(state),
   finalizingSettlement: selectors.getFinalizingSettlement(state),
   finalizingSettlementError: selectors.getFinalizingSettlementError(state),
+  settlementReportError: selectors.getSettlementReportError(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -27,6 +28,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onProcessButtonClick: (report: SettlementReport, settlement: Settlement) =>
     dispatch(actions.finalizeSettlement({ report, settlement })),
   onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
+  onSettlementReportProcessingError: (err: string) => dispatch(actions.setSettlementReportError(err)),
 });
 
 const connector = connect(stateProps, dispatchProps);

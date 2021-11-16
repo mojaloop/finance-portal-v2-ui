@@ -22,6 +22,7 @@ import {
   SHOW_FINALIZE_SETTLEMENT_MODAL,
   FINALIZE_SETTLEMENT,
   FINALIZE_SETTLEMENT_ERROR,
+  SET_SETTLEMENT_REPORT_ERROR,
   FINALIZING_SETTLEMENT,
   FinalizeSettlementError,
   Settlement,
@@ -54,6 +55,7 @@ export const finalizeSettlement =
   createAction<{ settlement: Settlement; report: SettlementReport }>(FINALIZE_SETTLEMENT);
 export const setSettlementReport = createAction<null | SettlementReport>(SET_SETTLEMENT_REPORT);
 export const setFinalizeSettlementError = createAction<null | FinalizeSettlementError>(FINALIZE_SETTLEMENT_ERROR);
+export const setSettlementReportError = createAction<null | string>(SET_SETTLEMENT_REPORT_ERROR);
 export const setFinalizingSettlement = createAction<null | Settlement>(FINALIZING_SETTLEMENT);
 export const hideFinalizeSettlementModal = createAction(HIDE_FINALIZE_SETTLEMENT_MODAL);
 export const showFinalizeSettlementModal = createAction(SHOW_FINALIZE_SETTLEMENT_MODAL);

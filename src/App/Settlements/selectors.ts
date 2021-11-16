@@ -15,6 +15,7 @@ export const getIsSettlementDetailsPending = (state: State) => state.subApp.sett
 export const getFinalizeSettlementModalVisible = (state: State) => state.subApp.settlements.showFinalizeSettlementModal;
 export const getFinalizingSettlement = (state: State) => state.subApp.settlements.finalizingSettlement;
 export const getFinalizingSettlementError = (state: State) => state.subApp.settlements.finalizingSettlementError;
+export const getSettlementReportError = (state: State) => state.subApp.settlements.settlementReportError;
 export const getSelectedSettlementDetail = (state: State) => state.subApp.settlements.selectedSettlementDetail;
 export const getSettlementDetailPositions = (state: State) => state.subApp.settlements.settlementDetailPositions;
 export const getSettlementDetailPositionsError = (state: State) =>

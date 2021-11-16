@@ -14,6 +14,8 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   onModalCloseClick,
   onProcessButtonClick,
   onSelectSettlementReport,
+  onSettlementReportProcessingError,
+  settlementReportError,
 }) => {
   const [controller, setController] = useState<AbortController | undefined>(undefined);
 
@@ -102,10 +104,17 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     return pending;
   }
 
+  // eslint-disable-next-line no-nested-ternary
   const content = finalizingSettlementError ? (
     <ErrorBox>
-      <div>'Errors finalizing settlement'</div>
+      <div>Errors finalizing settlement</div>
       {computeErrorDetails(finalizingSettlementError)}
+    </ErrorBox>
+  ) : settlementReportError ? (
+    <ErrorBox>
+      <div>Error processing report:</div>
+      {settlementReportError}
+      <div>Please review the report format and content and try again.</div>
     </ErrorBox>
   ) : (
     <div>
@@ -132,12 +141,13 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
                 signal.addEventListener('abort', () => reject(new Error('aborted')));
                 readFileAsArrayBuffer(file)
                   .then((fileBuf) => loadWorksheetData(fileBuf))
-                  .then(resolve);
+                  .then(resolve, reject);
               })
                 .catch((err) => {
                   // if aborted, ignore, we're not bothered
                   if (err.message !== 'aborted') {
-                    throw err;
+                    console.error(err);
+                    onSettlementReportProcessingError(err.message);
                   }
                 })
                 .then(onSelectSettlementReport);
@@ -150,7 +160,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         noFill
         size="s"
         label="Process"
-        enabled={settlementReport !== null}
+        disabled={settlementReport === null}
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           if (settlementReport !== null) {
@@ -178,7 +188,9 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       title={`Finalizing settlement ${finalizingSettlement.id}`}
       width="1200px"
       onClose={onModalCloseClick}
-      isCloseEnabled={endStates.includes(finalizingSettlement.state) || finalizingSettlementError}
+      isCloseEnabled={
+        endStates.includes(finalizingSettlement.state) || finalizingSettlementError || settlementReportError
+      }
       flex
     >
       {content}

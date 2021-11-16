@@ -16,6 +16,7 @@ export const SET_SETTLEMENT_DETAILS_ERROR = 'Settlements / Set Settlement Detail
 export const CLOSE_SETTLEMENT_DETAIL_MODAL = 'Settlements / Close Settlement Detail Modal';
 export const FINALIZE_SETTLEMENT = 'Settlements / Finalize Settlement';
 export const FINALIZE_SETTLEMENT_ERROR = 'Settlements / Finalize Settlement Error';
+export const SET_SETTLEMENT_REPORT_ERROR = 'Settlements / Settlement Report Error';
 export const FINALIZING_SETTLEMENT = 'Settlements / Finalizing Settlement';
 export const HIDE_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Hide Finalize Settlement Modal';
 export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settlement Modal';
@@ -241,6 +242,7 @@ export interface SettlementsState {
   showFinalizeSettlementModal: boolean;
   finalizingSettlementError: null | FinalizeSettlementError;
   settlementReport: null | SettlementReport;
+  settlementReportError: null | string;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;
