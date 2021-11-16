@@ -202,16 +202,12 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
           const newBalance = newBalanceResult?.data?.find(
             (acc: AccountWithPosition) => acc.id === adjustment.settlementAccount.id,
           )?.value;
-          console.log('newBalance', newBalance);
 
-          // TODO: we don't check anywhere first that the settlement amount is non-zero. This means
-          // that the check here that compares newBalance against the settlement account balance
-          // could fail if we're processing zero-value funds in/out. This probably isn't possible,
-          // but we probably should guard against this.
-          // We use "negative" newBalance because the switch returns a negative value for credit
-          // balances. The switch doesn't have a concept of debit balances for settlement accounts.
-          if (newBalanceResult.status === 200 && newBalance && -newBalance !== adjustment.settlementBankBalance) {
-            if (newBalance !== adjustment.settlementBankBalance) {
+          if (newBalanceResult.status === 200 && newBalance && newBalance !== adjustment.settlementAccount.value) {
+            // We use "negative" newBalance because the switch returns a negative value for credit
+            // balances. The switch doesn't have a concept of debit balances for settlement
+            // accounts.
+            if (-newBalance !== adjustment.settlementBankBalance) {
               return {
                 type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
                 value: {
@@ -242,7 +238,7 @@ interface SettlementFinalizeData {
 }
 
 function* collectSettlementFinalizeData(report: SettlementReport) {
-  // TODO: parallelize
+  // TODO: parallelize requests in this function
   // We need to get limits before we can set limits, because `alarmPercentage` is a required
   // field when we set a limit, and we don't want to change that here.
   const participantsLimits = transformParticipantsLimits(
