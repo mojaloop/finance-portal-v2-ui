@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import moment from 'moment';
-import ExcelJS from 'exceljs';
+import ExcelJS, { ValueType } from 'exceljs';
 import { SettlementReport, DateRanges, SettlementStatus, SettlementFilters } from './types';
 
 const getDateRangesTimestamps = {
@@ -139,70 +139,87 @@ export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
 
 // Note: ExcelJS does not support streaming in browser.
 export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
-  return new Promise((res) => {
-    const wb = new ExcelJS.Workbook();
-    wb.xlsx.load(buf).then(() => {
-      const SETTLEMENT_ID_CELL = 'B1';
-      const PARTICIPANT_INFO_COL = 'A';
-      const BALANCE_COL = 'C';
-      const TRANSFER_AMOUNT_COL = 'D';
+  const wb = new ExcelJS.Workbook();
+  return wb.xlsx.load(buf).then(() => {
+    const SETTLEMENT_ID_CELL = 'B1';
+    const PARTICIPANT_INFO_COL = 'A';
+    const BALANCE_COL = 'C';
+    const TRANSFER_AMOUNT_COL = 'D';
 
-      const ws = wb.getWorksheet(1);
-      const settlementIdText = ws.getCell(SETTLEMENT_ID_CELL).text;
-      const settlementId = Number(settlementIdText);
-      assert(
-        settlementId,
-        `Unable to extract settlement ID from cell ${SETTLEMENT_ID_CELL}. Found: ${settlementIdText}`,
-      );
+    const ws = wb.getWorksheet(1);
+    const settlementIdText = ws.getCell(SETTLEMENT_ID_CELL).text;
+    const settlementId = Number(settlementIdText);
+    assert(
+      /^[0-9]+$/.test(settlementIdText) && !Number.isNaN(settlementId),
+      new Error(`Unable to extract settlement ID from cell ${SETTLEMENT_ID_CELL}. Found: ${settlementIdText}`),
+    );
 
-      const startOfData = 7;
-      let endOfData = 7;
-      while (ws.getCell(`A${endOfData}`).text !== '') {
-        endOfData += 1;
-      }
+    const startOfData = 7;
+    let endOfData = 7;
+    while (ws.getCell(`A${endOfData}`).text !== '') {
+      endOfData += 1;
+    }
 
-      const entries =
-        ws.getRows(7, endOfData - startOfData)?.map((r) => {
-          const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
-          const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
-          const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
-          assert(
-            id && positionAccountId && name,
-            `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
-          );
+    const entries =
+      ws.getRows(7, endOfData - startOfData)?.map((r) => {
+        const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
+        // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
+        // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML
+        // spec might differently, or further restrict it.
+        const re = /^[0-9]+ [0-9]+ [a-zA-Z][a-zA-Z0-9]+$/;
+        assert(
+          re.test(participantInfoCellContent),
+          `Cell ${PARTICIPANT_INFO_COL}${r.number} does not appear to be formatted correctly. Cell contents: [${participantInfoCellContent}]. Test regex: ${re}.`,
+        );
+        const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
+        const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
+        assert(
+          id && positionAccountId && name,
+          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
+        );
 
-          const balanceText = r.getCell(BALANCE_COL).text;
-          const balance = Number(balanceText);
-          assert(
-            balance,
-            `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
-          );
+        const balanceCell = r.getCell(BALANCE_COL);
+        assert(
+          balanceCell.type === ValueType.Number,
+          `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell data type is not numeric.`,
+        );
+        const balance = Number(balanceCell.value);
+        assert(
+          balanceCell.value !== null &&
+            balanceCell.value !== undefined &&
+            balanceCell.text !== '' &&
+            !Number.isNaN(balance),
+          `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceCell.text}]`,
+        );
 
-          const isNegative = /^\(\d+\)\)$/;
-          const transferAmountText = r.getCell(TRANSFER_AMOUNT_COL).text.replace(',', '');
-          const transferAmount = isNegative.test(transferAmountText)
-            ? -Number(transferAmountText.replace(/(^\(|\)$)/g, ''))
-            : Number(transferAmountText);
-          assert(
-            transferAmount,
-            `Unable to extract transfer amount from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
-          );
+        const transferAmountCell = r.getCell(TRANSFER_AMOUNT_COL);
+        assert(
+          transferAmountCell.type === ValueType.Number,
+          `Unable to extract transfer amount from ${TRANSFER_AMOUNT_COL}${r.number}. Cell data type is not numeric.`,
+        );
+        const transferAmount = Number(transferAmountCell.value);
+        assert(
+          transferAmountCell.value !== null &&
+            transferAmountCell.value !== undefined &&
+            transferAmountCell.text !== '' &&
+            !Number.isNaN(transferAmount),
+          `Unable to extract transfer amount from ${TRANSFER_AMOUNT_COL}${r.number}. Cell contents: [${transferAmountCell.text}]`,
+        );
 
-          return {
-            participant: {
-              id,
-              name,
-            },
-            positionAccountId,
-            balance,
-            transferAmount,
-          };
-        }) || [];
+        return {
+          participant: {
+            id,
+            name,
+          },
+          positionAccountId,
+          balance,
+          transferAmount,
+        };
+      }) || [];
 
-      res({
-        settlementId,
-        entries,
-      });
-    });
+    return {
+      settlementId,
+      entries,
+    };
   });
 }

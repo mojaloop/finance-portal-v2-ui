@@ -3,8 +3,9 @@ import { loadWorksheetData } from '../../../src/App/Settlements/helpers';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-test('simple.xlsx', async () => {
-  const f = await readFile(path.join(__dirname, '/mock_data/simple.xlsx'));
+test('simple_positive.xlsx', async () => {
+  expect.assertions(1);
+  const f = await readFile(path.join(__dirname, '/mock_data/simple_positive.xlsx'));
   const report = await loadWorksheetData(f);
   expect(report).toEqual({
     "settlementId": 13,
@@ -36,13 +37,13 @@ test('simple.xlsx', async () => {
         "balance": 2200,
         "transferAmount": 500
       }
-    ]
+    ],
   });
 });
 
-
-test('simple2.xlsx', async () => {
-  const f = await readFile(path.join(__dirname, '/mock_data/simple2.xlsx'));
+test('simple_positive_2.xlsx', async () => {
+  expect.assertions(1);
+  const f = await readFile(path.join(__dirname, '/mock_data/simple_positive_2.xlsx'));
   const report = await loadWorksheetData(f);
 
   expect(report).toEqual({
@@ -291,6 +292,28 @@ test('simple2.xlsx', async () => {
         "balance": 4548331,
         "transferAmount": 218504
       },
-    ]
+    ],
   });
-})
+});
+
+test('settlement_id_wrong_cell.xlsx', async () => {
+  expect.assertions(1);
+  const f = await readFile(path.join(__dirname, '/mock_data/settlement_id_wrong_cell.xlsx'));
+  await expect(loadWorksheetData(f)).rejects.toThrow(/Unable to extract settlement ID from cell B1/);
+});
+
+test('no_data.xlsx', async () => {
+  expect.assertions(1);
+  const f = await readFile(path.join(__dirname, '/mock_data/no_data.xlsx'));
+  const report = await loadWorksheetData(f);
+  expect(report).toEqual({
+    "settlementId": 13,
+    "entries": [],
+  });
+});
+
+test('bad_mojaloop_identifier_column.xlsx', async () => {
+  expect.assertions(1);
+  const f = await readFile(path.join(__dirname, '/mock_data/bad_mojaloop_identifier_column.xlsx'));
+  await expect(loadWorksheetData(f)).rejects.toThrow(/^Cell A9 does not appear to be formatted correctly. Cell contents: \[3 hana 25\].*$/);
+});
