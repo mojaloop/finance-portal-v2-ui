@@ -157,8 +157,13 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
           };
         }
 
-        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
+        // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
+        // just skip the remaining steps.
+        if (adjustment.amount === 0) {
+          return 'OK';
+        }
         // Make the call to process funds out, then poll the balance until it's reduced
+        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         const fundsInOutResult: ApiResponse = yield call(apis.participantAccount.create, {
           participantName: adjustment.participant.name,
           accountId: adjustment.settlementAccount.id,
@@ -205,7 +210,7 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
           // but we probably should guard against this.
           // We use "negative" newBalance because the switch returns a negative value for credit
           // balances. The switch doesn't have a concept of debit balances for settlement accounts.
-          if (newBalanceResult.status === 200 && newBalance && -newBalance !== adjustment.settlementAccount.value) {
+          if (newBalanceResult.status === 200 && newBalance && -newBalance !== adjustment.settlementBankBalance) {
             if (newBalance !== adjustment.settlementBankBalance) {
               return {
                 type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
@@ -313,7 +318,7 @@ function buildAdjustments(
       // balance as a negative.
       const switchBalance = -settlementAccount.value;
       assert(switchBalance !== undefined, `Failed to retrieve position for account ${settlementAccountId}`);
-      const amount = settlementBankBalance + switchBalance;
+      const amount = settlementBankBalance - switchBalance;
       // TODO: uncomment before release
       // assert.equal(
       //   reportParticipant.name,
