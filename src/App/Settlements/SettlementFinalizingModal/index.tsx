@@ -51,11 +51,32 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           accountId: v.account.id,
           remediation: 'TODO', // TODO
         }));
-        return <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />;
+        return (
+          <div>
+            <div>Errors in settlement state change</div>
+            <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />
+          </div>
+        );
       }
       case FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS: {
-        // TODO: better error message
-        return <div>'Error processing adjustments'</div>;
+        const columns = [
+          { key: 'type', label: 'Message' },
+          { key: 'participantName', label: 'Participant' },
+          { key: 'positionAccountId', label: 'Position Account ID' },
+          { key: 'settlementAccountId', label: 'Settlement Account ID' },
+        ];
+        const list = err.value.map((v) => ({
+          participantName: v.value.adjustment.participant.name,
+          positionAccountId: v.value.adjustment.positionAccount.id,
+          settlementAccountId: v.value.adjustment.settlementAccount.id,
+          type: v.type,
+        }));
+        return (
+          <div>
+            <div>Error processing adjustments</div>
+            <DataList flex={true} columns={columns} list={list} sortColumn="Participant" sortAsc={true} />
+          </div>
+        );
       }
       default: {
         // Did you get a compile error here? This code is written such that if every
@@ -106,10 +127,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 
   // eslint-disable-next-line no-nested-ternary
   const content = finalizingSettlementError ? (
-    <ErrorBox>
-      <div>Errors finalizing settlement</div>
-      {computeErrorDetails(finalizingSettlementError)}
-    </ErrorBox>
+    <ErrorBox>{computeErrorDetails(finalizingSettlementError)}</ErrorBox>
   ) : settlementReportError ? (
     <ErrorBox>
       <div>Error processing report:</div>
