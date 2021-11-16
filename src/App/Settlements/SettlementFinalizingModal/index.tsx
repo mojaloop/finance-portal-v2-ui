@@ -143,19 +143,6 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
                 .then(onSelectSettlementReport);
             })(newController.signal, e.target.files[0]);
           }
-          // (async function processSelectedReportFile(signal) {
-          //   if (e.target.files?.[0]) {
-          //     signal.addEventListener('abort', () => {
-          //       throw new Error('Aborted');
-          //     });
-          //     const fileBuf = await readFileAsArrayBuffer(e.target.files[0]);
-          //     const report = await loadWorksheetData(fileBuf);
-          //     onSelectSettlementReport(report);
-          //     setController(undefined);
-          //   }
-          // })(newController.signal).catch((err) => {
-          //   console.error(err);
-          // });
         }}
       />
       <Button
