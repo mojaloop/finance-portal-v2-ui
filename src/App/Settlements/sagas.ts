@@ -103,7 +103,7 @@ function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
   return new Promise((res) => {
     const wb = new ExcelJS.Workbook();
     wb.xlsx.load(buf).then(() => {
-      const SETTLEMENT_ID_CELL = 'C1';
+      const SETTLEMENT_ID_CELL = 'B1';
       const PARTICIPANT_INFO_COL = 'A';
       const BALANCE_COL = 'C';
       const TRANSFER_AMOUNT_COL = 'D';
