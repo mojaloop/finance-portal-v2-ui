@@ -11,7 +11,7 @@
     "serve:prod": "serve -s dist -l 8080 --cors",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src --color",
     "prettier": "prettier --write 'src/**/*.{ts,tsx,js,scss,css,json}' 'webpack.*.js'",
-    "test:unit": "jest --testMatch **/tests/unit/*.ts"
+    "test:unit": "jest --testMatch **/tests/unit/**/*test.ts"
   },
   "authors": [
     "Ivan Annovazzi <ivan@modusbox.com>",
