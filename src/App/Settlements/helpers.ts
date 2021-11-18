@@ -119,7 +119,7 @@ export function mapApiToModel(item: any): Settlement {
 // // - all transfers add to 0
 // // - transfers correspond to net settlement amounts
 // // - previous balances + transfers correspond to current balances
-// // - accounts correspond to the accounts in the settlement
+// // - accounts correspond one-to-one to the accounts in the settlement
 // // - at least two participants in the settlement
 // // Error:
 // // - account ID, participant ID, participant name correspond correctly

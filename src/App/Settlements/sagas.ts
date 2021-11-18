@@ -287,7 +287,7 @@ function buildAdjustments(
   { participantsLimits, accountsParticipants, participantsAccounts, accountsPositions }: SettlementFinalizeData,
 ): Adjustment[] {
   return report.entries.map(
-    // ({ accountId, balance: settlementBankBalance, participant: reportParticipant }) => {
+    // TODO: amount, settlementBankBalance, etc. should be MLNumbers
     ({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
       const accountParticipant = accountsParticipants.get(positionAccountId);
       assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
@@ -337,21 +337,6 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
   // TODO: timeout
   const { settlement, report } = action.payload;
   try {
-    const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report);
-
-    const adjustments = buildAdjustments(report, finalizeData);
-
-    // TODO: amount, settlementBankBalance, etc. should be MLNumbers
-
-    console.log(adjustments);
-
-    const [debits, credits] = adjustments.reduce(
-      ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
-      [new Set<Adjustment>(), new Set<Adjustment>()],
-    );
-
-    console.log(debits, credits);
-
     // TODO: is there a problem here when the settlement bank transfer amounts don't correspond
     // correctly to the netSettlementAmount? I.e. when the position accounts are adjusted, will
     // they subsequently be correct? I expect so, because this is merely saying "this set of
@@ -359,52 +344,17 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // settlement/liquidity account balances are decoupled from the position account.
     //
     // Process in this order:
+    // 0. ensure all settlement participant accounts are in PS_TRANSFERS_RESERVED
     // 1. apply the new debit NDCs
     // 2. process the debit funds out, reducing the debtors liquidity account balances
-    // 3. progress the settlement state to PS_TRANSFERS_RESERVED, this will modify the debtors
-    //    positions by the net settlement amount
-    //    TODO: can we now modify the settlement participant accounts to SETTLED state?
-    // 4. process the credit funds in, increasing the creditors liquidity account balances
-    // 5. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
+    // 3. process the credit funds in, increasing the creditors liquidity account balances
+    // 4. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
     //    positions by the corresponding net settlement amounts
-    //    TODO: can we now modify the settlement participant accounts to SETTLED state?
-    // 6. apply the new credit NDCs
-    // TODO: swap 3 and 5, or similar?
+    // 5. apply the new credit NDCs
     // Because (2) and (4) do not have any effect on the ability of a participant to make transfers
     // but (1) and (5) reduce the switch's exposure to unfunded transfers and (3) and (6) increase the
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
-
-    const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
-      ...debits.values(),
-    ]);
-
-    console.log(debtorsErrors);
-
-    assert(
-      debtorsErrors.length === 0,
-      new FinalizeSettlementAssertionError({
-        type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
-        value: debtorsErrors,
-      }),
-    );
-
-    const creditorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
-      ...credits.values(),
-    ]);
-
-    console.log(creditorsErrors);
-
-    assert(
-      creditorsErrors.length === 0,
-      new FinalizeSettlementAssertionError({
-        type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
-        value: creditorsErrors,
-      }),
-    );
-
-    assert(creditorsErrors, 'fail deliberately');
-    assert(!creditorsErrors, 'fail deliberately');
 
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
@@ -443,13 +393,58 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           result.status,
           200,
           new FinalizeSettlementAssertionError({
-            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED,
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED,
             value: result.data,
           }),
         );
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
+        const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report);
+
+        const adjustments = buildAdjustments(report, finalizeData);
+
+        console.log(adjustments);
+
+        const [debits, credits] = adjustments.reduce(
+          ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
+          [new Set<Adjustment>(), new Set<Adjustment>()],
+        );
+
+        console.log(debits, credits);
+
+        const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
+          ...debits.values(),
+        ]);
+
+        console.log(debtorsErrors);
+
+        assert(
+          debtorsErrors.length === 0,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
+            value: debtorsErrors,
+          }),
+        );
+
+        const creditorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(
+          processAdjustments,
+          settlement,
+          [...credits.values()],
+        );
+
+        console.log(creditorsErrors);
+
+        assert(
+          creditorsErrors.length === 0,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS,
+            value: creditorsErrors,
+          }),
+        );
+
+        // TODO: the remainder of this state change should probably be per-account, rather than the
+        // whole settlement at once
         yield put(
           setFinalizingSettlement({
             ...settlement,
@@ -464,7 +459,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           result.status,
           200,
           new FinalizeSettlementAssertionError({
-            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED,
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED,
             value: result.data,
           }),
         );
