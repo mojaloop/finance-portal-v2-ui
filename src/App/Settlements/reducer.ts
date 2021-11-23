@@ -4,8 +4,6 @@ import {
   FilterNameValue,
   FinalizeSettlementError,
   Settlement,
-  SettlementDetail,
-  SettlementDetailPosition,
   SettlementReport,
   SettlementsState,
 } from './types';
@@ -21,13 +19,6 @@ import {
   setSettlementsFilterValue,
   clearSettlementsFilters,
   selectSettlement,
-  setSettlementDetailsError,
-  setSettlementDetails,
-  selectSettlementDetail,
-  closeSettlementDetailsModal,
-  setSettlementDetailPositions,
-  setSettlementDetailPositionsError,
-  closeSettlementDetailPositionsModal,
   setFinalizeSettlementError,
   setFinalizingSettlement,
   setSettlementReport,
@@ -48,17 +39,7 @@ const initialState: SettlementsState = {
     state: undefined,
   },
 
-  selectedSettlement: undefined,
-
-  isSettlementDetailsPending: false,
-  settlementDetails: null,
-  settlementDetailsError: null,
-
-  selectedSettlementDetail: undefined,
-
-  isSettlementDetailPositionsPending: false,
-  settlementDetailPositions: [],
-  settlementDetailPositionsError: null,
+  selectedSettlement: null,
 
   showFinalizeSettlementModal: false,
   settlementReport: null,
@@ -150,52 +131,9 @@ export default createReducer(initialState, (builder) =>
       ...state,
       filters: initialState.filters,
     }))
-    .addCase(selectSettlement, (state: SettlementsState, action: PayloadAction<Settlement>) => ({
+    .addCase(selectSettlement, (state: SettlementsState, action: PayloadAction<Settlement | null>) => ({
       ...state,
       selectedSettlement: action.payload,
-      settlementDetails: initialState.settlementDetails,
-      settlementDetailsError: initialState.settlementDetailsError,
-      isSettlementDetailsPending: true,
-    }))
-    .addCase(setSettlementDetails, (state: SettlementsState, action: PayloadAction<Settlement>) => ({
-      ...state,
-      settlementDetails: action.payload,
-      isSettlementDetailsPending: false,
-    }))
-    .addCase(setSettlementDetailsError, (state: SettlementsState, action: PayloadAction<string>) => ({
-      ...state,
-      settlementDetailsError: action.payload,
-      isSettlementDetailsPending: false,
-    }))
-    .addCase(selectSettlementDetail, (state: SettlementsState, action: PayloadAction<SettlementDetail>) => ({
-      ...state,
-      selectedSettlementDetail: action.payload,
-      isSettlementDetailPositionsPending: true,
-    }))
-    .addCase(closeSettlementDetailsModal, (state: SettlementsState) => ({
-      ...state,
-      selectedSettlement: initialState.selectedSettlement,
-      settlementDetails: initialState.settlementDetails,
-      settlementDetailsError: initialState.settlementDetailsError,
-    }))
-    .addCase(
-      setSettlementDetailPositions,
-      (state: SettlementsState, action: PayloadAction<SettlementDetailPosition[]>) => ({
-        ...state,
-        isSettlementDetailPositionsPending: false,
-        settlementDetailPositions: action.payload,
-      }),
-    )
-    .addCase(setSettlementDetailPositionsError, (state: SettlementsState, action: PayloadAction<string>) => ({
-      ...state,
-      isSettlementDetailPositionsPending: false,
-      settlementDetailPositionsError: action.payload,
-    }))
-    .addCase(closeSettlementDetailPositionsModal, (state: SettlementsState) => ({
-      ...state,
-      selectedSettlementDetail: initialState.selectedSettlementDetail,
-      settlementDetailPositions: initialState.settlementDetailPositions,
-      settlementDetailPositionsError: initialState.settlementDetailPositionsError,
     }))
     .addCase(setFinalizeSettlementError, (state: SettlementsState, action: PayloadAction<FinalizeSettlementError>) => ({
       ...state,

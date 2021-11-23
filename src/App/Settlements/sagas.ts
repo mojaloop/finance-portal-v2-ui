@@ -22,13 +22,10 @@ import {
   LedgerParticipant,
   Limit,
   REQUEST_SETTLEMENTS,
-  SELECT_SETTLEMENT,
-  SELECT_SETTLEMENT_DETAIL,
   SELECT_SETTLEMENTS_FILTER_DATE_RANGE,
   SELECT_SETTLEMENTS_FILTER_DATE_VALUE,
   SET_SETTLEMENTS_FILTER_VALUE,
   Settlement,
-  SettlementDetail,
   SettlementParticipant,
   SettlementPositionAccount,
   SettlementReport,
@@ -39,15 +36,10 @@ import {
   setFinalizingSettlement,
   setSettlements,
   setSettlementsError,
-  setSettlementDetails,
-  setSettlementDetailsError,
-  setSettlementDetailPositions,
-  setSettlementDetailPositionsError,
   requestSettlements,
 } from './actions';
 import { getSettlementsFilters } from './selectors';
 import * as helpers from './helpers';
-import { getSettlementDetailPositions } from './_mockData';
 
 class FinalizeSettlementAssertionError extends Error {
   data: FinalizeSettlementError;
@@ -623,40 +615,6 @@ export function* FetchSettlementAfterFiltersChangeSaga(): Generator {
   );
 }
 
-function* fetchSettlementDetails(action: PayloadAction<Settlement>) {
-  try {
-    yield put(setSettlementDetails(action.payload));
-  } catch (e) {
-    yield put(setSettlementDetailsError(e.message));
-  }
-}
-
-export function* FetchSettlementDetailsSaga(): Generator {
-  yield takeLatest(SELECT_SETTLEMENT, fetchSettlementDetails);
-}
-
-function* fetchSettlementDetailPositions(action: PayloadAction<SettlementDetail>) {
-  try {
-    yield call(apis.settlementsDetailPositions.read, {
-      settlementId: action.payload.settlementId,
-      detailId: action.payload.id,
-    });
-    yield put(setSettlementDetailPositions(getSettlementDetailPositions(action.payload)));
-  } catch (e) {
-    yield put(setSettlementDetailPositionsError(e.message));
-  }
-}
-
-export function* FetchSettlementDetailPositionsSaga(): Generator {
-  yield takeLatest(SELECT_SETTLEMENT_DETAIL, fetchSettlementDetailPositions);
-}
-
 export default function* rootSaga(): Generator {
-  yield all([
-    FetchSettlementsSaga(),
-    FetchSettlementDetailsSaga(),
-    FetchSettlementDetailPositionsSaga(),
-    FetchSettlementAfterFiltersChangeSaga(),
-    FinalizeSettlementSaga(),
-  ]);
+  yield all([FetchSettlementsSaga(), FetchSettlementAfterFiltersChangeSaga(), FinalizeSettlementSaga()]);
 }

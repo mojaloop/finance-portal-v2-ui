@@ -1,23 +1,13 @@
 import { strict as assert } from 'assert';
 import React, { FC } from 'react';
-import { Led, Button, Column, DataLabel, DataList, ErrorBox, Modal, Row, Spinner } from 'components';
+import { Led, Column, DataLabel, DataList, Modal, Row } from 'components';
 import { DFSP } from 'App/DFSPs/types';
 import connector, { ConnectorProps } from './connectors';
 import * as helpers from '../helpers';
-import { SettlementDetail, SettlementParticipant } from '../types';
-import SettlementDetailPositions from '../SettlementDetailPositions';
+import { SettlementParticipant } from '../types';
 import './SettlementDetails.css';
 
-const SettlementDetails: FC<ConnectorProps> = ({
-  dfsps,
-  selectedSettlement,
-  settlementDetails,
-  settlementDetailsError,
-  isSettlementDetailsPending,
-  selectedSettlementDetail,
-  onSelectSettlementDetail,
-  onModalCloseClick,
-}) => {
+const SettlementDetails: FC<ConnectorProps> = ({ dfsps, selectedSettlement, onModalCloseClick }) => {
   const detailsColumns = [
     { label: 'DFSP', key: 'dfsp' },
     { label: 'State', key: 'state' },
@@ -32,24 +22,9 @@ const SettlementDetails: FC<ConnectorProps> = ({
       key: 'credit',
       className: 'settlement-details__list__credit',
     },
-    {
-      label: '',
-      key: '',
-      func: (_: unknown, item: SettlementDetail) => (
-        /* eslint-disable */
-        <Button
-          label="View Net Positions"
-          size="s"
-          noFill
-          kind="secondary"
-          onClick={() => onSelectSettlementDetail(item)}
-        />
-        /* eslint-enable */
-      ),
-    },
   ];
-  assert(settlementDetails !== null);
-  const rows = settlementDetails.participants.flatMap((p: SettlementParticipant) =>
+  assert(selectedSettlement !== null);
+  const rows = selectedSettlement.participants.flatMap((p: SettlementParticipant) =>
     p.accounts.map((acc) => ({
       dfsp: dfsps.find((dfsp: DFSP) => dfsp.id === p.id)?.name,
       credit: acc.netSettlementAmount.amount > 0 ? acc.netSettlementAmount.amount : '-',
@@ -59,21 +34,6 @@ const SettlementDetails: FC<ConnectorProps> = ({
       state: acc.state,
     })),
   );
-  let content = null;
-  if (isSettlementDetailsPending) {
-    content = (
-      <div className="settlement-details__loader">
-        <Spinner size={20} />
-      </div>
-    );
-  } else if (settlementDetailsError) {
-    content = <ErrorBox>Settlement Detail: Unable to load data</ErrorBox>;
-  } else
-    content = (
-      <>
-        <DataList flex columns={detailsColumns} list={rows} />
-      </>
-    );
 
   const { color, label } = helpers.getStatusProperties(selectedSettlement.state);
   return (
@@ -119,8 +79,7 @@ const SettlementDetails: FC<ConnectorProps> = ({
           </div>
         </Column>
       </Row>
-      {content}
-      {selectedSettlementDetail && <SettlementDetailPositions />}
+      <DataList flex columns={detailsColumns} list={rows} />
     </Modal>
   );
 };

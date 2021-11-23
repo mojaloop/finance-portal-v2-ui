@@ -13,8 +13,6 @@ export const SET_SETTLEMENTS_FILTER_VALUE = 'Settlements / Set Settlements Filte
 export const CLEAR_SETTLEMENTS_FILTERS = 'Settlements / Clear Settlements Filters';
 
 export const SELECT_SETTLEMENT = 'Settlements / Select Settlement';
-export const SET_SETTLEMENT_DETAILS = 'Settlements / Set Settlement Details';
-export const SET_SETTLEMENT_DETAILS_ERROR = 'Settlements / Set Settlement Details Error';
 export const CLOSE_SETTLEMENT_DETAIL_MODAL = 'Settlements / Close Settlement Detail Modal';
 export const FINALIZE_SETTLEMENT = 'Settlements / Finalize Settlement';
 export const FINALIZE_SETTLEMENT_ERROR = 'Settlements / Finalize Settlement Error';
@@ -24,9 +22,7 @@ export const HIDE_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Hide Finalize Settl
 export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settlement Modal';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
-export const SET_SETTLEMENT_DETAIL_POSITIONS = 'Settlements / Set Settlement Detail Positions';
-export const SET_SETTLEMENT_DETAIL_POSITIONS_ERROR = 'Settlements / Set Settlement Detail Positions Error';
-export const CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL = 'Settlements / Close Settlement Detail Positions Modal';
+
 export const SET_SETTLEMENT_REPORT = 'Settlements / Set Settlement Report';
 
 export type IsActive = 1 | 0;
@@ -141,22 +137,6 @@ export interface MojaloopError {
   errorDescription: string;
 }
 
-export interface SettlementDetail {
-  id: string;
-  settlementId: string;
-  dfspId: number;
-  debit: number;
-  credit: number;
-}
-
-export interface SettlementDetailPosition {
-  id: string;
-  detailId: string;
-  dfsp: string;
-  debit: number;
-  credit: number;
-}
-
 export interface SettlementReport {
   settlementId: SettlementId;
   entries: {
@@ -191,15 +171,7 @@ export interface SettlementsState {
   isSettlementsPending: boolean;
   filters: SettlementFilters;
 
-  selectedSettlement?: Settlement;
-  settlementDetails: null | Settlement;
-  settlementDetailsError: ErrorMessage;
-  isSettlementDetailsPending: boolean;
-
-  selectedSettlementDetail?: SettlementDetail;
-  isSettlementDetailPositionsPending: boolean;
-  settlementDetailPositions: SettlementDetailPosition[];
-  settlementDetailPositionsError: ErrorMessage;
+  selectedSettlement: null | Settlement;
 
   finalizingSettlement: null | Settlement;
   showFinalizeSettlementModal: boolean;
