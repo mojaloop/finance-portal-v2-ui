@@ -14,6 +14,7 @@ import {
   CLEAR_SETTLEMENT_WINDOWS_FILTER_STATE,
   CLEAR_SETTLEMENT_WINDOWS_FILTERS,
   SettlementWindow,
+  SettlementStatus,
 } from './types';
 import {
   requestSettlementWindows,
@@ -99,8 +100,29 @@ function* settleWindows() {
         settlementWindows: windows.map((w) => ({ id: w.settlementWindowId })),
       },
     });
-
     assert.equal(settlementResponse.status, 200, 'Unable to settle settlement window');
+
+    const settlement = settlementResponse.data;
+
+    const settlementRecordedResult = yield call(
+      apis.settlement.update,
+      helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
+    );
+    assert.strictEqual(
+      settlementRecordedResult.status,
+      200,
+      `Mojaloop API error when advancing settlement state to PS_TRANSFERS_RECORDED: ${settlementRecordedResult.data}`,
+    );
+
+    const settlementReservedResult = yield call(
+      apis.settlement.update,
+      helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
+    );
+    assert.strictEqual(
+      settlementReservedResult.status,
+      200,
+      `Mojaloop API error when advancing settlement state to PS_TRANSFERS_RESERVED: ${settlementReservedResult.data}`,
+    );
 
     yield put(setSettleSettlementWindowsFinished(settlementResponse.id));
   } catch (e) {

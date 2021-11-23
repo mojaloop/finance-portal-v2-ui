@@ -1,5 +1,7 @@
 import { ErrorMessage } from 'App/types';
 
+export { Settlement, SettlementStatus } from 'App/types';
+
 export const RESET_SETTLEMENT_WINDOWS = 'Settlement Windows / Reset Settlement Windows';
 export const REQUEST_SETTLEMENT_WINDOWS = 'Settlement Windows / Request Settlement Windows';
 export const SET_SETTLEMENT_WINDOWS = 'Settlement Windows / Set Settlement Windows';
