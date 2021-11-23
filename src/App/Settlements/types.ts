@@ -1,6 +1,6 @@
-import { ErrorMessage, Currency, Settlement, SettlementPositionAccount } from '../types';
+import { ErrorMessage, Currency, Settlement, SettlementParticipantAccount } from '../types';
 
-export { Settlement, SettlementStatus, SettlementParticipant, SettlementPositionAccount } from '../types';
+export { Settlement, SettlementStatus, SettlementParticipant, SettlementParticipantAccount } from '../types';
 
 export const REQUEST_SETTLEMENTS = 'Settlements / Request Settlements';
 export const SET_SETTLEMENTS = 'Settlements / Set Settlements';
@@ -58,6 +58,7 @@ export interface Adjustment {
   positionAccount: AccountWithPosition;
   settlementAccount: AccountWithPosition;
   currentLimit: Limit;
+  settlementParticipantAccount: SettlementParticipantAccount;
 }
 
 export interface LedgerParticipant {
@@ -80,22 +81,23 @@ export enum FinalizeSettlementErrorKind {
 export interface FinalizeSettlementTransferError {
   apiResponse: MojaloopError;
   participant: LedgerParticipant;
-  account: SettlementPositionAccount;
+  account: SettlementParticipantAccount;
   transferId: string;
 }
 
 export interface FinalizeSettlementSettleAccountError {
   apiResponse: MojaloopError;
   participant: LedgerParticipant;
-  account: SettlementPositionAccount;
+  account: SettlementParticipantAccount;
 }
 
 // prettier-ignore
 export enum FinalizeSettlementProcessAdjustmentsErrorKind {
-  SET_NDC_FAILED          = 'Error attempting to set NDC',
-  FUNDS_PROCESSING_FAILED = 'Error attempting to process funds in/out',
-  BALANCE_UNCHANGED       = 'Balance unchanged after processing funds in/out',
-  BALANCE_INCORRECT       = 'Incorrect resulting balance after processing funds in/out',
+  SET_NDC_FAILED                               = 'Error attempting to set NDC',
+  FUNDS_PROCESSING_FAILED                      = 'Error attempting to process funds in/out',
+  BALANCE_UNCHANGED                            = 'Balance unchanged after processing funds in/out',
+  BALANCE_INCORRECT                            = 'Incorrect resulting balance after processing funds in/out',
+  SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED = 'Failed to record settlement participant account state',
 }
 
 export interface FinalizeSettlementProcessAdjustmentsBaseError {

@@ -208,7 +208,7 @@ export interface NetSettlementAmount {
   currency: Currency;
 }
 
-export interface SettlementPositionAccount {
+export interface SettlementParticipantAccount {
   id: number;
   state: SettlementStatus;
   reason: string;
@@ -217,7 +217,7 @@ export interface SettlementPositionAccount {
 
 export interface SettlementParticipant {
   id: number;
-  accounts: SettlementPositionAccount[];
+  accounts: SettlementParticipantAccount[];
 }
 
 export interface Settlement {

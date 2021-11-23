@@ -27,7 +27,7 @@ import {
   SET_SETTLEMENTS_FILTER_VALUE,
   Settlement,
   SettlementParticipant,
-  SettlementPositionAccount,
+  SettlementParticipantAccount,
   SettlementReport,
   SettlementStatus,
 } from './types';
@@ -109,10 +109,34 @@ function getParticipantsAccounts(participants: LedgerParticipant[]): Participant
     );
 }
 
-function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) {
-  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
+function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], newState: SettlementStatus) {
+  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK' | null)[] = yield all(
     adjustments.map((adjustment) => {
       return call(function* processAdjustment() {
+        // TODO: we need state order here and in the display later. It might pay to make
+        // SettlementStatus a sum type. Like
+        //   type SettlementStatus = { 'ABORTED', 0 } | { 'PENDING_SETTLEMENT', 1 } | ...etc.
+        const stateOrder = [
+          SettlementStatus.Aborted,
+          SettlementStatus.PendingSettlement,
+          SettlementStatus.PsTransfersRecorded,
+          SettlementStatus.PsTransfersReserved,
+          SettlementStatus.PsTransfersCommitted,
+          SettlementStatus.Settling,
+          SettlementStatus.Settled,
+        ];
+        const currentState = adjustment.settlementParticipantAccount.state;
+        const statePosition = stateOrder.indexOf(currentState);
+        const newStatePosition = stateOrder.indexOf(newState);
+        assert(
+          statePosition !== -1 && newStatePosition !== -1,
+          `Runtime error determining relative order of settlement participant account states ${newState}, ${currentState}`,
+        );
+        // If the settlement account state is already the target state, then we'll do nothing and
+        // exit here, returning null;
+        if (statePosition >= newStatePosition) {
+          return null;
+        }
         const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
           participantName: adjustment.participant.name,
           body: {
@@ -191,6 +215,26 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[]) 
                 },
               };
             }
+            // Set the settlement participant account to the new state
+            const spaResult = yield call(apis.settlementParticipantAccount.update, {
+              settlementId: settlement.id,
+              participantId: adjustment.participant.id,
+              accountId: adjustment.positionAccount.id,
+              body: {
+                state: newState,
+                reason: description,
+              },
+            });
+            if (spaResult.status !== 200) {
+              return {
+                type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
+                value: {
+                  adjustment,
+                  error: spaResult.data,
+                },
+              };
+            }
+
             return 'OK';
           }
         }
@@ -211,9 +255,10 @@ interface SettlementFinalizeData {
   accountsParticipants: Map<AccountId, AccountParticipant>;
   participantsAccounts: ParticipantsAccounts;
   accountsPositions: Map<AccountId, AccountWithPosition>;
+  settlementParticipantAccounts: Map<AccountId, SettlementParticipantAccount>;
 }
 
-function* collectSettlementFinalizeData(report: SettlementReport) {
+function* collectSettlementFinalizeData(report: SettlementReport, settlement: Settlement) {
   // TODO: parallelize requests in this function
   // We need to get limits before we can set limits, because `alarmPercentage` is a required
   // field when we set a limit, and we don't want to change that here.
@@ -247,20 +292,31 @@ function* collectSettlementFinalizeData(report: SettlementReport) {
       (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
       new Map<AccountId, AccountWithPosition>(),
     );
-
   console.log(accountsPositions);
+
+  const settlementParticipantAccounts = settlement.participants.reduce(
+    (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, acc), mapP),
+    new Map<AccountId, SettlementParticipantAccount>(),
+  );
 
   return {
     participantsLimits,
     accountsParticipants,
     participantsAccounts,
     accountsPositions,
+    settlementParticipantAccounts,
   };
 }
 
 function buildAdjustments(
   report: SettlementReport,
-  { participantsLimits, accountsParticipants, participantsAccounts, accountsPositions }: SettlementFinalizeData,
+  {
+    participantsLimits,
+    accountsParticipants,
+    participantsAccounts,
+    accountsPositions,
+    settlementParticipantAccounts,
+  }: SettlementFinalizeData,
 ): Adjustment[] {
   return report.entries.map(
     // TODO: amount, settlementBankBalance, etc. should be MLNumbers
@@ -291,6 +347,13 @@ function buildAdjustments(
       const switchBalance = -settlementAccount.value;
       assert(switchBalance !== undefined, `Failed to retrieve position for account ${settlementAccountId}`);
       const amount = settlementBankBalance - switchBalance;
+
+      const settlementParticipantAccount = settlementParticipantAccounts.get(positionAccountId);
+      assert(
+        settlementParticipantAccount !== undefined,
+        `Failed to retrieve settlement participant account for account ${positionAccountId}`,
+      );
+
       // TODO: uncomment before release
       // assert.equal(
       //   reportParticipant.name,
@@ -304,6 +367,7 @@ function buildAdjustments(
         positionAccount,
         settlementAccount,
         currentLimit,
+        settlementParticipantAccount,
       };
     },
   );
@@ -376,7 +440,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
-        const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report);
+        const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
 
         const adjustments = buildAdjustments(report, finalizeData);
 
@@ -389,9 +453,12 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
 
         console.log(debits, credits);
 
-        const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, settlement, [
-          ...debits.values(),
-        ]);
+        const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(
+          processAdjustments,
+          settlement,
+          [...debits.values()],
+          SettlementStatus.PsTransfersCommitted,
+        );
 
         console.log(debtorsErrors);
 
@@ -407,6 +474,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           processAdjustments,
           settlement,
           [...credits.values()],
+          SettlementStatus.PsTransfersCommitted,
         );
 
         console.log(creditorsErrors);
@@ -419,26 +487,15 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           }),
         );
 
-        // TODO: the remainder of this state change should probably be per-account, rather than the
-        // whole settlement at once
-        yield put(
-          setFinalizingSettlement({
-            ...settlement,
-            state: SettlementStatus.PsTransfersReserved,
-          }),
-        );
-        const result = yield call(
-          apis.settlement.update,
-          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersCommitted),
-        );
-        assert.strictEqual(
-          result.status,
-          200,
-          new FinalizeSettlementAssertionError({
-            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED,
-            value: result.data,
-          }),
-        );
+        // TODO: there will be an error as we transition to the next stage if not every account is
+        // handled by the adjustments. This is somewhat acceptable, because the user will have been
+        // warned that this could happen. We could prevent an error and simply issue the user with
+        // a notice. We could detect whether the state has changed by collecting the results of all
+        // the above settlement participant account state changes, and if any of them have been
+        // returned with `result.data.state` in the next state (PS_TRANSFERS_COMMITTED) at the time
+        // of writing, then we can continue. Else we should display the notice to the user.
+        // could be easily transmitted as a `FinalizeSettlementAssertionError`, though it isn't
+        // really an error..
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
@@ -467,14 +524,14 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         assert(
           settlement.participants
             .flatMap((p: SettlementParticipant) => p.accounts)
-            .every((a: SettlementPositionAccount) => accountParticipantMap.has(a.id)),
+            .every((a: SettlementParticipantAccount) => accountParticipantMap.has(a.id)),
           'Expected every account id present in settlement to be returned by GET /participants',
         );
 
         const requests = settlement.participants.flatMap((p: SettlementParticipant) =>
           p.accounts
-            .filter((a: SettlementPositionAccount) => a.state !== SettlementStatus.Settled)
-            .map((a: SettlementPositionAccount) => ({
+            .filter((a: SettlementParticipantAccount) => a.state !== SettlementStatus.Settled)
+            .map((a: SettlementParticipantAccount) => ({
               request: {
                 settlementId: settlement.id,
                 participantId: p.id,
@@ -550,6 +607,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       throw err;
     }
     yield put(setFinalizeSettlementError(err.data));
+  } finally {
+    yield put(requestSettlements());
   }
 }
 
