@@ -47,7 +47,7 @@ import {
 } from './actions';
 import { getSettlementsFilters } from './selectors';
 import * as helpers from './helpers';
-import { getSettlementDetails, getSettlementDetailPositions } from './_mockData';
+import { getSettlementDetailPositions } from './_mockData';
 
 class FinalizeSettlementAssertionError extends Error {
   data: FinalizeSettlementError;
@@ -625,8 +625,7 @@ export function* FetchSettlementAfterFiltersChangeSaga(): Generator {
 
 function* fetchSettlementDetails(action: PayloadAction<Settlement>) {
   try {
-    yield call(apis.settlement.read, { settlementId: action.payload.id });
-    yield put(setSettlementDetails(getSettlementDetails(action.payload)));
+    yield put(setSettlementDetails(action.payload));
   } catch (e) {
     yield put(setSettlementDetailsError(e.message));
   }

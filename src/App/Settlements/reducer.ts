@@ -51,7 +51,7 @@ const initialState: SettlementsState = {
   selectedSettlement: undefined,
 
   isSettlementDetailsPending: false,
-  settlementDetails: [],
+  settlementDetails: null,
   settlementDetailsError: null,
 
   selectedSettlementDetail: undefined,
@@ -157,7 +157,7 @@ export default createReducer(initialState, (builder) =>
       settlementDetailsError: initialState.settlementDetailsError,
       isSettlementDetailsPending: true,
     }))
-    .addCase(setSettlementDetails, (state: SettlementsState, action: PayloadAction<SettlementDetail[]>) => ({
+    .addCase(setSettlementDetails, (state: SettlementsState, action: PayloadAction<Settlement>) => ({
       ...state,
       settlementDetails: action.payload,
       isSettlementDetailsPending: false,

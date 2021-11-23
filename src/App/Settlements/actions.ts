@@ -48,7 +48,7 @@ export const setSettlementsFilterValue = createAction<FilterNameValue>(SET_SETTL
 export const clearSettlementsFilters = createAction(CLEAR_SETTLEMENTS_FILTERS);
 
 export const selectSettlement = createAction<Settlement>(SELECT_SETTLEMENT);
-export const setSettlementDetails = createAction<SettlementDetail[]>(SET_SETTLEMENT_DETAILS);
+export const setSettlementDetails = createAction<Settlement>(SET_SETTLEMENT_DETAILS);
 export const setSettlementDetailsError = createAction<string>(SET_SETTLEMENT_DETAILS_ERROR);
 export const closeSettlementDetailsModal = createAction(CLOSE_SETTLEMENT_DETAIL_MODAL);
 export const finalizeSettlement =

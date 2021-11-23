@@ -1,6 +1,6 @@
-import { ErrorMessage, Currency, Settlement, SettlementPositionAccount } from 'App/types';
+import { ErrorMessage, Currency, Settlement, SettlementPositionAccount } from '../types';
 
-export { Settlement, SettlementStatus, SettlementParticipant, SettlementPositionAccount } from 'App/types';
+export { Settlement, SettlementStatus, SettlementParticipant, SettlementPositionAccount } from '../types';
 
 export const REQUEST_SETTLEMENTS = 'Settlements / Request Settlements';
 export const SET_SETTLEMENTS = 'Settlements / Set Settlements';
@@ -192,7 +192,7 @@ export interface SettlementsState {
   filters: SettlementFilters;
 
   selectedSettlement?: Settlement;
-  settlementDetails: SettlementDetail[];
+  settlementDetails: null | Settlement;
   settlementDetailsError: ErrorMessage;
   isSettlementDetailsPending: boolean;
 
