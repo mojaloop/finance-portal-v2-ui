@@ -224,7 +224,6 @@ export interface Settlement {
   id: string;
   state: SettlementStatus;
   participants: SettlementParticipant[];
-  amounts: number[];
   reason: string;
   totalValue: number;
   totalVolume: number;

@@ -24,19 +24,6 @@ const getDetailId = createIdGenerator(2500);
 
 const getCreditDebit = createValueGenerator(100000, 500);
 
-export const getSettlementDetails: (settlement: Settlement) => SettlementDetail[] = (settlement) => {
-  return settlement.amounts.map((amount, index) => {
-    const isDebit = amount < 0;
-    return {
-      id: getDetailId(),
-      settlementId: settlement.id,
-      dfspId: settlement.participants[index].id,
-      debit: isDebit ? amount : 0,
-      credit: !isDebit ? amount : 0,
-    };
-  });
-};
-
 export const getSettlementDetailPositions: (settlementDetail: SettlementDetail) => SettlementDetailPosition[] = (
   settlementDetail,
 ) => {

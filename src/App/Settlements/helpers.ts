@@ -96,11 +96,6 @@ export function mapApiToModel(item: any): Settlement {
     createdDate: item.createdDate,
     changedDate: item.changedDate,
 
-    /* @ts-ignore */
-    amounts: item.participants.map((c: any) => {
-      /* @ts-ignore */
-      return c.accounts.reduce((pp: number, cc: any) => pp + cc.netSettlementAmount.amount, 0);
-    }, 0),
     totalValue: item.participants.reduce((p: number, c: any) => {
       /* @ts-ignore */
       return p + c.accounts.reduce((pp: number, cc: any) => pp + Math.max(cc.netSettlementAmount.amount, 0), 0);
