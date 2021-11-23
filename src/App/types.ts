@@ -192,3 +192,42 @@ export type Currency =
   | 'ZWL'
   | 'ZWN'
   | 'ZWR';
+
+export enum SettlementStatus {
+  PendingSettlement = 'PENDING_SETTLEMENT',
+  PsTransfersRecorded = 'PS_TRANSFERS_RECORDED',
+  PsTransfersReserved = 'PS_TRANSFERS_RESERVED',
+  PsTransfersCommitted = 'PS_TRANSFERS_COMMITTED',
+  Settling = 'SETTLING',
+  Settled = 'SETTLED',
+  Aborted = 'ABORTED',
+}
+
+export interface NetSettlementAmount {
+  amount: number;
+  currency: Currency;
+}
+
+export interface SettlementPositionAccount {
+  id: number;
+  state: SettlementStatus;
+  reason: string;
+  netSettlementAmount: NetSettlementAmount;
+}
+
+export interface SettlementParticipant {
+  id: number;
+  accounts: SettlementPositionAccount[];
+}
+
+export interface Settlement {
+  id: string;
+  state: SettlementStatus;
+  participants: SettlementParticipant[];
+  amounts: number[];
+  reason: string;
+  totalValue: number;
+  totalVolume: number;
+  createdDate: string;
+  changedDate: string;
+}

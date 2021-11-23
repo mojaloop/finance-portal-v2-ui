@@ -154,6 +154,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           const newController = new AbortController();
           setController(newController);
           if (e.target.files?.[0]) {
+            // Use a lambda to close over the argument values at the time of calling
             (function processSelectedReportFile(signal, file) {
               return new Promise((resolve, reject) => {
                 signal.addEventListener('abort', () => reject(new Error('aborted')));

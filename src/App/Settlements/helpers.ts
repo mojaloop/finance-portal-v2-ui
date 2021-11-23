@@ -3,6 +3,8 @@ import moment from 'moment';
 import ExcelJS, { ValueType } from 'exceljs';
 import { SettlementReport, DateRanges, SettlementStatus, SettlementFilters } from './types';
 
+export { buildUpdateSettlementStateRequest } from 'App/helpers';
+
 const getDateRangesTimestamps = {
   Any: () => ({
     start: undefined,

@@ -58,22 +58,6 @@ class FinalizeSettlementAssertionError extends Error {
   }
 }
 
-function buildUpdateSettlementStateRequest(settlement: Readonly<Settlement>, state: SettlementStatus) {
-  return {
-    settlementId: settlement.id,
-    body: {
-      participants: settlement.participants.map((p) => ({
-        ...p,
-        accounts: p.accounts.map((a) => ({
-          id: a.id,
-          reason: 'Business operations portal request',
-          state,
-        })),
-      })),
-    },
-  };
-}
-
 interface ApiResponse {
   status: number;
   data: any;
@@ -366,7 +350,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
+          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
         );
         assert.strictEqual(
           result.status,
@@ -387,7 +371,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
+          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
         );
         assert.strictEqual(
           result.status,
@@ -453,7 +437,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         const result = yield call(
           apis.settlement.update,
-          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersCommitted),
+          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersCommitted),
         );
         assert.strictEqual(
           result.status,
