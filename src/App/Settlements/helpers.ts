@@ -100,7 +100,6 @@ export function mapApiToModel(item: any): Settlement {
       /* @ts-ignore */
       return p + c.accounts.reduce((pp: number, cc: any) => pp + Math.max(cc.netSettlementAmount.amount, 0), 0);
     }, 0),
-    totalVolume: (Math.random() * 1000000).toFixed(2),
   };
 }
 

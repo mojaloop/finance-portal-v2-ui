@@ -226,7 +226,6 @@ export interface Settlement {
   participants: SettlementParticipant[];
   reason: string;
   totalValue: number;
-  totalVolume: number;
   createdDate: string;
   changedDate: string;
 }
