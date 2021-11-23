@@ -1,9 +1,21 @@
 import { strict as assert } from 'assert';
 import moment from 'moment';
-import ExcelJS, { ValueType } from 'exceljs';
+import ExcelJS from 'exceljs';
 import { SettlementReport, DateRanges, SettlementStatus, SettlementFilters } from './types';
 
 export { buildUpdateSettlementStateRequest } from 'App/helpers';
+
+// TODO: unit testing
+const isNumericTextRe =
+  /^(\((?<parenthesized>[0-9]+(\.[0-9]+)?)\)|(?<positive>[0-9]+(\.[0-9]+)?)|(?<negative>-[0-9]+(\.[0-9]+)?))$/g;
+const extractReportQuantity = (text: string): number => {
+  const allMatches = Array.from(text.matchAll(isNumericTextRe));
+  if (allMatches.length !== 1 || allMatches[0].length === 0) {
+    return NaN;
+  }
+  const { positive, negative, parenthesized } = allMatches[0]?.groups || {};
+  return Number(positive || negative || parenthesized);
+};
 
 const getDateRangesTimestamps = {
   Any: () => ({
@@ -115,7 +127,8 @@ export function mapApiToModel(item: any): Settlement {
 // // - all transfers add to 0
 // // - transfers correspond to net settlement amounts
 // // - previous balances + transfers correspond to current balances
-// // - accounts correspond one-to-one to the accounts in the settlement
+// // - accounts correspond one-to-one to the accounts in the settlement (warning: there may be
+// //   *more* accounts in the finalization file than in the settlement)
 // // - at least two participants in the settlement
 // // Error:
 // // - account ID, participant ID, participant name correspond correctly
@@ -163,45 +176,30 @@ export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementRepor
         // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
         // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML
         // spec might differently, or further restrict it.
-        const re = /^(?<idText>[0-9]+) (?<accountIdText>[0-9]+) (?<name>[a-zA-Z][a-zA-Z0-9]+)$/;
-        const match = re.exec(participantInfoCellContent);
+        const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]+)$/g;
         assert(
-          match !== null && match.groups,
+          re.test(participantInfoCellContent),
           `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]. Matching regex: ${re}`,
         );
-        const { idText, accountIdText, name } = match.groups;
+        const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
         const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
         assert(
           !Number.isNaN(id) && !Number.isNaN(positionAccountId) && name,
           `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
         );
 
-        const balanceCell = r.getCell(BALANCE_COL);
+        const balanceText = r.getCell(BALANCE_COL).text;
+        const balance = extractReportQuantity(balanceText);
         assert(
-          balanceCell.type === ValueType.Number,
-          `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell data type is not numeric.`,
-        );
-        const balance = Number(balanceCell.value);
-        assert(
-          balanceCell.value !== null &&
-            balanceCell.value !== undefined &&
-            balanceCell.text !== '' &&
-            !Number.isNaN(balance),
-          `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceCell.text}]`,
+          !Number.isNaN(balance),
+          `Unable to extract account balance from ${BALANCE_COL}${r.number}. Cell contents: [${balanceText}]`,
         );
 
-        const transferAmountCell = r.getCell(TRANSFER_AMOUNT_COL);
+        const transferAmountText = r.getCell(TRANSFER_AMOUNT_COL).text;
+        const transferAmount = extractReportQuantity(transferAmountText);
         assert(
-          transferAmountCell.type === ValueType.Number,
-          `Unable to extract transfer amount from ${TRANSFER_AMOUNT_COL}${r.number}. Cell data type is not numeric.`,
-        );
-        const transferAmount = Number(transferAmountCell.value);
-        assert(
-          transferAmountCell.value !== null &&
-            transferAmountCell.value !== undefined &&
-            transferAmountCell.text !== '' &&
-            !Number.isNaN(transferAmount),
-          `Unable to extract transfer amount from ${TRANSFER_AMOUNT_COL}${r.number}. Cell contents: [${transferAmountCell.text}]`,
+          !Number.isNaN(transferAmount),
+          `Unable to extract transfer amount from ${TRANSFER_AMOUNT_COL}${r.number}. Cell contents: [${transferAmountText}]`,
         );
 
         return {
