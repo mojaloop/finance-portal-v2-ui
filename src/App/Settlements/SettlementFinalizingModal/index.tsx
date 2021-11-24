@@ -2,7 +2,7 @@ import { strict as assert } from 'assert';
 import React, { FC, useState } from 'react';
 import { Button, ErrorBox, Modal, Spinner, DataList } from 'components';
 import connector, { ConnectorProps } from './connectors';
-import { readFileAsArrayBuffer, loadWorksheetData } from '../helpers';
+import { readFileAsArrayBuffer, deserializeReport } from '../helpers';
 import { SettlementStatus, FinalizeSettlementError, FinalizeSettlementErrorKind } from '../types';
 
 import './SettlementFinalizingModal.css';
@@ -87,7 +87,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     }
   }
 
-  assert(finalizingSettlement, 'Expected finalizing settlement. This should be an unreachable state.');
+  assert(finalizingSettlement, 'Runtime assertion error: expected finalizing settlement.');
 
   const orderedStates = [
     SettlementStatus.PendingSettlement,
@@ -130,7 +130,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     <ErrorBox>{computeErrorDetails(finalizingSettlementError)}</ErrorBox>
   ) : settlementReportError ? (
     <ErrorBox>
-      <div>Error processing report:</div>
+      <div>Error validating report:</div>
       {settlementReportError}
       <div>Please review the report format and content and try again.</div>
     </ErrorBox>
@@ -159,7 +159,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
               return new Promise((resolve, reject) => {
                 signal.addEventListener('abort', () => reject(new Error('aborted')));
                 readFileAsArrayBuffer(file)
-                  .then((fileBuf) => loadWorksheetData(fileBuf))
+                  .then((fileBuf) => deserializeReport(fileBuf))
                   .then(resolve, reject);
               })
                 .catch((err) => {
@@ -207,6 +207,10 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       title={`Finalizing settlement ${finalizingSettlement.id}`}
       width="1200px"
       onClose={onModalCloseClick}
+      // TODO: this is wrong, the user can't exit the modal early. We only want to prevent them
+      // exiting the modal _while_ we're processing. Try it out: if the settlement was created from
+      // closed settlement windows in the UI, it will begin with its state in PS_TRANSFERS_RESERVED
+      // and the user will not be able to exit the modal.
       isCloseEnabled={
         endStates.includes(finalizingSettlement.state) || finalizingSettlementError || settlementReportError
       }

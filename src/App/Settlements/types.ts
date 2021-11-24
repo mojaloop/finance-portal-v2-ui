@@ -1,4 +1,4 @@
-import { ErrorMessage, Currency, Settlement, SettlementParticipantAccount } from '../types';
+import { ErrorMessage, Currency, Settlement, SettlementParticipant, SettlementParticipantAccount } from '../types';
 
 export { Settlement, SettlementStatus, SettlementParticipant, SettlementParticipantAccount } from '../types';
 
@@ -59,6 +59,7 @@ export interface Adjustment {
   settlementAccount: AccountWithPosition;
   currentLimit: Limit;
   settlementParticipantAccount: SettlementParticipantAccount;
+  settlementParticipant: SettlementParticipant;
 }
 
 export interface LedgerParticipant {
@@ -139,17 +140,27 @@ export interface MojaloopError {
   errorDescription: string;
 }
 
+export interface SettlementReportRow {
+  rowNumber: number;
+  switchIdentifiers: string;
+  balance: number;
+  transferAmount: number;
+}
+
+export interface SettlementReportEntry {
+  participant: {
+    id: FspId;
+    name: FspName;
+  };
+  positionAccountId: AccountId;
+  balance: number;
+  transferAmount: number;
+  row: SettlementReportRow;
+}
+
 export interface SettlementReport {
   settlementId: SettlementId;
-  entries: {
-    participant: {
-      id: FspId;
-      name: FspName;
-    };
-    positionAccountId: AccountId;
-    balance: number;
-    transferAmount: number;
-  }[];
+  entries: SettlementReportEntry[];
 }
 
 export enum DateRanges {

@@ -221,7 +221,7 @@ export interface SettlementParticipant {
 }
 
 export interface Settlement {
-  id: string;
+  id: number;
   state: SettlementStatus;
   participants: SettlementParticipant[];
   reason: string;

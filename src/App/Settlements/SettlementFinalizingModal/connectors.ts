@@ -14,14 +14,16 @@ const stateProps = (state: State) => ({
 const dispatchProps = (dispatch: Dispatch) => ({
   onModalCloseClick: () => {
     // TODO: this should all be folded into a single discriminated union that represents the state
-    // of settlement finalizing. This might mean that the finalizeSettlement saga calls itself
-    // repeatedly as the settlement state transitions.
+    // of settlement finalizing. This might mean that the finalizeSettlement saga repeatedly
+    // dispatches actions that call the finalizeSettlement saga as the settlement state
+    // transitions.
     dispatch(actions.setFinalizingSettlement(null));
     dispatch(actions.setFinalizeSettlementError(null));
     // Clear the settlement report such that the operator does not open another settlement and have
     // the settlement report pre-loaded with the wrong file. We perform validation on the
     // settlement report that is uploaded, but this could cause confusion for the operator.
     dispatch(actions.setSettlementReport(null));
+    dispatch(actions.setSettlementReportError(null));
     dispatch(actions.hideFinalizeSettlementModal());
     dispatch(actions.requestSettlements());
   },

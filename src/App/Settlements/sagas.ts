@@ -39,7 +39,16 @@ import {
   requestSettlements,
 } from './actions';
 import { getSettlementsFilters } from './selectors';
-import * as helpers from './helpers';
+import {
+  buildFiltersParams,
+  buildUpdateSettlementStateRequest,
+  mapApiToModel,
+  SettlementFinalizeData,
+  ParticipantsAccounts,
+  AccountParticipant,
+  AccountsParticipants,
+  validateReport,
+} from './helpers';
 
 class FinalizeSettlementAssertionError extends Error {
   data: FinalizeSettlementError;
@@ -50,6 +59,13 @@ class FinalizeSettlementAssertionError extends Error {
   }
 }
 
+// TODO: should really be the following type. One of the most dire problems with the usage of TS in
+// this whole repo: the surface of the application should be typed, i.e. the ML API should have
+// types, and all responses should be validated as having those types, perhaps by ajv, if there's
+// some sort of ajv/typescript integration.
+// type ApiResponse<T> =
+//   | { kind: 'ERROR', status: number, data: MojaloopError }
+//   | { kind: 'SUCCESS', status: number, data: T }
 interface ApiResponse {
   status: number;
   data: any;
@@ -70,11 +86,6 @@ function transformParticipantsLimits(
   }, new Map<FspName, Map<Currency, Limit>>());
 }
 
-interface AccountParticipant {
-  participant: LedgerParticipant;
-  account: LedgerAccount;
-}
-type AccountsParticipants = Map<AccountId, AccountParticipant>;
 function getAccountsParticipants(participants: LedgerParticipant[]): AccountsParticipants {
   return participants
     .filter((fsp) => !/hub/i.test(fsp.name))
@@ -83,8 +94,6 @@ function getAccountsParticipants(participants: LedgerParticipant[]): AccountsPar
       new Map<AccountId, AccountParticipant>(),
     );
 }
-
-type ParticipantsAccounts = Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>;
 
 function getParticipantsAccounts(participants: LedgerParticipant[]): ParticipantsAccounts {
   return participants
@@ -157,13 +166,33 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], 
           };
         }
 
+        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
         // just skip the remaining steps.
         if (adjustment.amount === 0) {
+          // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
+          // Set the settlement participant account to the new state
+          const spaResult = yield call(apis.settlementParticipantAccount.update, {
+            settlementId: settlement.id,
+            participantId: adjustment.settlementParticipant.id,
+            accountId: adjustment.settlementParticipantAccount.id,
+            body: {
+              state: newState,
+              reason: description,
+            },
+          });
+          if (spaResult.status !== 200) {
+            return {
+              type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
+              value: {
+                adjustment,
+                error: spaResult.data,
+              },
+            };
+          }
           return 'OK';
         }
         // Make the call to process funds out, then poll the balance until it's reduced
-        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         const fundsInOutResult: ApiResponse = yield call(apis.participantAccount.create, {
           participantName: adjustment.participant.name,
           accountId: adjustment.settlementAccount.id,
@@ -190,6 +219,7 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], 
           };
         }
 
+        // Poll for a while to confirm the new balance
         for (let i = 0; i < 5; i++) {
           const SECONDS = 1000;
           yield delay(2 * SECONDS);
@@ -218,8 +248,8 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], 
             // Set the settlement participant account to the new state
             const spaResult = yield call(apis.settlementParticipantAccount.update, {
               settlementId: settlement.id,
-              participantId: adjustment.participant.id,
-              accountId: adjustment.positionAccount.id,
+              participantId: adjustment.settlementParticipant.id,
+              accountId: adjustment.settlementParticipantAccount.id,
               body: {
                 state: newState,
                 reason: description,
@@ -250,14 +280,6 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], 
   return results.filter((res) => res !== 'OK');
 }
 
-interface SettlementFinalizeData {
-  participantsLimits: Map<FspName, Map<Currency, Limit>>;
-  accountsParticipants: Map<AccountId, AccountParticipant>;
-  participantsAccounts: ParticipantsAccounts;
-  accountsPositions: Map<AccountId, AccountWithPosition>;
-  settlementParticipantAccounts: Map<AccountId, SettlementParticipantAccount>;
-}
-
 function* collectSettlementFinalizeData(report: SettlementReport, settlement: Settlement) {
   // TODO: parallelize requests in this function
   // We need to get limits before we can set limits, because `alarmPercentage` is a required
@@ -265,15 +287,14 @@ function* collectSettlementFinalizeData(report: SettlementReport, settlement: Se
   const participantsLimits = transformParticipantsLimits(
     ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
   );
-  console.log(participantsLimits);
-  const participantsAccountsRaw = ensureResponse(
+
+  const switchParticipants = ensureResponse(
     yield call(apis.participants.read, {}),
     200,
     'Failed to retrieve participants',
   );
-  const participantsAccounts = getParticipantsAccounts(participantsAccountsRaw);
-  const accountsParticipants = getAccountsParticipants(participantsAccountsRaw);
-  console.log(accountsParticipants);
+  const participantsAccounts = getParticipantsAccounts(switchParticipants);
+  const accountsParticipants = getAccountsParticipants(switchParticipants);
 
   // Get the participants current positions such that we can determine which will decrease and
   // which will increase
@@ -292,11 +313,15 @@ function* collectSettlementFinalizeData(report: SettlementReport, settlement: Se
       (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
       new Map<AccountId, AccountWithPosition>(),
     );
-  console.log(accountsPositions);
 
   const settlementParticipantAccounts = settlement.participants.reduce(
     (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, acc), mapP),
     new Map<AccountId, SettlementParticipantAccount>(),
+  );
+
+  const settlementParticipants = settlement.participants.reduce(
+    (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, p), mapP),
+    new Map<AccountId, SettlementParticipant>(),
   );
 
   return {
@@ -305,6 +330,7 @@ function* collectSettlementFinalizeData(report: SettlementReport, settlement: Se
     participantsAccounts,
     accountsPositions,
     settlementParticipantAccounts,
+    settlementParticipants,
   };
 }
 
@@ -316,6 +342,7 @@ function buildAdjustments(
     participantsAccounts,
     accountsPositions,
     settlementParticipantAccounts,
+    settlementParticipants,
   }: SettlementFinalizeData,
 ): Adjustment[] {
   return report.entries.map(
@@ -354,6 +381,12 @@ function buildAdjustments(
         `Failed to retrieve settlement participant account for account ${positionAccountId}`,
       );
 
+      const settlementParticipant = settlementParticipants.get(settlementParticipantAccount.id);
+      assert(
+        settlementParticipant !== undefined,
+        `Failed to retrieve settlement participant for account ${positionAccountId}`,
+      );
+
       // TODO: uncomment before release
       // assert.equal(
       //   reportParticipant.name,
@@ -368,6 +401,7 @@ function buildAdjustments(
         settlementAccount,
         currentLimit,
         settlementParticipantAccount,
+        settlementParticipant,
       };
     },
   );
@@ -406,7 +440,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         const result = yield call(
           apis.settlement.update,
-          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
+          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersRecorded),
         );
         assert.strictEqual(
           result.status,
@@ -427,7 +461,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         const result = yield call(
           apis.settlement.update,
-          helpers.buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
+          buildUpdateSettlementStateRequest(settlement, SettlementStatus.PsTransfersReserved),
         );
         assert.strictEqual(
           result.status,
@@ -440,11 +474,18 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
+        console.log(SettlementStatus.PsTransfersReserved);
+        // TODO: much of this data would be useful throughout the portal, perhaps hoist it up and
+        // make it available everywhere. This might also mean we can validate the report when we
+        // ingest it.
         const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
+
+        const reportValidations = validateReport(report, finalizeData, settlement);
+        assert(reportValidations.size !== 0);
 
         const adjustments = buildAdjustments(report, finalizeData);
 
-        console.log(adjustments);
+        console.log('adjustments', adjustments);
 
         const [debits, credits] = adjustments.reduce(
           ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
@@ -460,7 +501,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           SettlementStatus.PsTransfersCommitted,
         );
 
-        console.log(debtorsErrors);
+        console.log('debtorsErrors', debtorsErrors);
 
         assert(
           debtorsErrors.length === 0,
@@ -477,7 +518,7 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           SettlementStatus.PsTransfersCommitted,
         );
 
-        console.log(creditorsErrors);
+        console.log('creditorsErrors', creditorsErrors);
 
         assert(
           creditorsErrors.length === 0,
@@ -499,10 +540,12 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
+        console.log(SettlementStatus.PsTransfersCommitted);
       // We could transition to PS_TRANSFERS_COMMITTED, but then we'd immediately transition to
       // SETTLING anyway, so we do nothing here.
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settling: {
+        console.log(SettlementStatus.Settling);
         yield put(
           setFinalizingSettlement({
             ...settlement,
@@ -510,6 +553,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           }),
         );
 
+        // TODO: we get this data above in collectFinalizeData, use that instead of re-retrieving
+        // here.
         const participantsResult = yield call(apis.participants.read, {});
         const participants: LedgerParticipant[] = participantsResult.data;
         const accountParticipantMap: Map<LedgerAccount['id'], LedgerParticipant> = new Map(
@@ -572,6 +617,8 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         let result: { data: Settlement; status: number } = yield call(apis.settlement.read, {
           settlementId: settlement.id,
         });
+        // TODO: this can fail, there should be a retry limit. In fact, should we be polling? Does
+        // the settlement state not change immediately?
         while (result.data.state !== SettlementStatus.Settled) {
           yield delay(5000);
           result = yield call(apis.settlement.read, { settlementId: settlement.id });
@@ -607,8 +654,6 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       throw err;
     }
     yield put(setFinalizeSettlementError(err.data));
-  } finally {
-    yield put(requestSettlements());
   }
 }
 
@@ -619,7 +664,7 @@ export function* FinalizeSettlementSaga(): Generator {
 function* fetchSettlements() {
   try {
     const filters = yield select(getSettlementsFilters);
-    const params = helpers.buildFiltersParams(filters);
+    const params = buildFiltersParams(filters);
     const response = yield call(apis.settlements.read, {
       params,
     });
@@ -642,7 +687,7 @@ function* fetchSettlements() {
     ) {
       yield put(setSettlements([]));
     } else {
-      yield put(setSettlements(response.data.map(helpers.mapApiToModel)));
+      yield put(setSettlements(response.data.map(mapApiToModel)));
     }
   } catch (e) {
     yield put(setSettlementsError(e.message));

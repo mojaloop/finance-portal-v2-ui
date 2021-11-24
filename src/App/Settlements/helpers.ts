@@ -1,13 +1,49 @@
 import { strict as assert } from 'assert';
 import moment from 'moment';
 import ExcelJS from 'exceljs';
-import { SettlementReport, DateRanges, SettlementStatus, SettlementFilters } from './types';
+import {
+  AccountId,
+  AccountWithPosition,
+  DateRanges,
+  FspName,
+  LedgerAccount,
+  LedgerAccountType,
+  LedgerParticipant,
+  Limit,
+  Settlement,
+  SettlementFilters,
+  SettlementParticipant,
+  SettlementParticipantAccount,
+  SettlementReport,
+  SettlementReportEntry,
+  SettlementReportRow,
+  SettlementStatus,
+} from './types';
+
+import { Currency } from '../types';
+
+export interface AccountParticipant {
+  participant: LedgerParticipant;
+  account: LedgerAccount;
+}
+export type AccountsParticipants = Map<AccountId, AccountParticipant>;
+export type ParticipantsAccounts = Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>;
+
+export interface SettlementFinalizeData {
+  participantsLimits: Map<FspName, Map<Currency, Limit>>;
+  accountsParticipants: AccountsParticipants;
+  participantsAccounts: ParticipantsAccounts;
+  accountsPositions: Map<AccountId, AccountWithPosition>;
+  settlementParticipantAccounts: Map<AccountId, SettlementParticipantAccount>;
+  settlementParticipants: Map<AccountId, SettlementParticipant>;
+}
 
 export { buildUpdateSettlementStateRequest } from 'App/helpers';
 
-// TODO: unit testing
 const isNumericTextRe =
   /^(\((?<parenthesized>[0-9]+(\.[0-9]+)?)\)|(?<positive>[0-9]+(\.[0-9]+)?)|(?<negative>-[0-9]+(\.[0-9]+)?))$/g;
+// TODO: unit testing
+// TODO: Note: commas: https://modusbox.atlassian.net/browse/MMD-1827
 const extractReportQuantity = (text: string): number => {
   const allMatches = Array.from(text.matchAll(isNumericTextRe));
   if (allMatches.length !== 1 || allMatches[0].length === 0) {
@@ -137,6 +173,262 @@ export function mapApiToModel(item: any): Settlement {
 // // - monetary amounts have correct number of decimal places for currency
 // }
 
+export enum SettlementReportValidationKind {
+  SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
+  TransfersSumNonZero = 'sum of transfers in the report is non-zero',
+  TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
+  BalanceNotAsExpected = 'balance not modified corresponding to transfer amount',
+  AccountsNotPresent = 'accounts in settlement not present in report',
+  ExtraAccountsPresent = 'accounts in report not present in settlement',
+  ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
+  AccountIsIncorrectType = 'account type should be POSITION',
+  MonetaryAmountsInvalid = 'monetary amounts not valid for currency',
+  InvalidAccountId = 'report account ID does not exist in switch',
+}
+
+export function describeSettlementReportValidation(validation: SettlementReportValidationKind) {
+  switch (validation) {
+    case SettlementReportValidationKind.SettlementIdNonMatching:
+      return (
+        'The settlement ID for the settlement selected to finalize is compared against the settlement ID in the ' +
+        'settlement finalization report. These must be the same.'
+      );
+    case SettlementReportValidationKind.TransfersSumNonZero:
+      return (
+        'Transfers in the settlement finalization report are added together. The sum should be zero. Sometimes ' +
+        'it is not, because the settlement bank may not have processed every line in the report, or may have ' +
+        'processed the report differently than it was produced.'
+      );
+    case SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount:
+    case SettlementReportValidationKind.BalanceNotAsExpected:
+      return (
+        'The transfer amount in the settlement finalization report is added to or subtracted from (as ' +
+        'appropriate) the current liquidity account balance value in the switch. The result is expected to be equal ' +
+        'to the new liquidity account balance in the settlement finalization report. These may not be equal if ' +
+        'funds have been added to or removed from the switch liquidity account balance since settlement initiation.'
+      );
+    case SettlementReportValidationKind.AccountsNotPresent:
+    case SettlementReportValidationKind.ExtraAccountsPresent:
+    case SettlementReportValidationKind.ReportIdentifiersNonMatching:
+      return (
+        'The participant ID, account ID and participant name provided in the switch identifiers column of the ' +
+        'settlement finalization report did not match each other. When the account ID was looked up, it did not ' +
+        'match the ID of the settlement participant, or the name of the participant.'
+      );
+    case SettlementReportValidationKind.AccountIsIncorrectType:
+    case SettlementReportValidationKind.MonetaryAmountsInvalid:
+    case SettlementReportValidationKind.InvalidAccountId:
+    default: {
+      // Did you get a compile error here? This code is written such that if every
+      // case in the above switch state is not handled, compilation will fail.
+      const exhaustiveCheck: never = validation;
+      throw new Error(`Unhandled validation: ${exhaustiveCheck}`);
+    }
+  }
+}
+
+export type SettlementReportValidation =
+  | {
+      kind: SettlementReportValidationKind.SettlementIdNonMatching;
+      data: {
+        reportId: number;
+        settlementId: number;
+      };
+    }
+  | { kind: SettlementReportValidationKind.TransfersSumNonZero }
+  | {
+      kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount;
+      data: {
+        row: SettlementReportRow;
+        account: SettlementParticipantAccount;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.BalanceNotAsExpected;
+      data: {
+        entry: SettlementReportEntry;
+        reportBalance: number;
+        expectedBalance: number;
+        transferAmount: number;
+        account: LedgerAccount;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.AccountsNotPresent;
+      data: {
+        participant?: FspName;
+        account: SettlementParticipantAccount;
+      }[];
+    }
+  | {
+      kind: SettlementReportValidationKind.InvalidAccountId;
+      data: SettlementReportEntry[];
+    }
+  | {
+      kind: SettlementReportValidationKind.ExtraAccountsPresent;
+      data: {
+        participant?: FspName;
+        entry: SettlementReportEntry;
+      }[];
+    }
+  | {
+      kind: SettlementReportValidationKind.ReportIdentifiersNonMatching;
+      data: { row: SettlementReportRow };
+    }
+  | {
+      kind: SettlementReportValidationKind.AccountIsIncorrectType;
+      data: LedgerAccount;
+    }
+  | {
+      kind: SettlementReportValidationKind.MonetaryAmountsInvalid;
+      data: { row: SettlementReportRow };
+    };
+
+export function validateReport(
+  report: SettlementReport,
+  data: SettlementFinalizeData,
+  settlement: Settlement,
+): Set<SettlementReportValidation> {
+  const result = new Set<SettlementReportValidation>();
+  // Because no currency has more than four decimal places, we can have quite a large epsilon value
+  const EPSILON = 1e-5;
+  const equal = (a: number, b: number) => Math.abs(a - b) > EPSILON;
+
+  // SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
+  if (settlement.id !== report.settlementId) {
+    result.add({
+      kind: SettlementReportValidationKind.SettlementIdNonMatching,
+      data: {
+        reportId: report.settlementId,
+        settlementId: settlement.id,
+      },
+    });
+  }
+
+  // TransfersSumNonZero = 'sum of transfers in the report is non-zero',
+  const reportTransfersSum = report.entries.reduce((sum, e) => sum + e.transferAmount, 0);
+  if (!equal(reportTransfersSum, 0)) {
+    result.add({ kind: SettlementReportValidationKind.TransfersSumNonZero });
+  }
+
+  // TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
+  report.entries.forEach((entry) => {
+    const spa = data.settlementParticipantAccounts.get(entry.positionAccountId);
+    if (spa && entry.transferAmount === spa.netSettlementAmount.amount) {
+      result.add({
+        kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount,
+        data: {
+          row: entry.row,
+          account: spa,
+        },
+      });
+    }
+  });
+
+  // TODO: should we notify anyone about this? Perhaps not; sometimes the balance will change as a
+  // result of normal business processes.
+  // BalancesNotAsExpected = 'balances not modified corresponding to transfer amounts',
+  report.entries
+    .map((entry) => {
+      // collect data for this entry
+      const { account: positionAccount, participant } = data.accountsParticipants.get(entry.positionAccountId) || {};
+      if (!positionAccount || !participant) {
+        return undefined;
+      }
+      const settlementAccountId = data.participantsAccounts
+        .get(participant.name)
+        ?.get(positionAccount.currency)
+        ?.get('SETTLEMENT')?.account.id;
+      if (settlementAccountId === undefined) {
+        return undefined;
+      }
+      const settlementAccount = data.accountsPositions.get(settlementAccountId);
+      if (settlementAccount === undefined) {
+        return undefined;
+      }
+      return {
+        entry,
+        settlementAccount,
+      };
+    })
+    .filter((e): e is { entry: SettlementReportEntry; settlementAccount: AccountWithPosition } => e !== undefined)
+    .forEach(({ entry, settlementAccount }) => {
+      const expectedBalance = settlementAccount.value + entry.transferAmount;
+      const reportBalance = entry.balance;
+      if (!equal(expectedBalance, reportBalance)) {
+        result.add({
+          kind: SettlementReportValidationKind.BalanceNotAsExpected,
+          data: {
+            entry,
+            reportBalance,
+            expectedBalance,
+            transferAmount: entry.transferAmount,
+            account: settlementAccount,
+          },
+        });
+      }
+    });
+
+  // AccountsNotPresent = 'accounts in settlement not present in report',
+  const reportAccountIds = new Set(report.entries.map((entry) => entry.positionAccountId));
+  const accountsNotInReport = settlement.participants.flatMap((p) => p.accounts.filter((acc) => !reportAccountIds.has(acc.id)));
+  if (accountsNotInReport.length !== 0) {
+    result.add({
+      kind: SettlementReportValidationKind.AccountsNotPresent,
+      data: accountsNotInReport.map((account) => ({
+        participant: data.accountsParticipants.get(account.id)?.participant.name,
+        account,
+      })),
+    });
+  }
+
+  // InvalidAccountId = 'report account ID does not exist in switch',
+  const invalidAccounts = report.entries.filter((entry) => !data.accountsParticipants.has(entry.positionAccountId));
+  if (invalidAccounts.length !== 0) {
+    result.add({
+      kind: SettlementReportValidationKind.InvalidAccountId,
+      data: invalidAccounts,
+    });
+  }
+
+  // ExtraAccountsPresent = 'accounts in report not present in settlement',
+  const settlementAccountIds = new Set(settlement.participants.flatMap((p) => p.accounts.map((acc) => acc.id)));
+  const entriesNotInSettlement = report.entries.filter((entry) => !settlementAccountIds.has(entry.positionAccountId));
+  if (entriesNotInSettlement.length !== 0) {
+    result.add({
+      kind: SettlementReportValidationKind.ExtraAccountsPresent,
+      data: entriesNotInSettlement.map((entry) => ({
+        entry,
+        participant: data.accountsParticipants.get(entry.positionAccountId)?.participant.name,
+      })),
+    });
+  }
+
+  // ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
+  report.entries.forEach((entry) => {
+    const switchParticipant = data.accountsParticipants.get(entry.positionAccountId);
+    const settlementParticipantId = data.settlementParticipants.get(entry.positionAccountId)?.id;
+    // If we can't find the participant using the account ID, we'll have already returned an
+    // "Invalid Account" error. If we can't find the settlement participant using the account ID,
+    // we'll have returned an "account not in settlement" error.
+    if (switchParticipant && settlementParticipantId) {
+      if (
+        entry.participant.name !== switchParticipant.participant.name ||
+        entry.participant.id !== settlementParticipantId
+      ) {
+        result.add({
+          kind: SettlementReportValidationKind.ReportIdentifiersNonMatching,
+          data: { row: entry.row },
+        });
+      }
+    }
+  });
+
+  return result;
+  // AccountIsIncorrectType = 'account type should be POSITION',
+  // MonetaryAmountsInvalid = 'monetary amounts not valid for currency',
+}
+
 export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
   return new Promise((res, rej) => {
     const reader = new FileReader();
@@ -148,7 +440,7 @@ export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
 }
 
 // Note: ExcelJS does not support streaming in browser.
-export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementReport> {
+export function deserializeReport(buf: ArrayBuffer): PromiseLike<SettlementReport> {
   const wb = new ExcelJS.Workbook();
   return wb.xlsx.load(buf).then(() => {
     const SETTLEMENT_ID_CELL = 'B1';
@@ -172,20 +464,20 @@ export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementRepor
 
     const entries =
       ws.getRows(7, endOfData - startOfData)?.map((r) => {
-        const participantInfoCellContent = r.getCell(PARTICIPANT_INFO_COL).text;
+        const switchIdentifiers = r.getCell(PARTICIPANT_INFO_COL).text;
         // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
         // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML
         // spec might differently, or further restrict it.
         const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]+)$/g;
         assert(
-          re.test(participantInfoCellContent),
-          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]. Matching regex: ${re}`,
+          re.test(switchIdentifiers),
+          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${switchIdentifiers}]. Matching regex: ${re}`,
         );
-        const [idText, accountIdText, name] = participantInfoCellContent.split(' ');
+        const [idText, accountIdText, name] = switchIdentifiers.split(' ');
         const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
         assert(
           !Number.isNaN(id) && !Number.isNaN(positionAccountId) && name,
-          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${participantInfoCellContent}]`,
+          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${switchIdentifiers}]`,
         );
 
         const balanceText = r.getCell(BALANCE_COL).text;
@@ -210,6 +502,12 @@ export function loadWorksheetData(buf: ArrayBuffer): PromiseLike<SettlementRepor
           positionAccountId,
           balance,
           transferAmount,
+          row: {
+            rowNumber: r.number,
+            switchIdentifiers,
+            balance,
+            transferAmount,
+          },
         };
       }) || [];
 
