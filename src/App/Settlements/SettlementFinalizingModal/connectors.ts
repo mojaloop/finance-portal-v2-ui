@@ -9,6 +9,8 @@ const stateProps = (state: State) => ({
   finalizingSettlement: selectors.getFinalizingSettlement(state),
   finalizingSettlementError: selectors.getFinalizingSettlementError(state),
   settlementReportError: selectors.getSettlementReportError(state),
+  processFundsInOut: selectors.getFinalizeProcessFundsInOut(state),
+  processNdc: selectors.getFinalizeProcessNdc(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -31,6 +33,11 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.finalizeSettlement({ report, settlement })),
   onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
   onSettlementReportProcessingError: (err: string) => dispatch(actions.setSettlementReportError(err)),
+  onSetFundsInOutChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(actions.setFinalizeProcessFundsInOut(e.target.checked));
+  },
+  onSetNetDebitCapChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+    dispatch(actions.setFinalizeProcessNdc(e.target.checked)),
 });
 
 const connector = connect(stateProps, dispatchProps);

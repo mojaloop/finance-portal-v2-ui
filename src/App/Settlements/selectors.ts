@@ -13,3 +13,5 @@ export const getFinalizeSettlementModalVisible = (state: State) => state.subApp.
 export const getFinalizingSettlement = (state: State) => state.subApp.settlements.finalizingSettlement;
 export const getFinalizingSettlementError = (state: State) => state.subApp.settlements.finalizingSettlementError;
 export const getSettlementReportError = (state: State) => state.subApp.settlements.settlementReportError;
+export const getFinalizeProcessFundsInOut = (state: State) => state.subApp.settlements.finalizeProcessFundsInOut;
+export const getFinalizeProcessNdc = (state: State) => state.subApp.settlements.finalizeProcessNdc;

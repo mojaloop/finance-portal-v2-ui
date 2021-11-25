@@ -38,7 +38,7 @@ import {
   setSettlementsError,
   requestSettlements,
 } from './actions';
-import { getSettlementsFilters } from './selectors';
+import { getSettlementsFilters, getFinalizeProcessNdc, getFinalizeProcessFundsInOut } from './selectors';
 import {
   buildFiltersParams,
   buildUpdateSettlementStateRequest,
@@ -118,7 +118,19 @@ function getParticipantsAccounts(participants: LedgerParticipant[]): Participant
     );
 }
 
-function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], newState: SettlementStatus) {
+function* processAdjustments({
+  settlement,
+  adjustments,
+  newState,
+  adjustNdc,
+  adjustLiquidityAccountBalance,
+}: {
+  settlement: Settlement;
+  adjustments: Adjustment[];
+  newState: SettlementStatus;
+  adjustNdc: boolean;
+  adjustLiquidityAccountBalance: boolean;
+}) {
   const results: (FinalizeSettlementProcessAdjustmentsError | 'OK' | null)[] = yield all(
     adjustments.map((adjustment) => {
       return call(function* processAdjustment() {
@@ -146,30 +158,32 @@ function* processAdjustments(settlement: Settlement, adjustments: Adjustment[], 
         if (statePosition >= newStatePosition) {
           return null;
         }
-        const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
-          participantName: adjustment.participant.name,
-          body: {
-            currency: adjustment.positionAccount.currency,
-            limit: {
-              ...adjustment.currentLimit,
-              value: adjustment.settlementBankBalance,
+        if (adjustNdc) {
+          const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
+            participantName: adjustment.participant.name,
+            body: {
+              currency: adjustment.positionAccount.currency,
+              limit: {
+                ...adjustment.currentLimit,
+                value: adjustment.settlementBankBalance,
+              },
             },
-          },
-        });
-        if (ndcResult.status !== 200) {
-          return {
-            type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
-            value: {
-              adjustment,
-              error: ndcResult.data,
-            },
-          };
+          });
+          if (ndcResult.status !== 200) {
+            return {
+              type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
+              value: {
+                adjustment,
+                error: ndcResult.data,
+              },
+            };
+          }
         }
 
         const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
         // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
         // just skip the remaining steps.
-        if (adjustment.amount === 0) {
+        if (adjustment.amount === 0 || !adjustLiquidityAccountBalance) {
           // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
           // Set the settlement participant account to the new state
           const spaResult = yield call(apis.settlementParticipantAccount.update, {
@@ -494,12 +508,13 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
 
         console.log(debits, credits);
 
-        const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(
-          processAdjustments,
+        const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, {
           settlement,
-          [...debits.values()],
-          SettlementStatus.PsTransfersCommitted,
-        );
+          adjustments: [...debits.values()],
+          newState: SettlementStatus.PsTransfersCommitted,
+          adjustNdc: yield select(getFinalizeProcessNdc),
+          adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
+        });
 
         console.log('debtorsErrors', debtorsErrors);
 
@@ -511,12 +526,13 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
           }),
         );
 
-        const creditorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(
-          processAdjustments,
+        const creditorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, {
           settlement,
-          [...credits.values()],
-          SettlementStatus.PsTransfersCommitted,
-        );
+          adjustments: [...credits.values()],
+          newState: SettlementStatus.PsTransfersCommitted,
+          adjustNdc: yield select(getFinalizeProcessNdc),
+          adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
+        });
 
         console.log('creditorsErrors', creditorsErrors);
 

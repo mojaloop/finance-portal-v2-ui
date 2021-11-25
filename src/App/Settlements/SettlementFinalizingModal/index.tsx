@@ -16,6 +16,10 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   onSelectSettlementReport,
   onSettlementReportProcessingError,
   settlementReportError,
+  onSetNetDebitCapChange,
+  onSetFundsInOutChange,
+  processFundsInOut,
+  processNdc,
 }) => {
   const [controller, setController] = useState<AbortController | undefined>(undefined);
 
@@ -176,6 +180,22 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           }
         }}
       />
+      <br />
+      <label htmlFor="set-process-funds-in-out">
+        <input
+          id="set-process-funds-in-out"
+          type="checkbox"
+          checked={processFundsInOut}
+          onChange={onSetFundsInOutChange}
+        />
+        Set liquidity account balance to balance values in settlement finalization report
+      </label>
+      <br />
+      <label htmlFor="set-process-net-debit-cap">
+        <input id="set-process-net-debit-cap" type="checkbox" checked={processNdc} onChange={onSetNetDebitCapChange} />
+        Set net debit cap to balance values in settlement finalization report
+      </label>
+      <br />
       <Button
         kind="secondary"
         noFill
