@@ -55,6 +55,7 @@ module.exports = {
       ignoreStrings: true,
       ignoreTemplateLiterals: true,
       ignoreRegExpLiterals: true,
+      ignoreComments: true,
     }],
     'no-console': ['warn', { allow: ['error'] }],
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
