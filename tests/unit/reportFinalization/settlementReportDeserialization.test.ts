@@ -1,12 +1,12 @@
 
-import { loadWorksheetData } from '../../../src/App/Settlements/helpers';
+import { deserializeReport } from '../../../src/App/Settlements/helpers';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
 test('simple_positive.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/simple_positive.xlsx'));
-  const report = await loadWorksheetData(f);
+  const report = await deserializeReport(f);
   expect(report).toEqual({
     "settlementId": 13,
     "entries": [
@@ -44,7 +44,7 @@ test('simple_positive.xlsx', async () => {
 test('simple_positive_2.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/simple_positive_2.xlsx'));
-  const report = await loadWorksheetData(f);
+  const report = await deserializeReport(f);
 
   expect(report).toEqual({
     settlementId: 22,
@@ -299,13 +299,13 @@ test('simple_positive_2.xlsx', async () => {
 test('settlement_id_wrong_cell.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/settlement_id_wrong_cell.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/Unable to extract settlement ID from cell B1/);
+  await expect(deserializeReport(f)).rejects.toThrow(/Unable to extract settlement ID from cell B1/);
 });
 
 test('no_data.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/no_data.xlsx'));
-  const report = await loadWorksheetData(f);
+  const report = await deserializeReport(f);
   expect(report).toEqual({
     "settlementId": 13,
     "entries": [],
@@ -315,14 +315,14 @@ test('no_data.xlsx', async () => {
 test('bad_mojaloop_identifier_column.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/bad_mojaloop_identifier_column.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/^Unable to extract participant ID, account ID and participant name from A9. Cell contents: \[3 hana 25\].*$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract participant ID, account ID and participant name from A9. Cell contents: \[3 hana 25\].*$/);
 });
 
 // TODO: we *could* check for a gap
 test('missing_mojaloop_identifier.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/missing_mojaloop_identifier.xlsx'));
-  const report = await loadWorksheetData(f);
+  const report = await deserializeReport(f);
   expect(report).toEqual({
     "entries": [
       {
@@ -342,23 +342,23 @@ test('missing_mojaloop_identifier.xlsx', async () => {
 test('bad_balance_column_type.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/bad_balance_column_type.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/^Unable to extract account balance from C8. Cell data type is not numeric.$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract account balance from C8. Cell data type is not numeric.$/);
 });
 
 test('missing_balance_entry.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/missing_balance_entry.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/^Unable to extract account balance from C9. Cell data type is not numeric.$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract account balance from C9. Cell data type is not numeric.$/);
 });
 
 test('bad_transfer_amount_column_type.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/bad_transfer_amount_column_type.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/^Unable to extract transfer amount from D7. Cell data type is not numeric.$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract transfer amount from D7. Cell data type is not numeric.$/);
 });
 
 test('missing_transfer_amount.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/missing_transfer_amount.xlsx'));
-  await expect(loadWorksheetData(f)).rejects.toThrow(/^Unable to extract transfer amount from D8. Cell data type is not numeric.$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract transfer amount from D8. Cell data type is not numeric.$/);
 });
