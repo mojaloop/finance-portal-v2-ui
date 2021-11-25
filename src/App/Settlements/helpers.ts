@@ -227,7 +227,7 @@ export interface SettlementFinalizeData {
   settlementParticipants: Map<AccountId, SettlementParticipant>;
 }
 
-export { buildUpdateSettlementStateRequest } from 'App/helpers';
+export { buildUpdateSettlementStateRequest } from '../helpers';
 
 const isNumericTextRe =
   /^(\((?<parenthesized>[0-9]+(\.[0-9]+)?)\)|(?<positive>[0-9]+(\.[0-9]+)?)|(?<negative>-[0-9]+(\.[0-9]+)?))$/g;
