@@ -22,6 +22,195 @@ import {
 
 import { Currency } from '../types';
 
+export type MinorUnit = 0 | 2 | 3 | 4 | '.';
+export interface CurrencyData {
+  alpha: Currency;
+  numeric: number;
+  minorUnit: MinorUnit;
+}
+export const CURRENCY_DATA = new Map<Currency, CurrencyData>([
+  ['AED', { alpha: 'AED', numeric: 784, minorUnit: 2 }],
+  ['AFN', { alpha: 'AFN', numeric: 971, minorUnit: 2 }],
+  ['ALL', { alpha: 'ALL', numeric: 8, minorUnit: 2 }],
+  ['AMD', { alpha: 'AMD', numeric: 51, minorUnit: 2 }],
+  ['ANG', { alpha: 'ANG', numeric: 532, minorUnit: 2 }],
+  ['AOA', { alpha: 'AOA', numeric: 973, minorUnit: 2 }],
+  ['ARS', { alpha: 'ARS', numeric: 32, minorUnit: 2 }],
+  ['AUD', { alpha: 'AUD', numeric: 36, minorUnit: 2 }],
+  ['AWG', { alpha: 'AWG', numeric: 533, minorUnit: 2 }],
+  ['AZN', { alpha: 'AZN', numeric: 944, minorUnit: 2 }],
+  ['BAM', { alpha: 'BAM', numeric: 977, minorUnit: 2 }],
+  ['BBD', { alpha: 'BBD', numeric: 52, minorUnit: 2 }],
+  ['BDT', { alpha: 'BDT', numeric: 50, minorUnit: 2 }],
+  ['BGN', { alpha: 'BGN', numeric: 975, minorUnit: 2 }],
+  ['BHD', { alpha: 'BHD', numeric: 48, minorUnit: 3 }],
+  ['BIF', { alpha: 'BIF', numeric: 108, minorUnit: 0 }],
+  ['BMD', { alpha: 'BMD', numeric: 60, minorUnit: 2 }],
+  ['BND', { alpha: 'BND', numeric: 96, minorUnit: 2 }],
+  ['BOB', { alpha: 'BOB', numeric: 68, minorUnit: 2 }],
+  ['BOV', { alpha: 'BOV', numeric: 984, minorUnit: 2 }],
+  ['BRL', { alpha: 'BRL', numeric: 986, minorUnit: 2 }],
+  ['BSD', { alpha: 'BSD', numeric: 44, minorUnit: 2 }],
+  ['BTN', { alpha: 'BTN', numeric: 64, minorUnit: 2 }],
+  ['BWP', { alpha: 'BWP', numeric: 72, minorUnit: 2 }],
+  ['BYN', { alpha: 'BYN', numeric: 933, minorUnit: 2 }],
+  ['BZD', { alpha: 'BZD', numeric: 84, minorUnit: 2 }],
+  ['CAD', { alpha: 'CAD', numeric: 124, minorUnit: 2 }],
+  ['CDF', { alpha: 'CDF', numeric: 976, minorUnit: 2 }],
+  ['CHE', { alpha: 'CHE', numeric: 947, minorUnit: 2 }],
+  ['CHF', { alpha: 'CHF', numeric: 756, minorUnit: 2 }],
+  ['CHW', { alpha: 'CHW', numeric: 948, minorUnit: 2 }],
+  ['CLF', { alpha: 'CLF', numeric: 990, minorUnit: 4 }],
+  ['CLP', { alpha: 'CLP', numeric: 152, minorUnit: 0 }],
+  ['CNY', { alpha: 'CNY', numeric: 156, minorUnit: 2 }],
+  ['COP', { alpha: 'COP', numeric: 170, minorUnit: 2 }],
+  ['COU', { alpha: 'COU', numeric: 970, minorUnit: 2 }],
+  ['CRC', { alpha: 'CRC', numeric: 188, minorUnit: 2 }],
+  ['CUC', { alpha: 'CUC', numeric: 931, minorUnit: 2 }],
+  ['CUP', { alpha: 'CUP', numeric: 192, minorUnit: 2 }],
+  ['CVE', { alpha: 'CVE', numeric: 132, minorUnit: 2 }],
+  ['CZK', { alpha: 'CZK', numeric: 203, minorUnit: 2 }],
+  ['DJF', { alpha: 'DJF', numeric: 262, minorUnit: 0 }],
+  ['DKK', { alpha: 'DKK', numeric: 208, minorUnit: 2 }],
+  ['DOP', { alpha: 'DOP', numeric: 214, minorUnit: 2 }],
+  ['DZD', { alpha: 'DZD', numeric: 12, minorUnit: 2 }],
+  ['EGP', { alpha: 'EGP', numeric: 818, minorUnit: 2 }],
+  ['ERN', { alpha: 'ERN', numeric: 232, minorUnit: 2 }],
+  ['ETB', { alpha: 'ETB', numeric: 230, minorUnit: 2 }],
+  ['EUR', { alpha: 'EUR', numeric: 978, minorUnit: 2 }],
+  ['FJD', { alpha: 'FJD', numeric: 242, minorUnit: 2 }],
+  ['FKP', { alpha: 'FKP', numeric: 238, minorUnit: 2 }],
+  ['GBP', { alpha: 'GBP', numeric: 826, minorUnit: 2 }],
+  ['GEL', { alpha: 'GEL', numeric: 981, minorUnit: 2 }],
+  ['GHS', { alpha: 'GHS', numeric: 936, minorUnit: 2 }],
+  ['GIP', { alpha: 'GIP', numeric: 292, minorUnit: 2 }],
+  ['GMD', { alpha: 'GMD', numeric: 270, minorUnit: 2 }],
+  ['GNF', { alpha: 'GNF', numeric: 324, minorUnit: 0 }],
+  ['GTQ', { alpha: 'GTQ', numeric: 320, minorUnit: 2 }],
+  ['GYD', { alpha: 'GYD', numeric: 328, minorUnit: 2 }],
+  ['HKD', { alpha: 'HKD', numeric: 344, minorUnit: 2 }],
+  ['HNL', { alpha: 'HNL', numeric: 340, minorUnit: 2 }],
+  ['HRK', { alpha: 'HRK', numeric: 191, minorUnit: 2 }],
+  ['HTG', { alpha: 'HTG', numeric: 332, minorUnit: 2 }],
+  ['HUF', { alpha: 'HUF', numeric: 348, minorUnit: 2 }],
+  ['IDR', { alpha: 'IDR', numeric: 360, minorUnit: 2 }],
+  ['ILS', { alpha: 'ILS', numeric: 376, minorUnit: 2 }],
+  ['INR', { alpha: 'INR', numeric: 356, minorUnit: 2 }],
+  ['IQD', { alpha: 'IQD', numeric: 368, minorUnit: 3 }],
+  ['IRR', { alpha: 'IRR', numeric: 364, minorUnit: 2 }],
+  ['ISK', { alpha: 'ISK', numeric: 352, minorUnit: 0 }],
+  ['JMD', { alpha: 'JMD', numeric: 388, minorUnit: 2 }],
+  ['JOD', { alpha: 'JOD', numeric: 400, minorUnit: 3 }],
+  ['JPY', { alpha: 'JPY', numeric: 392, minorUnit: 0 }],
+  ['KES', { alpha: 'KES', numeric: 404, minorUnit: 2 }],
+  ['KGS', { alpha: 'KGS', numeric: 417, minorUnit: 2 }],
+  ['KHR', { alpha: 'KHR', numeric: 116, minorUnit: 2 }],
+  ['KMF', { alpha: 'KMF', numeric: 174, minorUnit: 0 }],
+  ['KPW', { alpha: 'KPW', numeric: 408, minorUnit: 2 }],
+  ['KRW', { alpha: 'KRW', numeric: 410, minorUnit: 0 }],
+  ['KWD', { alpha: 'KWD', numeric: 414, minorUnit: 3 }],
+  ['KYD', { alpha: 'KYD', numeric: 136, minorUnit: 2 }],
+  ['KZT', { alpha: 'KZT', numeric: 398, minorUnit: 2 }],
+  ['LAK', { alpha: 'LAK', numeric: 418, minorUnit: 2 }],
+  ['LBP', { alpha: 'LBP', numeric: 422, minorUnit: 2 }],
+  ['LKR', { alpha: 'LKR', numeric: 144, minorUnit: 2 }],
+  ['LRD', { alpha: 'LRD', numeric: 430, minorUnit: 2 }],
+  ['LSL', { alpha: 'LSL', numeric: 426, minorUnit: 2 }],
+  ['LYD', { alpha: 'LYD', numeric: 434, minorUnit: 3 }],
+  ['MAD', { alpha: 'MAD', numeric: 504, minorUnit: 2 }],
+  ['MDL', { alpha: 'MDL', numeric: 498, minorUnit: 2 }],
+  ['MGA', { alpha: 'MGA', numeric: 969, minorUnit: 2 }],
+  ['MKD', { alpha: 'MKD', numeric: 807, minorUnit: 2 }],
+  ['MMK', { alpha: 'MMK', numeric: 104, minorUnit: 2 }],
+  ['MNT', { alpha: 'MNT', numeric: 496, minorUnit: 2 }],
+  ['MOP', { alpha: 'MOP', numeric: 446, minorUnit: 2 }],
+  ['MRU', { alpha: 'MRU', numeric: 929, minorUnit: 2 }],
+  ['MUR', { alpha: 'MUR', numeric: 480, minorUnit: 2 }],
+  ['MVR', { alpha: 'MVR', numeric: 462, minorUnit: 2 }],
+  ['MWK', { alpha: 'MWK', numeric: 454, minorUnit: 2 }],
+  ['MXN', { alpha: 'MXN', numeric: 484, minorUnit: 2 }],
+  ['MXV', { alpha: 'MXV', numeric: 979, minorUnit: 2 }],
+  ['MYR', { alpha: 'MYR', numeric: 458, minorUnit: 2 }],
+  ['MZN', { alpha: 'MZN', numeric: 943, minorUnit: 2 }],
+  ['NAD', { alpha: 'NAD', numeric: 516, minorUnit: 2 }],
+  ['NGN', { alpha: 'NGN', numeric: 566, minorUnit: 2 }],
+  ['NIO', { alpha: 'NIO', numeric: 558, minorUnit: 2 }],
+  ['NOK', { alpha: 'NOK', numeric: 578, minorUnit: 2 }],
+  ['NPR', { alpha: 'NPR', numeric: 524, minorUnit: 2 }],
+  ['NZD', { alpha: 'NZD', numeric: 554, minorUnit: 2 }],
+  ['OMR', { alpha: 'OMR', numeric: 512, minorUnit: 3 }],
+  ['PAB', { alpha: 'PAB', numeric: 590, minorUnit: 2 }],
+  ['PEN', { alpha: 'PEN', numeric: 604, minorUnit: 2 }],
+  ['PGK', { alpha: 'PGK', numeric: 598, minorUnit: 2 }],
+  ['PHP', { alpha: 'PHP', numeric: 608, minorUnit: 2 }],
+  ['PKR', { alpha: 'PKR', numeric: 586, minorUnit: 2 }],
+  ['PLN', { alpha: 'PLN', numeric: 985, minorUnit: 2 }],
+  ['PYG', { alpha: 'PYG', numeric: 600, minorUnit: 0 }],
+  ['QAR', { alpha: 'QAR', numeric: 634, minorUnit: 2 }],
+  ['RON', { alpha: 'RON', numeric: 946, minorUnit: 2 }],
+  ['RSD', { alpha: 'RSD', numeric: 941, minorUnit: 2 }],
+  ['RUB', { alpha: 'RUB', numeric: 643, minorUnit: 2 }],
+  ['RWF', { alpha: 'RWF', numeric: 646, minorUnit: 0 }],
+  ['SAR', { alpha: 'SAR', numeric: 682, minorUnit: 2 }],
+  ['SBD', { alpha: 'SBD', numeric: 90, minorUnit: 2 }],
+  ['SCR', { alpha: 'SCR', numeric: 690, minorUnit: 2 }],
+  ['SDG', { alpha: 'SDG', numeric: 938, minorUnit: 2 }],
+  ['SEK', { alpha: 'SEK', numeric: 752, minorUnit: 2 }],
+  ['SGD', { alpha: 'SGD', numeric: 702, minorUnit: 2 }],
+  ['SHP', { alpha: 'SHP', numeric: 654, minorUnit: 2 }],
+  ['SLL', { alpha: 'SLL', numeric: 694, minorUnit: 2 }],
+  ['SOS', { alpha: 'SOS', numeric: 706, minorUnit: 2 }],
+  ['SRD', { alpha: 'SRD', numeric: 968, minorUnit: 2 }],
+  ['SSP', { alpha: 'SSP', numeric: 728, minorUnit: 2 }],
+  ['STN', { alpha: 'STN', numeric: 930, minorUnit: 2 }],
+  ['SVC', { alpha: 'SVC', numeric: 222, minorUnit: 2 }],
+  ['SYP', { alpha: 'SYP', numeric: 760, minorUnit: 2 }],
+  ['SZL', { alpha: 'SZL', numeric: 748, minorUnit: 2 }],
+  ['THB', { alpha: 'THB', numeric: 764, minorUnit: 2 }],
+  ['TJS', { alpha: 'TJS', numeric: 972, minorUnit: 2 }],
+  ['TMT', { alpha: 'TMT', numeric: 934, minorUnit: 2 }],
+  ['TND', { alpha: 'TND', numeric: 788, minorUnit: 3 }],
+  ['TOP', { alpha: 'TOP', numeric: 776, minorUnit: 2 }],
+  ['TRY', { alpha: 'TRY', numeric: 949, minorUnit: 2 }],
+  ['TTD', { alpha: 'TTD', numeric: 780, minorUnit: 2 }],
+  ['TWD', { alpha: 'TWD', numeric: 901, minorUnit: 2 }],
+  ['TZS', { alpha: 'TZS', numeric: 834, minorUnit: 2 }],
+  ['UAH', { alpha: 'UAH', numeric: 980, minorUnit: 2 }],
+  ['UGX', { alpha: 'UGX', numeric: 800, minorUnit: 0 }],
+  ['USD', { alpha: 'USD', numeric: 840, minorUnit: 2 }],
+  ['USN', { alpha: 'USN', numeric: 997, minorUnit: 2 }],
+  ['UYI', { alpha: 'UYI', numeric: 940, minorUnit: 0 }],
+  ['UYU', { alpha: 'UYU', numeric: 858, minorUnit: 2 }],
+  ['UYW', { alpha: 'UYW', numeric: 927, minorUnit: 4 }],
+  ['UZS', { alpha: 'UZS', numeric: 860, minorUnit: 2 }],
+  ['VED', { alpha: 'VED', numeric: 926, minorUnit: 2 }],
+  ['VES', { alpha: 'VES', numeric: 928, minorUnit: 2 }],
+  ['VND', { alpha: 'VND', numeric: 704, minorUnit: 0 }],
+  ['VUV', { alpha: 'VUV', numeric: 548, minorUnit: 0 }],
+  ['WST', { alpha: 'WST', numeric: 882, minorUnit: 2 }],
+  ['XAF', { alpha: 'XAF', numeric: 950, minorUnit: 0 }],
+  ['XAG', { alpha: 'XAG', numeric: 961, minorUnit: '.' }],
+  ['XAU', { alpha: 'XAU', numeric: 959, minorUnit: '.' }],
+  ['XBA', { alpha: 'XBA', numeric: 955, minorUnit: '.' }],
+  ['XBB', { alpha: 'XBB', numeric: 956, minorUnit: '.' }],
+  ['XBC', { alpha: 'XBC', numeric: 957, minorUnit: '.' }],
+  ['XBD', { alpha: 'XBD', numeric: 958, minorUnit: '.' }],
+  ['XCD', { alpha: 'XCD', numeric: 951, minorUnit: 2 }],
+  ['XDR', { alpha: 'XDR', numeric: 960, minorUnit: '.' }],
+  ['XOF', { alpha: 'XOF', numeric: 952, minorUnit: 0 }],
+  ['XPD', { alpha: 'XPD', numeric: 964, minorUnit: '.' }],
+  ['XPF', { alpha: 'XPF', numeric: 953, minorUnit: 0 }],
+  ['XPT', { alpha: 'XPT', numeric: 962, minorUnit: '.' }],
+  ['XSU', { alpha: 'XSU', numeric: 994, minorUnit: '.' }],
+  ['XTS', { alpha: 'XTS', numeric: 963, minorUnit: '.' }],
+  ['XUA', { alpha: 'XUA', numeric: 965, minorUnit: '.' }],
+  ['XXX', { alpha: 'XXX', numeric: 999, minorUnit: '.' }],
+  ['YER', { alpha: 'YER', numeric: 886, minorUnit: 2 }],
+  ['ZAR', { alpha: 'ZAR', numeric: 710, minorUnit: 2 }],
+  ['ZMW', { alpha: 'ZMW', numeric: 967, minorUnit: 2 }],
+  ['ZWL', { alpha: 'ZWL', numeric: 932, minorUnit: 2 }],
+]);
+
 export interface AccountParticipant {
   participant: LedgerParticipant;
   account: LedgerAccount;
@@ -178,11 +367,12 @@ export enum SettlementReportValidationKind {
   TransfersSumNonZero = 'sum of transfers in the report is non-zero',
   TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
   BalanceNotAsExpected = 'balance not modified corresponding to transfer amount',
-  AccountsNotPresent = 'accounts in settlement not present in report',
-  ExtraAccountsPresent = 'accounts in report not present in settlement',
+  AccountsNotPresentInReport = 'accounts in settlement not present in report',
+  ExtraAccountsPresentInReport = 'accounts in report not present in settlement',
   ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
   AccountIsIncorrectType = 'account type should be POSITION',
-  MonetaryAmountsInvalid = 'monetary amounts not valid for currency',
+  NewBalanceAmountInvalid = 'new balance amount not valid for currency',
+  TransferAmountInvalid = 'transfer amount not valid for currency',
   InvalidAccountId = 'report account ID does not exist in switch',
 }
 
@@ -200,6 +390,10 @@ export function describeSettlementReportValidation(validation: SettlementReportV
         'processed the report differently than it was produced.'
       );
     case SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount:
+      return (
+        "The transfer amount supplied in the settlement finalization report doesn't match the settlement amount " +
+        'in the settlement.'
+      );
     case SettlementReportValidationKind.BalanceNotAsExpected:
       return (
         'The transfer amount in the settlement finalization report is added to or subtracted from (as ' +
@@ -207,8 +401,10 @@ export function describeSettlementReportValidation(validation: SettlementReportV
         'to the new liquidity account balance in the settlement finalization report. These may not be equal if ' +
         'funds have been added to or removed from the switch liquidity account balance since settlement initiation.'
       );
-    case SettlementReportValidationKind.AccountsNotPresent:
-    case SettlementReportValidationKind.ExtraAccountsPresent:
+    case SettlementReportValidationKind.AccountsNotPresentInReport:
+      return 'The settlement finalization report does not contain all report present in the settlement.';
+    case SettlementReportValidationKind.ExtraAccountsPresentInReport:
+      return 'The settlement finalization report contains accounts not present in the settlement.';
     case SettlementReportValidationKind.ReportIdentifiersNonMatching:
       return (
         'The participant ID, account ID and participant name provided in the switch identifiers column of the ' +
@@ -216,8 +412,23 @@ export function describeSettlementReportValidation(validation: SettlementReportV
         'match the ID of the settlement participant, or the name of the participant.'
       );
     case SettlementReportValidationKind.AccountIsIncorrectType:
-    case SettlementReportValidationKind.MonetaryAmountsInvalid:
+      return (
+        'The settlement finalization report contains an account that is not of the correct account type. This could ' +
+        'be caused by an error in the generation of the initialization report, or the finalization report may have ' +
+        'been manually generated, or modified.'
+      );
+    case SettlementReportValidationKind.NewBalanceAmountInvalid:
+      return (
+        'A balance amount in the settlement finalization report is not a valid amount in the currency of the ' +
+        'liquidity account specified in the report.'
+      );
+    case SettlementReportValidationKind.TransferAmountInvalid:
+      return (
+        'A transfer amount in the settlement finalization report is not a valid amount in the currency of the ' +
+        'liquidity account specified in the report.'
+      );
     case SettlementReportValidationKind.InvalidAccountId:
+      return 'The settlement finalization report contains an account ID that is not a valid ID in the switch.';
     default: {
       // Did you get a compile error here? This code is written such that if every
       // case in the above switch state is not handled, compilation will fail.
@@ -254,7 +465,7 @@ export type SettlementReportValidation =
       };
     }
   | {
-      kind: SettlementReportValidationKind.AccountsNotPresent;
+      kind: SettlementReportValidationKind.AccountsNotPresentInReport;
       data: {
         participant?: FspName;
         account: SettlementParticipantAccount;
@@ -265,7 +476,7 @@ export type SettlementReportValidation =
       data: SettlementReportEntry[];
     }
   | {
-      kind: SettlementReportValidationKind.ExtraAccountsPresent;
+      kind: SettlementReportValidationKind.ExtraAccountsPresentInReport;
       data: {
         participant?: FspName;
         entry: SettlementReportEntry;
@@ -273,15 +484,28 @@ export type SettlementReportValidation =
     }
   | {
       kind: SettlementReportValidationKind.ReportIdentifiersNonMatching;
-      data: { row: SettlementReportRow };
+      data: { entry: SettlementReportEntry };
     }
   | {
       kind: SettlementReportValidationKind.AccountIsIncorrectType;
-      data: LedgerAccount;
+      data: {
+        entry: SettlementReportEntry;
+        switchAccount: LedgerAccount;
+      };
     }
   | {
-      kind: SettlementReportValidationKind.MonetaryAmountsInvalid;
-      data: { row: SettlementReportRow };
+      kind: SettlementReportValidationKind.NewBalanceAmountInvalid;
+      data: {
+        entry: SettlementReportEntry;
+        currencyData: CurrencyData;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.TransferAmountInvalid;
+      data: {
+        entry: SettlementReportEntry;
+        currencyData: CurrencyData;
+      };
     };
 
 export function validateReport(
@@ -371,10 +595,12 @@ export function validateReport(
 
   // AccountsNotPresent = 'accounts in settlement not present in report',
   const reportAccountIds = new Set(report.entries.map((entry) => entry.positionAccountId));
-  const accountsNotInReport = settlement.participants.flatMap((p) => p.accounts.filter((acc) => !reportAccountIds.has(acc.id)));
+  const accountsNotInReport = settlement.participants.flatMap((p) =>
+    p.accounts.filter((acc) => !reportAccountIds.has(acc.id)),
+  );
   if (accountsNotInReport.length !== 0) {
     result.add({
-      kind: SettlementReportValidationKind.AccountsNotPresent,
+      kind: SettlementReportValidationKind.AccountsNotPresentInReport,
       data: accountsNotInReport.map((account) => ({
         participant: data.accountsParticipants.get(account.id)?.participant.name,
         account,
@@ -396,7 +622,7 @@ export function validateReport(
   const entriesNotInSettlement = report.entries.filter((entry) => !settlementAccountIds.has(entry.positionAccountId));
   if (entriesNotInSettlement.length !== 0) {
     result.add({
-      kind: SettlementReportValidationKind.ExtraAccountsPresent,
+      kind: SettlementReportValidationKind.ExtraAccountsPresentInReport,
       data: entriesNotInSettlement.map((entry) => ({
         entry,
         participant: data.accountsParticipants.get(entry.positionAccountId)?.participant.name,
@@ -418,15 +644,71 @@ export function validateReport(
       ) {
         result.add({
           kind: SettlementReportValidationKind.ReportIdentifiersNonMatching,
-          data: { row: entry.row },
+          data: { entry },
         });
       }
     }
   });
 
-  return result;
   // AccountIsIncorrectType = 'account type should be POSITION',
-  // MonetaryAmountsInvalid = 'monetary amounts not valid for currency',
+  report.entries.forEach((entry) => {
+    const account = data.accountsParticipants.get(entry.positionAccountId)?.account;
+    if (account && account.ledgerAccountType !== 'POSITION') {
+      result.add({
+        kind: SettlementReportValidationKind.AccountIsIncorrectType,
+        data: {
+          switchAccount: account,
+          entry,
+        },
+      });
+    }
+  });
+
+  // NewBalanceAmountInvalid = 'new balance amount not valid for currency',
+  // TransferAmountInvalid = 'transfer amount not valid for currency',
+  report.entries.forEach((entry) => {
+    const account = data.accountsParticipants.get(entry.positionAccountId)?.account;
+    if (account) {
+      const currencyData = CURRENCY_DATA.get(account.currency);
+      // TODO: later, we compare the fractional length of the numeric amount against the number of
+      // minor units used in the currency. This is a little workaround; what we really need to test
+      // is: can this value represent this currency (or vice versa)? The reason this particular
+      // code doesn't _quite_ work is because two currencies have base-5 minor units according to
+      // Wikipedia.
+      // https://en.m.wikipedia.org/wiki/ISO_4217#Minor_units_of_currency
+      assert(
+        currencyData !== undefined,
+        `Runtime error retrieving currency data for account ${entry.positionAccountId} for ${account.currency} for finalization report row ${entry.row.rowNumber}`,
+      );
+      assert(account.currency !== 'MRU' && account.currency !== 'MGA', `Unsupported currency ${account.currency}`);
+      const balanceFrac = entry.balance.toString().split('.')[1];
+      const transferFrac = entry.transferAmount.toString().split('.')[1];
+      if (balanceFrac) {
+        if (currencyData.minorUnit > balanceFrac.length) {
+          result.add({
+            kind: SettlementReportValidationKind.NewBalanceAmountInvalid,
+            data: {
+              currencyData,
+              entry,
+            },
+          });
+        }
+      }
+      if (transferFrac) {
+        if (currencyData.minorUnit > transferFrac.length) {
+          result.add({
+            kind: SettlementReportValidationKind.TransferAmountInvalid,
+            data: {
+              currencyData,
+              entry,
+            },
+          });
+        }
+      }
+    }
+  });
+
+  return result;
 }
 
 export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
