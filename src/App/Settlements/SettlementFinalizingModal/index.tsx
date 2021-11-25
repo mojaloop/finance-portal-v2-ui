@@ -136,6 +136,8 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     </ErrorBox>
   ) : (
     <div>
+      <div>Please select a settlement finalization report to process:</div>
+      <br />
       <input
         type="file"
         // disabled={true}
@@ -187,6 +189,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           }
         }}
       />
+      <hr />
       <table>
         <tbody>
           {orderedStates.map((s) => (
