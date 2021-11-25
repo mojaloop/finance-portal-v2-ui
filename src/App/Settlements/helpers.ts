@@ -230,16 +230,18 @@ export interface SettlementFinalizeData {
 export { buildUpdateSettlementStateRequest } from '../helpers';
 
 const isNumericTextRe =
-  /^(\((?<parenthesized>[0-9]+(\.[0-9]+)?)\)|(?<positive>[0-9]+(\.[0-9]+)?)|(?<negative>-[0-9]+(\.[0-9]+)?))$/g;
-// TODO: unit testing
-// TODO: Note: commas: https://modusbox.atlassian.net/browse/MMD-1827
-const extractReportQuantity = (text: string): number => {
+  /^(\((?<parenthesized>(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?)\)|(?<positive>(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?)|(?<negative>-(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?))$/g;
+export const extractReportQuantity = (text: string): number => {
   const allMatches = Array.from(text.matchAll(isNumericTextRe));
   if (allMatches.length !== 1 || allMatches[0].length === 0) {
     return NaN;
   }
-  const { positive, negative, parenthesized } = allMatches[0]?.groups || {};
-  return Number(positive || negative || parenthesized);
+  let { parenthesized } = allMatches[0]?.groups || {};
+  const { positive, negative } = allMatches[0]?.groups || {};
+  if (parenthesized) {
+    parenthesized = `-${parenthesized}`;
+  }
+  return Number((positive || negative || parenthesized)?.replace(/,/g, ''));
 };
 
 const getDateRangesTimestamps = {
@@ -508,207 +510,318 @@ export type SettlementReportValidation =
       };
     };
 
+// Because no currency has more than four decimal places, we can have quite a large epsilon value
+const EPSILON = 1e-5;
+const equal = (a: number, b: number) => Math.abs(a - b) > EPSILON;
+
+export const validationFunctions = {
+  union: function union<T>(...args: Set<T>[]) {
+    return args.reduce((res, a) => [...a.values()].reduce((resA, v) => resA.add(v), res), new Set<T>());
+  },
+
+  settlementId: function validateReportSettlementId(report: SettlementReport, settlement: Settlement) {
+    const result = new Set<SettlementReportValidation>();
+    if (settlement.id !== report.settlementId) {
+      result.add({
+        kind: SettlementReportValidationKind.SettlementIdNonMatching,
+        data: {
+          reportId: report.settlementId,
+          settlementId: settlement.id,
+        },
+      });
+    }
+    return result;
+  },
+
+  transfersSum: function validateTransfersSum(report: SettlementReport) {
+    const result = new Set<SettlementReportValidation>();
+    const reportTransfersSum = report.entries.reduce((sum, e) => sum + e.transferAmount, 0);
+    if (!equal(reportTransfersSum, 0)) {
+      result.add({ kind: SettlementReportValidationKind.TransfersSumNonZero });
+    }
+    return result;
+  },
+
+  transfersMatchNetSettlements: function matchTransfersToNetSettlements(
+    report: SettlementReport,
+    settlementParticipantAccounts: SettlementFinalizeData['settlementParticipantAccounts'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    report.entries.forEach((entry) => {
+      const spa = settlementParticipantAccounts.get(entry.positionAccountId);
+      if (spa && entry.transferAmount === spa.netSettlementAmount.amount) {
+        result.add({
+          kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount,
+          data: {
+            row: entry.row,
+            account: spa,
+          },
+        });
+      }
+    });
+    return result;
+  },
+
+  balancesAsExpected: function checkBalancesAsExpected(report: SettlementReport, data: SettlementFinalizeData) {
+    // TODO: should we notify anyone about this? Perhaps not; sometimes the balance will change as a
+    // result of normal business processes.
+    const result = new Set<SettlementReportValidation>();
+    report.entries
+      .map((entry) => {
+        // collect data for this entry
+        const { account: positionAccount, participant } = data.accountsParticipants.get(entry.positionAccountId) || {};
+        if (!positionAccount || !participant) {
+          return undefined;
+        }
+        const settlementAccountId = data.participantsAccounts
+          .get(participant.name)
+          ?.get(positionAccount.currency)
+          ?.get('SETTLEMENT')?.account.id;
+        if (settlementAccountId === undefined) {
+          return undefined;
+        }
+        const settlementAccount = data.accountsPositions.get(settlementAccountId);
+        if (settlementAccount === undefined) {
+          return undefined;
+        }
+        return {
+          entry,
+          settlementAccount,
+        };
+      })
+      .filter((e): e is { entry: SettlementReportEntry; settlementAccount: AccountWithPosition } => e !== undefined)
+      .forEach(({ entry, settlementAccount }) => {
+        const expectedBalance = settlementAccount.value + entry.transferAmount;
+        const reportBalance = entry.balance;
+        if (!equal(expectedBalance, reportBalance)) {
+          result.add({
+            kind: SettlementReportValidationKind.BalanceNotAsExpected,
+            data: {
+              entry,
+              reportBalance,
+              expectedBalance,
+              transferAmount: entry.transferAmount,
+              account: settlementAccount,
+            },
+          });
+        }
+      });
+    return result;
+  },
+
+  settlementAccountsPresentInReport: function checkSettlementAccountsPresentInReport(
+    report: SettlementReport,
+    settlement: Settlement,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    const reportAccountIds = new Set(report.entries.map((entry) => entry.positionAccountId));
+    const accountsNotInReport = settlement.participants.flatMap((p) =>
+      p.accounts.filter((acc) => !reportAccountIds.has(acc.id)),
+    );
+    if (accountsNotInReport.length !== 0) {
+      result.add({
+        kind: SettlementReportValidationKind.AccountsNotPresentInReport,
+        data: accountsNotInReport.map((account) => ({
+          participant: accountsParticipants.get(account.id)?.participant.name,
+          account,
+        })),
+      });
+    }
+    return result;
+  },
+
+  accountsValid: function checkAccountsValid(
+    report: SettlementReport,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    const invalidAccounts = report.entries.filter((entry) => !accountsParticipants.has(entry.positionAccountId));
+    if (invalidAccounts.length !== 0) {
+      result.add({
+        kind: SettlementReportValidationKind.InvalidAccountId,
+        data: invalidAccounts,
+      });
+    }
+    return result;
+  },
+
+  extraAccountsPresent: function checkExtraAccountsPresent(
+    report: SettlementReport,
+    settlement: Settlement,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    const settlementAccountIds = new Set(settlement.participants.flatMap((p) => p.accounts.map((acc) => acc.id)));
+    const entriesNotInSettlement = report.entries.filter((entry) => !settlementAccountIds.has(entry.positionAccountId));
+    if (entriesNotInSettlement.length !== 0) {
+      result.add({
+        kind: SettlementReportValidationKind.ExtraAccountsPresentInReport,
+        data: entriesNotInSettlement.map((entry) => ({
+          entry,
+          participant: accountsParticipants.get(entry.positionAccountId)?.participant.name,
+        })),
+      });
+    }
+    return result;
+  },
+
+  reportIdentifiersCongruent: function checkReportIdentifiersCongruent(
+    report: SettlementReport,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+    settlementParticipants: SettlementFinalizeData['settlementParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    report.entries.forEach((entry) => {
+      const switchParticipant = accountsParticipants.get(entry.positionAccountId);
+      const settlementParticipantId = settlementParticipants.get(entry.positionAccountId)?.id;
+      // If we can't find the participant using the account ID, we'll have already returned an
+      // "Invalid Account" error. If we can't find the settlement participant using the account ID,
+      // we'll have returned an "account not in settlement" error.
+      if (switchParticipant && settlementParticipantId) {
+        if (
+          entry.participant.name !== switchParticipant.participant.name ||
+          entry.participant.id !== settlementParticipantId
+        ) {
+          result.add({
+            kind: SettlementReportValidationKind.ReportIdentifiersNonMatching,
+            data: { entry },
+          });
+        }
+      }
+    });
+    return result;
+  },
+
+  accountType: function validateAccountType(
+    report: SettlementReport,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    report.entries.forEach((entry) => {
+      const account = accountsParticipants.get(entry.positionAccountId)?.account;
+      if (account && account.ledgerAccountType !== 'POSITION') {
+        result.add({
+          kind: SettlementReportValidationKind.AccountIsIncorrectType,
+          data: {
+            switchAccount: account,
+            entry,
+          },
+        });
+      }
+    });
+    return result;
+  },
+
+  amounts: function validateReportAmounts(
+    report: SettlementReport,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
+    const result = new Set<SettlementReportValidation>();
+    report.entries.forEach((entry) => {
+      const account = accountsParticipants.get(entry.positionAccountId)?.account;
+      if (account) {
+        const currencyData = CURRENCY_DATA.get(account.currency);
+        // TODO: later, we compare the fractional length of the numeric amount against the number of
+        // minor units used in the currency. This is a little workaround; what we really need to test
+        // is: can this value represent this currency (or vice versa)? The reason this particular
+        // code doesn't _quite_ work is because two currencies have base-5 minor units according to
+        // Wikipedia.
+        // https://en.m.wikipedia.org/wiki/ISO_4217#Minor_units_of_currency
+        assert(
+          currencyData !== undefined,
+          `Runtime error retrieving currency data for account ${entry.positionAccountId} for ${account.currency} for finalization report row ${entry.row.rowNumber}`,
+        );
+        assert(account.currency !== 'MRU' && account.currency !== 'MGA', `Unsupported currency ${account.currency}`);
+        const balanceFrac = entry.balance.toString().split('.')[1];
+        const transferFrac = entry.transferAmount.toString().split('.')[1];
+        if (balanceFrac) {
+          if (currencyData.minorUnit > balanceFrac.length) {
+            result.add({
+              kind: SettlementReportValidationKind.NewBalanceAmountInvalid,
+              data: {
+                currencyData,
+                entry,
+              },
+            });
+          }
+        }
+        if (transferFrac) {
+          if (currencyData.minorUnit > transferFrac.length) {
+            result.add({
+              kind: SettlementReportValidationKind.TransferAmountInvalid,
+              data: {
+                currencyData,
+                entry,
+              },
+            });
+          }
+        }
+      }
+    });
+    return result;
+  },
+};
+
 export function validateReport(
   report: SettlementReport,
   data: SettlementFinalizeData,
   settlement: Settlement,
 ): Set<SettlementReportValidation> {
-  const result = new Set<SettlementReportValidation>();
-  // Because no currency has more than four decimal places, we can have quite a large epsilon value
-  const EPSILON = 1e-5;
-  const equal = (a: number, b: number) => Math.abs(a - b) > EPSILON;
-
   // SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
-  if (settlement.id !== report.settlementId) {
-    result.add({
-      kind: SettlementReportValidationKind.SettlementIdNonMatching,
-      data: {
-        reportId: report.settlementId,
-        settlementId: settlement.id,
-      },
-    });
-  }
+  const settlementIdResult = validationFunctions.settlementId(report, settlement);
 
   // TransfersSumNonZero = 'sum of transfers in the report is non-zero',
-  const reportTransfersSum = report.entries.reduce((sum, e) => sum + e.transferAmount, 0);
-  if (!equal(reportTransfersSum, 0)) {
-    result.add({ kind: SettlementReportValidationKind.TransfersSumNonZero });
-  }
+  const transferSumResult = validationFunctions.transfersSum(report);
 
   // TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
-  report.entries.forEach((entry) => {
-    const spa = data.settlementParticipantAccounts.get(entry.positionAccountId);
-    if (spa && entry.transferAmount === spa.netSettlementAmount.amount) {
-      result.add({
-        kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount,
-        data: {
-          row: entry.row,
-          account: spa,
-        },
-      });
-    }
-  });
+  const transfersMatchResult = validationFunctions.transfersMatchNetSettlements(
+    report,
+    data.settlementParticipantAccounts,
+  );
 
-  // TODO: should we notify anyone about this? Perhaps not; sometimes the balance will change as a
-  // result of normal business processes.
   // BalancesNotAsExpected = 'balances not modified corresponding to transfer amounts',
-  report.entries
-    .map((entry) => {
-      // collect data for this entry
-      const { account: positionAccount, participant } = data.accountsParticipants.get(entry.positionAccountId) || {};
-      if (!positionAccount || !participant) {
-        return undefined;
-      }
-      const settlementAccountId = data.participantsAccounts
-        .get(participant.name)
-        ?.get(positionAccount.currency)
-        ?.get('SETTLEMENT')?.account.id;
-      if (settlementAccountId === undefined) {
-        return undefined;
-      }
-      const settlementAccount = data.accountsPositions.get(settlementAccountId);
-      if (settlementAccount === undefined) {
-        return undefined;
-      }
-      return {
-        entry,
-        settlementAccount,
-      };
-    })
-    .filter((e): e is { entry: SettlementReportEntry; settlementAccount: AccountWithPosition } => e !== undefined)
-    .forEach(({ entry, settlementAccount }) => {
-      const expectedBalance = settlementAccount.value + entry.transferAmount;
-      const reportBalance = entry.balance;
-      if (!equal(expectedBalance, reportBalance)) {
-        result.add({
-          kind: SettlementReportValidationKind.BalanceNotAsExpected,
-          data: {
-            entry,
-            reportBalance,
-            expectedBalance,
-            transferAmount: entry.transferAmount,
-            account: settlementAccount,
-          },
-        });
-      }
-    });
+  const expectedBalanceResult = validationFunctions.balancesAsExpected(report, data);
 
   // AccountsNotPresent = 'accounts in settlement not present in report',
-  const reportAccountIds = new Set(report.entries.map((entry) => entry.positionAccountId));
-  const accountsNotInReport = settlement.participants.flatMap((p) =>
-    p.accounts.filter((acc) => !reportAccountIds.has(acc.id)),
+  const accountsPresentResult = validationFunctions.settlementAccountsPresentInReport(
+    report,
+    settlement,
+    data.accountsParticipants,
   );
-  if (accountsNotInReport.length !== 0) {
-    result.add({
-      kind: SettlementReportValidationKind.AccountsNotPresentInReport,
-      data: accountsNotInReport.map((account) => ({
-        participant: data.accountsParticipants.get(account.id)?.participant.name,
-        account,
-      })),
-    });
-  }
 
   // InvalidAccountId = 'report account ID does not exist in switch',
-  const invalidAccounts = report.entries.filter((entry) => !data.accountsParticipants.has(entry.positionAccountId));
-  if (invalidAccounts.length !== 0) {
-    result.add({
-      kind: SettlementReportValidationKind.InvalidAccountId,
-      data: invalidAccounts,
-    });
-  }
+  const accountsValidResult = validationFunctions.accountsValid(report, data.accountsParticipants);
 
   // ExtraAccountsPresent = 'accounts in report not present in settlement',
-  const settlementAccountIds = new Set(settlement.participants.flatMap((p) => p.accounts.map((acc) => acc.id)));
-  const entriesNotInSettlement = report.entries.filter((entry) => !settlementAccountIds.has(entry.positionAccountId));
-  if (entriesNotInSettlement.length !== 0) {
-    result.add({
-      kind: SettlementReportValidationKind.ExtraAccountsPresentInReport,
-      data: entriesNotInSettlement.map((entry) => ({
-        entry,
-        participant: data.accountsParticipants.get(entry.positionAccountId)?.participant.name,
-      })),
-    });
-  }
+  const extraAccountsResult = validationFunctions.extraAccountsPresent(report, settlement, data.accountsParticipants);
 
   // ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
-  report.entries.forEach((entry) => {
-    const switchParticipant = data.accountsParticipants.get(entry.positionAccountId);
-    const settlementParticipantId = data.settlementParticipants.get(entry.positionAccountId)?.id;
-    // If we can't find the participant using the account ID, we'll have already returned an
-    // "Invalid Account" error. If we can't find the settlement participant using the account ID,
-    // we'll have returned an "account not in settlement" error.
-    if (switchParticipant && settlementParticipantId) {
-      if (
-        entry.participant.name !== switchParticipant.participant.name ||
-        entry.participant.id !== settlementParticipantId
-      ) {
-        result.add({
-          kind: SettlementReportValidationKind.ReportIdentifiersNonMatching,
-          data: { entry },
-        });
-      }
-    }
-  });
+  const reportIdentifiersMatchResult = validationFunctions.reportIdentifiersCongruent(
+    report,
+    data.accountsParticipants,
+    data.settlementParticipants,
+  );
 
   // AccountIsIncorrectType = 'account type should be POSITION',
-  report.entries.forEach((entry) => {
-    const account = data.accountsParticipants.get(entry.positionAccountId)?.account;
-    if (account && account.ledgerAccountType !== 'POSITION') {
-      result.add({
-        kind: SettlementReportValidationKind.AccountIsIncorrectType,
-        data: {
-          switchAccount: account,
-          entry,
-        },
-      });
-    }
-  });
+  const accountTypeValidResult = validationFunctions.accountType(report, data.accountsParticipants);
 
   // NewBalanceAmountInvalid = 'new balance amount not valid for currency',
   // TransferAmountInvalid = 'transfer amount not valid for currency',
-  report.entries.forEach((entry) => {
-    const account = data.accountsParticipants.get(entry.positionAccountId)?.account;
-    if (account) {
-      const currencyData = CURRENCY_DATA.get(account.currency);
-      // TODO: later, we compare the fractional length of the numeric amount against the number of
-      // minor units used in the currency. This is a little workaround; what we really need to test
-      // is: can this value represent this currency (or vice versa)? The reason this particular
-      // code doesn't _quite_ work is because two currencies have base-5 minor units according to
-      // Wikipedia.
-      // https://en.m.wikipedia.org/wiki/ISO_4217#Minor_units_of_currency
-      assert(
-        currencyData !== undefined,
-        `Runtime error retrieving currency data for account ${entry.positionAccountId} for ${account.currency} for finalization report row ${entry.row.rowNumber}`,
-      );
-      assert(account.currency !== 'MRU' && account.currency !== 'MGA', `Unsupported currency ${account.currency}`);
-      const balanceFrac = entry.balance.toString().split('.')[1];
-      const transferFrac = entry.transferAmount.toString().split('.')[1];
-      if (balanceFrac) {
-        if (currencyData.minorUnit > balanceFrac.length) {
-          result.add({
-            kind: SettlementReportValidationKind.NewBalanceAmountInvalid,
-            data: {
-              currencyData,
-              entry,
-            },
-          });
-        }
-      }
-      if (transferFrac) {
-        if (currencyData.minorUnit > transferFrac.length) {
-          result.add({
-            kind: SettlementReportValidationKind.TransferAmountInvalid,
-            data: {
-              currencyData,
-              entry,
-            },
-          });
-        }
-      }
-    }
-  });
+  const amountsValidResult = validationFunctions.accountType(report, data.accountsParticipants);
 
-  return result;
+  return validationFunctions.union(
+    settlementIdResult,
+    transferSumResult,
+    transfersMatchResult,
+    expectedBalanceResult,
+    accountsPresentResult,
+    accountsValidResult,
+    extraAccountsResult,
+    reportIdentifiersMatchResult,
+    accountTypeValidResult,
+    amountsValidResult,
+  );
 }
 
 export function readFileAsArrayBuffer(file: File): PromiseLike<ArrayBuffer> {
