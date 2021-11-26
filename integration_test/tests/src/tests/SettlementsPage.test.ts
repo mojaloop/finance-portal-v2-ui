@@ -145,7 +145,8 @@ test.meta({
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
   ));
-  await t.expect(settlementRowAfter.state.innerText).eql('Settled');
+  // This can take some time, use a high timeout
+  await t.expect(settlementRowAfter.state.innerText).eql('Settled', { timeout: 30000 });
 });
 
 
