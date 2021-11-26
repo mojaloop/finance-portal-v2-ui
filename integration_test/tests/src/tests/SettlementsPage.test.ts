@@ -102,7 +102,7 @@ test.meta({
 
   // Get the initiation report, "simulate" some balances returned by the settlement bank, save it
   // as the finalization report.
-  const initiationReport = await api.getSettlementInitiationReport(REPORT_BASE_PATH, settlement.id);
+  const initiationReport = await api.reporting.getSettlementInitiationReport(REPORT_BASE_PATH, settlement.id);
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(initiationReport.body);
   const ws = wb.getWorksheet(1);
@@ -123,7 +123,7 @@ test.meta({
   balanceInfo?.forEach(({ balance, row }) => {
     row.getCell(BALANCE_COL).value = balance;
   });
-  const filename = __dirname + `settlement-finalization-report-settlement-${settlement.id}.xlsx`;
+  const filename = __dirname + `/settlement-finalization-report-settlement-${settlement.id}.xlsx`;
   // TODO: delete this; don't leave it lying round on the user's machine. Or, use a temp file. Or
   // don't? It's not difficult to delete files that aren't version-controlled, and 
   wb.xlsx.writeFile(filename);

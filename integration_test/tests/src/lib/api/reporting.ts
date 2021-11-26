@@ -1,8 +1,6 @@
 
 import got, { OptionsOfBufferResponseBody, CancelableRequest, Response } from 'got';
 
-// export async function getSettlementInitiationReport(basePath: string, settlementId: number): Promise<CancelableRequest<Response<Buffer>>> {
-// export async function getSettlementInitiationReport(basePath: string, settlementId: number): Promise<CancelableRequest<number>> {
 // TODO: should accept basePath: URL | string
 export async function getSettlementInitiationReport(basePath: string, settlementId: number): Promise<CancelableRequest<Response<Buffer>>> {
   const bufferResponseOpts: OptionsOfBufferResponseBody = {
