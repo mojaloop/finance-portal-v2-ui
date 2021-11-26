@@ -11,6 +11,8 @@
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",
     "env-var": "^7.0.1",
+    "exceljs": "^4.3.0",
+    "got": "^11.8.3",
     "mojaloop-voodoo-client": "0.7.0",
     "request": "2.88.2",
     "testcafe": "1.15.1",
