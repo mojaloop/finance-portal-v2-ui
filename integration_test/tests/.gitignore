@@ -1,3 +1,2 @@
-allure
-reports
-node_modules
+# The test suite creates xlsx files in this directory, we don't want to commit them
+**/*.xlsx
