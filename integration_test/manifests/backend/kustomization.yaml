@@ -4,7 +4,7 @@ resources:
 - github.com/partiallyordered/voodoo-doll/kubernetes?ref=ad96349ef8fe91a422377be8f53aea56aee60c8e
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.4
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.4
-- ing.yaml
+- ingress.yaml
 
 configMapGenerator:
 - name: oauth-app-credentials
