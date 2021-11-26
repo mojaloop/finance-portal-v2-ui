@@ -265,7 +265,7 @@ function* processAdjustments({
             accountId: adjustment.settlementAccount.id,
             transferId,
             body: {
-              action: 'recordFundsOutPrepareReserve',
+              action: 'recordFundsOutCommit',
               reason: description,
             },
           });
