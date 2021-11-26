@@ -62,7 +62,9 @@ export type WindowRow = {
 };
 
 export const SettlementFinalizeModal = {
-  closeButton: ReactSelector('Modal').findReact('Button'),
+  closeButton: ReactSelector('Modal').findReact('Button').withText('Close'),
+  processButton: ReactSelector('Modal').findReact('Button').withText('Process'),
+  fileInput: ReactSelector('Modal').find('input'),
 };
 
 const SettlementDetailModalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });
