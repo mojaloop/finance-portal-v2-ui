@@ -748,7 +748,7 @@ export function deserializeReport(buf: ArrayBuffer): PromiseLike<SettlementRepor
     }
 
     const entries =
-      ws.getRows(7, endOfData - startOfData)?.map((r) => {
+      ws.getRows(startOfData, endOfData - startOfData)?.map((r) => {
         const switchIdentifiers = r.getCell(PARTICIPANT_INFO_COL).text;
         // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
         // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML

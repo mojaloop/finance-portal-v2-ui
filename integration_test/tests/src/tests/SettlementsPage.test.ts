@@ -5,11 +5,19 @@ import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
+import api from '../lib/api';
+import ExcelJS from 'exceljs';
+
+const INGRESS_HOST = 'localhost';
+const INGRESS_PORT = 8000;
+const VOODOO_PORT = 3030;
+const REPORT_BASE_PATH = `http://${INGRESS_HOST}:${INGRESS_PORT}/report`;
+const VOODOO_URI = `ws://${INGRESS_HOST}:${VOODOO_PORT}/voodoo`;
 
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: config.voodooTimeoutMs });
+    const cli = new VoodooClient(VOODOO_URI, { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [
@@ -67,8 +75,8 @@ test.meta({
 
   // Run a transfer so the settlement window can be closed
   const transfers2: protocol.TransferMessage[] = [{
-    msg_sender: participants[0].name,
-    msg_recipient: participants[1].name,
+    msg_sender: participants[1].name,
+    msg_recipient: participants[0].name,
     currency: 'MMK',
     amount: '10',
     transfer_id: uuidv4(),
@@ -92,6 +100,34 @@ test.meta({
     settlementWindows: settlementWindowIds.map((id) => ({ id })),
   });
 
+  // Get the initiation report, "simulate" some balances returned by the settlement bank, save it
+  // as the finalization report.
+  const initiationReport = await api.getSettlementInitiationReport(REPORT_BASE_PATH, settlement.id);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(initiationReport.body);
+  const ws = wb.getWorksheet(1);
+  const BALANCE_COL = 'C';
+  const PARTICIPANT_INFO_COL = 'A';
+  const START_OF_DATA = 7;
+  let endOfData = 7;
+  while (ws.getCell(`A${endOfData}`).text !== '') {
+    endOfData += 1;
+  }
+  const balanceInfo = ws.getRows(START_OF_DATA, endOfData - START_OF_DATA)?.map((row) => ({
+    balance: Math.trunc(Math.random() * 5000),
+    participantInfo: row.getCell(PARTICIPANT_INFO_COL),
+    rowNum: row.number,
+    row,
+  }));
+  await t.expect(balanceInfo).notEql(undefined, 'Expect some data rows in the settlement initiation report');
+  balanceInfo?.forEach(({ balance, row }) => {
+    row.getCell(BALANCE_COL).value = balance;
+  });
+  const filename = __dirname + `settlement-finalization-report-settlement-${settlement.id}.xlsx`;
+  // TODO: delete this; don't leave it lying round on the user's machine. Or, use a temp file. Or
+  // don't? It's not difficult to delete files that aren't version-controlled, and 
+  wb.xlsx.writeFile(filename);
+
   await t.click(SideMenu.settlementsButton);
 
   const rowsBefore = await SettlementsPage.getResultRows();
@@ -100,6 +136,10 @@ test.meta({
   ));
   await t.expect(settlementRowBefore.state.innerText).eql('Pending Settlement');
   await t.click(settlementRowBefore.finalizeButton);
+
+  await t.setFilesToUpload(SettlementFinalizeModal.fileInput, [filename]);
+  await t.click(SettlementFinalizeModal.processButton);
+
   await t.click(SettlementFinalizeModal.closeButton);
   const rowsAfter = await SettlementsPage.getResultRows();
   const settlementRowAfter = await Promise.any(rowsAfter.map(
