@@ -206,31 +206,78 @@ function* processAdjustments({
           }
           return 'OK';
         }
-        // Make the call to process funds out, then poll the balance until it's reduced
-        const fundsInOutResult: ApiResponse = yield call(apis.participantAccount.create, {
-          participantName: adjustment.participant.name,
-          accountId: adjustment.settlementAccount.id,
-          body: {
-            externalReference: description,
-            action: adjustment.amount > 0 ? 'recordFundsIn' : 'recordFundsOutPrepareReserve',
-            reason: description,
-            amount: {
-              amount: Math.abs(adjustment.amount), // TODO: MLNumber
-              // TODO: I think the transfer fails if currency is missing, but it is advertised as
-              // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
-              currency: adjustment.settlementAccount.currency,
+
+        if (adjustment.amount > 0) {
+          // Make the call to process funds out, then poll the balance until it's reduced
+          const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, {
+            participantName: adjustment.participant.name,
+            accountId: adjustment.settlementAccount.id,
+            body: {
+              externalReference: description,
+              action: 'recordFundsIn',
+              reason: description,
+              amount: {
+                amount: Math.abs(adjustment.amount), // TODO: MLNumber
+                // TODO: I think the transfer fails if currency is missing, but it is advertised as
+                // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
+                currency: adjustment.settlementAccount.currency,
+              },
+              transferId: uuidv4(),
             },
-            transferId: uuidv4(),
-          },
-        });
-        if (fundsInOutResult.status !== 202) {
-          return {
-            type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
-            value: {
-              adjustment,
-              error: fundsInOutResult.data,
+          });
+          if (fundsInResult.status !== 202) {
+            return {
+              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+              value: {
+                adjustment,
+                error: fundsInResult.data,
+              },
+            };
+          }
+        } else {
+          // Make the call to process funds out, then poll the balance until it's reduced
+          const transferId = uuidv4();
+          const fundsOutPrepareReserveResult: ApiResponse = yield call(apis.participantAccount.create, {
+            participantName: adjustment.participant.name,
+            accountId: adjustment.settlementAccount.id,
+            body: {
+              externalReference: description,
+              action: 'recordFundsOutPrepareReserve',
+              reason: description,
+              amount: {
+                amount: Math.abs(adjustment.amount), // TODO: MLNumber
+                currency: adjustment.settlementAccount.currency,
+              },
+              transferId,
             },
-          };
+          });
+          if (fundsOutPrepareReserveResult.status !== 202) {
+            return {
+              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+              value: {
+                adjustment,
+                error: fundsOutPrepareReserveResult.data,
+              },
+            };
+          }
+          const fundsOutCommitResult: ApiResponse = yield call(apis.participantAccountTransfer.update, {
+            participantName: adjustment.participant.name,
+            accountId: adjustment.settlementAccount.id,
+            transferId,
+            body: {
+              action: 'recordFundsOutPrepareReserve',
+              reason: description,
+            },
+          });
+          if (fundsOutCommitResult.status !== 202) {
+            return {
+              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+              value: {
+                adjustment,
+                error: fundsOutCommitResult.data,
+              },
+            };
+          }
         }
 
         // Poll for a while to confirm the new balance
