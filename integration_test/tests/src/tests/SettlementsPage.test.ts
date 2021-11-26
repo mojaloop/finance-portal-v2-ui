@@ -8,11 +8,9 @@ import { v4 as uuidv4 } from 'uuid';
 import api from '../lib/api';
 import ExcelJS from 'exceljs';
 
-const INGRESS_HOST = 'localhost';
-const INGRESS_PORT = 8000;
-const VOODOO_PORT = 3030;
-const REPORT_BASE_PATH = `http://${INGRESS_HOST}:${INGRESS_PORT}/report`;
-const VOODOO_URI = `ws://${INGRESS_HOST}:${VOODOO_PORT}/voodoo`;
+const { ingressPort, vooodooPort, ingressHost } = config;
+const REPORT_BASE_PATH = `http://${ingressHost}:${ingressPort}/report`;
+const VOODOO_URI = `ws://${ingressHost}:${voodooPort}/voodoo`;
 
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
@@ -147,6 +145,8 @@ test.meta({
   ));
   // This can take some time, use a high timeout
   await t.expect(settlementRowAfter.state.innerText).eql('Settled', { timeout: 30000 });
+
+  // TODO: check financial positions
 });
 
 

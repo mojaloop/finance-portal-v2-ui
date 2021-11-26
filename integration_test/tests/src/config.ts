@@ -23,6 +23,9 @@ function ensureEnv(e: string): string {
 // TODO: ajv
 export const config = {
   financePortalEndpoint: ensureEnv('FINANCE_PORTAL_ENDPOINT'),
+  ingressHost: 'localhost',
+  ingressPort: ensureEnv('INGRESS_PORT'),
+  voodooPort: 3030,
   credentials: {
     admin: {
       username: users[0].username,
