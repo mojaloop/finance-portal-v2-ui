@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import api from '../lib/api';
 import ExcelJS from 'exceljs';
 
-const { ingressPort, vooodooPort, ingressHost } = config;
+const { ingressPort, voodooPort, ingressHost } = config;
 const REPORT_BASE_PATH = `http://${ingressHost}:${ingressPort}/report`;
 const VOODOO_URI = `ws://${ingressHost}:${voodooPort}/voodoo`;
 
