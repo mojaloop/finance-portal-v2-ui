@@ -5,6 +5,7 @@ resources:
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is?ref=v2.0.4
 - github.com/mojaloop/wso2is-populate/integration_test/manifests/wso2is-populate?ref=v2.0.4
 - ingress.yaml
+- ../reporting-service
 
 configMapGenerator:
 - name: oauth-app-credentials
