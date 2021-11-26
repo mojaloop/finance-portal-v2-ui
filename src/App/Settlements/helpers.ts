@@ -4,6 +4,7 @@ import ExcelJS from 'exceljs';
 import {
   AccountId,
   AccountWithPosition,
+  CurrencyData,
   DateRanges,
   FspName,
   LedgerAccount,
@@ -15,20 +16,14 @@ import {
   SettlementParticipant,
   SettlementParticipantAccount,
   SettlementReport,
+  SettlementReportValidation,
+  SettlementReportValidationKind,
   SettlementReportEntry,
-  SettlementReportRow,
   SettlementStatus,
 } from './types';
 
 import { Currency } from '../types';
 
-export type MinorUnit = 0 | 2 | 3 | 4 | '.';
-
-export interface CurrencyData {
-  alpha: Currency;
-  numeric: number;
-  minorUnit: MinorUnit;
-}
 export const CURRENCY_DATA = new Map<Currency, CurrencyData>([
   ['AED', { alpha: 'AED', numeric: 784, minorUnit: 2 }],
   ['AFN', { alpha: 'AFN', numeric: 971, minorUnit: 2 }],
@@ -343,20 +338,6 @@ export function mapApiToModel(item: any): Settlement {
   };
 }
 
-export enum SettlementReportValidationKind {
-  SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
-  TransfersSumNonZero = 'sum of transfers in the report is non-zero',
-  TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
-  BalanceNotAsExpected = 'balance not modified corresponding to transfer amount',
-  AccountsNotPresentInReport = 'accounts in settlement not present in report',
-  ExtraAccountsPresentInReport = 'accounts in report not present in settlement',
-  ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
-  AccountIsIncorrectType = 'account type should be POSITION',
-  NewBalanceAmountInvalid = 'new balance amount not valid for currency',
-  TransferAmountInvalid = 'transfer amount not valid for currency',
-  InvalidAccountId = 'report account ID does not exist in switch',
-}
-
 export function describeSettlementReportValidation(validation: SettlementReportValidationKind) {
   switch (validation) {
     case SettlementReportValidationKind.SettlementIdNonMatching:
@@ -419,76 +400,6 @@ export function describeSettlementReportValidation(validation: SettlementReportV
   }
 }
 
-export type SettlementReportValidation =
-  | {
-      kind: SettlementReportValidationKind.SettlementIdNonMatching;
-      data: {
-        reportId: number;
-        settlementId: number;
-      };
-    }
-  | { kind: SettlementReportValidationKind.TransfersSumNonZero }
-  | {
-      kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount;
-      data: {
-        row: SettlementReportRow;
-        account: SettlementParticipantAccount;
-      };
-    }
-  | {
-      kind: SettlementReportValidationKind.BalanceNotAsExpected;
-      data: {
-        entry: SettlementReportEntry;
-        reportBalance: number;
-        expectedBalance: number;
-        transferAmount: number;
-        account: LedgerAccount;
-      };
-    }
-  | {
-      kind: SettlementReportValidationKind.AccountsNotPresentInReport;
-      data: {
-        participant?: FspName;
-        account: SettlementParticipantAccount;
-      }[];
-    }
-  | {
-      kind: SettlementReportValidationKind.InvalidAccountId;
-      data: SettlementReportEntry[];
-    }
-  | {
-      kind: SettlementReportValidationKind.ExtraAccountsPresentInReport;
-      data: {
-        participant?: FspName;
-        entry: SettlementReportEntry;
-      }[];
-    }
-  | {
-      kind: SettlementReportValidationKind.ReportIdentifiersNonMatching;
-      data: { entry: SettlementReportEntry };
-    }
-  | {
-      kind: SettlementReportValidationKind.AccountIsIncorrectType;
-      data: {
-        entry: SettlementReportEntry;
-        switchAccount: LedgerAccount;
-      };
-    }
-  | {
-      kind: SettlementReportValidationKind.NewBalanceAmountInvalid;
-      data: {
-        entry: SettlementReportEntry;
-        currencyData: CurrencyData;
-      };
-    }
-  | {
-      kind: SettlementReportValidationKind.TransferAmountInvalid;
-      data: {
-        entry: SettlementReportEntry;
-        currencyData: CurrencyData;
-      };
-    };
-
 // Because no currency has more than four decimal places, we can have quite a large epsilon value
 const EPSILON = 1e-5;
 const equal = (a: number, b: number) => Math.abs(a - b) > EPSILON;
@@ -528,11 +439,11 @@ export const validationFunctions = {
     const result = new Set<SettlementReportValidation>();
     report.entries.forEach((entry) => {
       const spa = settlementParticipantAccounts.get(entry.positionAccountId);
-      if (spa && entry.transferAmount === spa.netSettlementAmount.amount) {
+      if (spa && entry.transferAmount !== spa.netSettlementAmount.amount) {
         result.add({
           kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount,
           data: {
-            row: entry.row,
+            entry,
             account: spa,
           },
         });

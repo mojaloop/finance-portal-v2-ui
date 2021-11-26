@@ -1,8 +1,9 @@
 import { strict as assert } from 'assert';
 import React, { FC, useState } from 'react';
 import { Button, ErrorBox, Modal, Spinner, DataList } from 'components';
+import { MD5 as hash } from 'object-hash';
 import connector, { ConnectorProps } from './connectors';
-import { readFileAsArrayBuffer, deserializeReport } from '../helpers';
+import { readFileAsArrayBuffer, deserializeReport, describeSettlementReportValidation } from '../helpers';
 import { SettlementStatus, FinalizeSettlementError, FinalizeSettlementErrorKind } from '../types';
 
 import './SettlementFinalizingModal.css';
@@ -25,6 +26,16 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 
   function computeErrorDetails(err: FinalizeSettlementError) {
     switch (err.type) {
+      case FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION:
+        return (
+          <div>
+            {[...err.value.values()].map((v) => (
+              // TODO: anything. Probably a table. This is just a description of the error, but
+              // some could occur multiple times, confusing the user.
+              <div key={hash(v)}>{describeSettlementReportValidation(v.kind)}</div>
+            ))}
+          </div>
+        );
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {

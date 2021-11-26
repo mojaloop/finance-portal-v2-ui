@@ -72,6 +72,98 @@ export interface LedgerParticipant {
   accounts: LedgerAccount[];
 }
 
+export enum SettlementReportValidationKind {
+  SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
+  TransfersSumNonZero = 'sum of transfers in the report is non-zero',
+  TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
+  BalanceNotAsExpected = 'balance not modified corresponding to transfer amount',
+  AccountsNotPresentInReport = 'accounts in settlement not present in report',
+  ExtraAccountsPresentInReport = 'accounts in report not present in settlement',
+  ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
+  AccountIsIncorrectType = 'account type should be POSITION',
+  NewBalanceAmountInvalid = 'new balance amount not valid for currency',
+  TransferAmountInvalid = 'transfer amount not valid for currency',
+  InvalidAccountId = 'report account ID does not exist in switch',
+}
+
+export type MinorUnit = 0 | 2 | 3 | 4 | '.';
+
+export interface CurrencyData {
+  alpha: Currency;
+  numeric: number;
+  minorUnit: MinorUnit;
+}
+
+export type SettlementReportValidation =
+  | {
+      kind: SettlementReportValidationKind.SettlementIdNonMatching;
+      data: {
+        reportId: number;
+        settlementId: number;
+      };
+    }
+  | { kind: SettlementReportValidationKind.TransfersSumNonZero }
+  | {
+      kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount;
+      data: {
+        entry: SettlementReportEntry;
+        account: SettlementParticipantAccount;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.BalanceNotAsExpected;
+      data: {
+        entry: SettlementReportEntry;
+        reportBalance: number;
+        expectedBalance: number;
+        transferAmount: number;
+        account: LedgerAccount;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.AccountsNotPresentInReport;
+      data: {
+        participant?: FspName;
+        account: SettlementParticipantAccount;
+      }[];
+    }
+  | {
+      kind: SettlementReportValidationKind.InvalidAccountId;
+      data: SettlementReportEntry[];
+    }
+  | {
+      kind: SettlementReportValidationKind.ExtraAccountsPresentInReport;
+      data: {
+        participant?: FspName;
+        entry: SettlementReportEntry;
+      }[];
+    }
+  | {
+      kind: SettlementReportValidationKind.ReportIdentifiersNonMatching;
+      data: { entry: SettlementReportEntry };
+    }
+  | {
+      kind: SettlementReportValidationKind.AccountIsIncorrectType;
+      data: {
+        entry: SettlementReportEntry;
+        switchAccount: LedgerAccount;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.NewBalanceAmountInvalid;
+      data: {
+        entry: SettlementReportEntry;
+        currencyData: CurrencyData;
+      };
+    }
+  | {
+      kind: SettlementReportValidationKind.TransferAmountInvalid;
+      data: {
+        entry: SettlementReportEntry;
+        currencyData: CurrencyData;
+      };
+    };
+
 // prettier-ignore
 export enum FinalizeSettlementErrorKind {
   PROCESS_ADJUSTMENTS                   = 'Error processing adjustments',
@@ -79,6 +171,7 @@ export enum FinalizeSettlementErrorKind {
   SET_SETTLEMENT_PS_TRANSFERS_RESERVED  = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
   SET_SETTLEMENT_PS_TRANSFERS_COMMITTED = 'Error attempting to set settlement state to PS_TRANSFERS_COMMITTED',
   SETTLE_ACCOUNTS                       = 'Errors attempting to settle accounts',
+  FINALIZE_REPORT_VALIDATION            = 'Errors when validating the settlement report',
 }
 
 export interface FinalizeSettlementTransferError {
@@ -135,6 +228,7 @@ export type FinalizeSettlementError =
   | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }
+  | { type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION; value: Set<SettlementReportValidation> }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError };
 
 export interface MojaloopError {

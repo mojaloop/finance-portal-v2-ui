@@ -1,10 +1,17 @@
 import {
   validationFunctions,
   extractReportQuantity,
-  SettlementFinalizeData,
 } from '../../../src/App/Settlements/helpers';
 
-import { SettlementReport, Settlement } from '../../../src/App/Settlements/types';
+import {
+  AccountId,
+  SettlementReport,
+  Settlement,
+  SettlementStatus,
+  SettlementParticipantAccount,
+  // SettlementFinalizeData,
+  SettlementReportValidationKind,
+} from '../../../src/App/Settlements/types';
 
 describe('numeric value extraction', () => {
   const negativeTestCases = [
@@ -90,24 +97,77 @@ describe('numeric value extraction', () => {
     'extracts %p from %s',
     (expected, input) => {
       expect.assertions(1);
-      expect(extractReportQuantity(input)).toEqual(expected);
+      const result = extractReportQuantity(input);
+      expect(result).toEqual(expected);
     },
   );
 })
+
+const unusedDate = (new Date()).toISOString();
 
 // Need/want to update this? Easy way is to console.log(JSON.stringify(report, null, 2)) from one
 // of the deserialisation unit tests.
 interface TestData {
   report: SettlementReport;
-  data: SettlementFinalizeData;
   settlement: Settlement;
 };
 const testData: TestData[] = [
   {
-    settlement: undefined;
-    data: undefined,
+    settlement: {
+      changedDate: unusedDate,
+      createdDate: unusedDate,
+      id: 0xace,
+      participants: [
+        {
+          id: 11,
+          accounts: [
+            {
+              id: 21,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -1500,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1,
+          accounts: [
+            {
+              id: 19,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 1000,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3,
+          accounts: [
+            {
+              id: 25,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 500,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+      ],
+      settlementWindows: null, // this isn't used in this code
+      reason: 'test',
+      state: SettlementStatus.PendingSettlement,
+      totalValue: NaN, // unused in this code
+    },
     report: {
-      "settlementId": 13,
+      "settlementId": 0xace,
       "entries": [
         {
           "participant": {
@@ -158,10 +218,397 @@ const testData: TestData[] = [
     },
   },
   {
-    settlement: undefined,
-    data: undefined,
+    settlement: {
+      changedDate: unusedDate,
+      createdDate: unusedDate,
+      id: 7357,
+      participants: [
+        {
+          id: 1417,
+          accounts: [
+            {
+              id: 521,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -136411,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 182,
+          accounts: [
+            {
+              id: 1463,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -92910,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3052,
+          accounts: [
+            {
+              id: 3016,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 461888,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 2655,
+          accounts: [
+            {
+              id: 631,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -322740,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 4750,
+          accounts: [
+            {
+              id: 4063,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 205150,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1271,
+          accounts: [
+            {
+              id: 3646,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 263231,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3767,
+          accounts: [
+            {
+              id: 660,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -237125,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 2392,
+          accounts: [
+            {
+              id: 308,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -216809,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 611,
+          accounts: [
+            {
+              id: 1157,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -40419,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 2669,
+          accounts: [
+            {
+              id: 4320,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 377483,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1398,
+          accounts: [
+            {
+              id: 4213,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -392160,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1593,
+          accounts: [
+            {
+              id: 4858,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -294242,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3311,
+          accounts: [
+            {
+              id: 3640,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 367050,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1708,
+          accounts: [
+            {
+              id: 889,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 360697,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 549,
+          accounts: [
+            {
+              id: 683,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -37979,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 917,
+          accounts: [
+            {
+              id: 1989,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 109000,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 976,
+          accounts: [
+            {
+              id: 1912,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -492349,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 2723,
+          accounts: [
+            {
+              id: 1426,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 339714,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3226,
+          accounts: [
+            {
+              id: 3590,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -443104,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 4647,
+          accounts: [
+            {
+              id: 1688,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 40997,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 4615,
+          accounts: [
+            {
+              id: 4812,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -353399,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3182,
+          accounts: [
+            {
+              id: 1713,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 37653,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3055,
+          accounts: [
+            {
+              id: 570,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 160961,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 650,
+          accounts: [
+            {
+              id: 1482,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 292990,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 3486,
+          accounts: [
+            {
+              id: 4417,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: -432234,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 36,
+          accounts: [
+            {
+              id: 841,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 30895,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+        {
+          id: 1674,
+          accounts: [
+            {
+              id: 2916,
+              state: SettlementStatus.PendingSettlement,
+              reason: "test",
+              netSettlementAmount: {
+                amount: 218504,
+                currency: "MMK",
+              },
+            },
+          ],
+        },
+      ],
+      settlementWindows: null, // this isn't used in this code
+      reason: 'test',
+      state: SettlementStatus.PendingSettlement,
+      totalValue: NaN, // unused in this code
+    },
     report: {
-      "settlementId": 22,
+      "settlementId": 7357,
       "entries": [
         {
           "participant": {
@@ -573,9 +1020,79 @@ const testData: TestData[] = [
   },
 ];
 
-describe('Report data validation', async () => {
-  test('settlement id validated correctly', () => {
+// const testSwitchData: SettlementFinalizeData[] = [
+const testSwitchData = [
+  {},
+  {
+    settlementParticipantAccounts: new Map<AccountId, SettlementParticipantAccount>(
+      testData[1].report.entries.map((ent) => [
+        ent.positionAccountId,
+        {
+          id: ent.positionAccountId,
+          state: SettlementStatus.PendingSettlement,
+          reason: 'test',
+          netSettlementAmount: {
+            amount: ent.transferAmount,
+            currency: 'MMK',
+          },
+        },
+      ])
+    ),
+  }
+]
+
+describe('Report data validation', () => {
+  test('correct settlement id validated correctly', () => {
     expect.assertions(1);
-    validationFunctions.settlementId(testReports[0], )
+    const { settlement, report } = testData[0];
+    const result = validationFunctions.settlementId(report, settlement);
+    expect(result.size).toEqual(0);
   });
+
+  test('incorrect settlement id validated correctly', () => {
+    expect.assertions(2);
+    let { settlement } = testData[0];
+    settlement.id += 5;
+    const { report } = testData[0];
+    const result = validationFunctions.settlementId(report, settlement);
+    expect(result.size).toEqual(1);
+    const item = result.values().next().value;
+    expect(item.kind).toEqual(SettlementReportValidationKind.SettlementIdNonMatching);
+  });
+
+  test('transfers match net settlement amounts - positive', () => {
+    expect.assertions(1);
+    const { report } = testData[1];
+    const { settlementParticipantAccounts } = testSwitchData[1];
+    const result = validationFunctions.transfersMatchNetSettlements(
+      report,
+      settlementParticipantAccounts,
+    );
+    expect(result.size).toEqual(0);
+  });
+
+  test('transfers match net settlement amounts - negative', () => {
+    expect.assertions(1);
+    let { report } = testData[1];
+    const { settlementParticipantAccounts } = testSwitchData[1];
+    const testAccountId = report.entries[0].positionAccountId;
+    let testAccount = settlementParticipantAccounts.get(testAccountId);
+    testAccount.netSettlementAmount.amount += 100;
+    const result = validationFunctions.transfersMatchNetSettlements(
+      report,
+      settlementParticipantAccounts,
+    );
+    expect(result.size).toEqual(1);
+  });
+
+  // test('balances as expected - positive', () => {});
+
+  // TODO:
+  // - test the union function
+  // - test participants with multiple accounts
+  // - multi-currency
+  // - Write this as a huge range of integration tests, getting settlement initiation reports from
+  //   the switch, then getting real switch data from the switch, and running the validation stuff
+  //   against it?! Much less rubbish mocking. Few participants, few currencies, lot of transfers.
+  //   Much higher value.
 });

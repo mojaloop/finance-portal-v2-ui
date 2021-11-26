@@ -495,7 +495,13 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
 
         const reportValidations = validateReport(report, finalizeData, settlement);
-        assert(reportValidations.size !== 0, 'some change');
+        assert(
+          reportValidations.size !== 0,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION,
+            value: reportValidations,
+          }),
+        );
 
         const adjustments = buildAdjustments(report, finalizeData);
 
