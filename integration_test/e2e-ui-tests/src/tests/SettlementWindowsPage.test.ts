@@ -14,9 +14,7 @@ import api, { ResponseKind } from '../lib/api';
 
 const dateNotPresentRegex = /^-$|^$/;
 
-const { ingressPort, voodooPort, ingressHost } = config;
-const SETTLEMENTS_BASE_PATH = `http://${ingressHost}:${ingressPort}/api/settlement`;
-const VOODOO_URI = `ws://${ingressHost}:${voodooPort}/voodoo`;
+const { voodooEndpoint, settlementsBasePath } = config;
 
 const closeOpenSettlementWindow = async (t: TestController): Promise<string> => {
   // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
@@ -38,7 +36,7 @@ fixture `Settlement windows page`
   // isn't handled correctly, causing the root page (i.e. login) to load again.
   .page `${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient(VOODOO_URI, { defaultTimeout: config.voodooTimeoutMs });
+    const cli = new VoodooClient(voodooEndpoint, { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [
@@ -212,7 +210,7 @@ test.meta({
   // settlement state change has been processed
   await t.click(SettlementWindowsSettlementModal.continueViewingWindowsButton);
   const settlementsResult = await api.settlement.getSettlements(
-    SETTLEMENTS_BASE_PATH,
+    settlementsBasePath,
     {
       settlementWindowId: settlementWindowIds[0],
     },

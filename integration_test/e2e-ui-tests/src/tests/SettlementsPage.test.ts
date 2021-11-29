@@ -9,14 +9,12 @@ import { v4 as uuidv4 } from 'uuid';
 import api from '../lib/api';
 import ExcelJS from 'exceljs';
 
-const { ingressPort, voodooPort, ingressHost } = config;
-const REPORT_BASE_PATH = `http://${ingressHost}:${ingressPort}/report`;
-const VOODOO_URI = `ws://${ingressHost}:${voodooPort}/voodoo`;
+const { voodooEndpoint, reportBasePath } = config;
 
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient(VOODOO_URI, { defaultTimeout: config.voodooTimeoutMs });
+    const cli = new VoodooClient(voodooEndpoint, { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [
@@ -101,7 +99,8 @@ test.meta({
 
   // Get the initiation report, "simulate" some balances returned by the settlement bank, save it
   // as the finalization report.
-  const initiationReport = await api.reporting.getSettlementInitiationReport(REPORT_BASE_PATH, settlement.id);
+  const initiationReport =
+    await api.reporting.getSettlementInitiationReport(reportBasePath, settlement.id);
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(initiationReport.body);
   const ws = wb.getWorksheet(1);

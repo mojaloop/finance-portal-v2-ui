@@ -20,12 +20,16 @@ function ensureEnv(e: string): string {
   return result as string;
 }
 
+const ingressHost = 'localhost';
+const ingressPort = ensureEnv('INGRESS_PORT');
+const voodooPort = 3030;
+
 // TODO: ajv
 export const config = {
   financePortalEndpoint: ensureEnv('FINANCE_PORTAL_ENDPOINT'),
-  ingressHost: 'localhost',
-  ingressPort: ensureEnv('INGRESS_PORT'),
-  voodooPort: 3030,
+  voodooEndpoint: `ws://${ingressHost}:${voodooPort}/voodoo`,
+  reportBasePath: `http://${ingressHost}:${ingressPort}/report`,
+  settlementsBasePath: `http://${ingressHost}:${ingressPort}/api/settlement`,
   credentials: {
     admin: {
       username: users[0].username,
