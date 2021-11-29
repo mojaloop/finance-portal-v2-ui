@@ -10,7 +10,7 @@ import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
-import api, { ResponseKind } from '../lib/api';
+import api, { ResponseKind } from '../../../lib/src/api';
 
 const dateNotPresentRegex = /^-$|^$/;
 

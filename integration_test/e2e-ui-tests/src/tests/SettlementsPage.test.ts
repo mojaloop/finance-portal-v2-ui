@@ -6,7 +6,7 @@ import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
-import api from '../lib/api';
+import api from '../../../lib/src/api';
 import ExcelJS from 'exceljs';
 
 const { voodooEndpoint, reportBasePath } = config;
