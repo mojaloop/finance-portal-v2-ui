@@ -1,4 +1,3 @@
-
 import reporting from './reporting';
 import settlement from './settlement';
 import { protocol } from 'mojaloop-voodoo-client';

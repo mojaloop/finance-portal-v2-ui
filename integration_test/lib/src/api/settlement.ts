@@ -1,4 +1,3 @@
-
 import got, { OptionsOfJSONResponseBody } from 'got';
 import { protocol } from 'mojaloop-voodoo-client';
 import { URLSearchParams } from 'url';

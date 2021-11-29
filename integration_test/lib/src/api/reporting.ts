@@ -1,4 +1,3 @@
-
 import got, { OptionsOfBufferResponseBody, CancelableRequest, Response } from 'got';
 
 // TODO: should accept basePath: URL | string

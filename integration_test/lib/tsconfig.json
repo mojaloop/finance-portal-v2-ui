@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "declaration": true,
+    "esModuleInterop": true,
+    "target": "esnext",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "strict": true,
+    "outDir": "dist",
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "lib": ["es2015"]
+}
