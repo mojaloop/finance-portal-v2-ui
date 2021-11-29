@@ -200,7 +200,7 @@ test.meta({
 
   await t.click(SettlementWindowsPage.settleWindowsButton);
   const settlements = await cli.getSettlements({
-    state: 'PENDING_SETTLEMENT',
+    state: 'PS_TRANSFERS_RESERVED',
     settlementWindowId: settlementWindowIds[0],
   });
 
