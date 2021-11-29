@@ -86,6 +86,11 @@ jobs:
     - name: Port-forward voodoo-doll
       run: kubectl port-forward --address 0.0.0.0 voodoo-doll 3030 &
 
+    - name: Install lib dependencies
+      working-directory: integration_test/lib
+      run: |-
+        npm ci
+
     - name: Install test dependencies
       working-directory: integration_test/e2e-ui-tests
       run: |-
