@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import api from '../../../lib/src/api';
 import ExcelJS from 'exceljs';
 
-const { voodooEndpoint, reportBasePath } = config;
+const { voodooEndpoint, reportBasePath, settlementsBasePath } = config;
 
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
@@ -65,10 +65,11 @@ test.meta({
   await cli.completeTransfers(transfers1);
   const openWindows1 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows1.length).eql(1, 'Expected only a single open window');
-  const closedSettlementWindowId1 = await cli.closeSettlementWindow({
-    id: openWindows1[0].settlementWindowId,
-    reason: 'Integration test',
-  });
+  await api.settlement.closeSettlementWindow(
+    settlementsBasePath,
+    openWindows1[0].settlementWindowId,
+    'Integration test',
+  );
 
   // Run a transfer so the settlement window can be closed
   const transfers2: protocol.TransferMessage[] = [{
@@ -81,21 +82,25 @@ test.meta({
   await cli.completeTransfers(transfers2);
   const openWindows2 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows2.length).eql(1, 'Expected only a single open window');
-  const closedSettlementWindowId2 = await cli.closeSettlementWindow({
-    id: openWindows2[0].settlementWindowId,
-    reason: 'Integration test',
-  });
+  await api.settlement.closeSettlementWindow(
+    settlementsBasePath,
+    openWindows2[0].settlementWindowId,
+    'Integration test',
+  );
 
   const settlementWindowIds = [
-    closedSettlementWindowId1,
-    closedSettlementWindowId2,
+    openWindows1[0].settlementWindowId,
+    openWindows2[0].settlementWindowId,
   ];
 
-  const settlement = await cli.createSettlement({
-    reason: 'Integration test',
-    settlementModel: 'DEFERREDNET',
-    settlementWindows: settlementWindowIds.map((id) => ({ id })),
-  });
+  const settlement = await api.settlement.createSettlement(
+    settlementsBasePath,
+    {
+      reason: 'Integration test',
+      settlementModel: 'DEFERREDNET',
+      settlementWindows: settlementWindowIds.map((id) => ({ id })),
+    },
+  );
 
   // Get the initiation report, "simulate" some balances returned by the settlement bank, save it
   // as the finalization report.

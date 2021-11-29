@@ -209,18 +209,12 @@ test.meta({
   // Waiting for the "continue viewing" button to be present and ready forces us to wait until the
   // settlement state change has been processed
   await t.click(SettlementWindowsSettlementModal.continueViewingWindowsButton);
-  const settlementsResult = await api.settlement.getSettlements(
+  const settlements = await api.settlement.getSettlements(
     settlementsBasePath,
     {
       settlementWindowId: settlementWindowIds[0],
     },
   );
-  await t.expect(settlementsResult.kind).notEql(
-    ResponseKind.MojaloopError,
-    'Expect not to receive error from settlements API',
-  );
-
-  const settlements = settlementsResult.body as protocol.Settlement[];
 
   await t.expect(settlements.length).eql(
     1,
