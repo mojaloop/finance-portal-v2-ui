@@ -87,12 +87,12 @@ jobs:
       run: kubectl port-forward --address 0.0.0.0 voodoo-doll 3030 &
 
     - name: Install test dependencies
-      working-directory: integration_test/tests
+      working-directory: integration_test/e2e-ui-tests
       run: |-
         npm ci
 
     - name: Run tests
-      working-directory: integration_test/tests
+      working-directory: integration_test/e2e-ui-tests
       run: |-
         INGRESS_PORT="3000" FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
 
@@ -101,7 +101,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: test-report
-        path: integration_test/tests/report.html
+        path: integration_test/e2e-ui-tests/report.html
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
