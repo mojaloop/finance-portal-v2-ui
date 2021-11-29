@@ -1,3 +1,4 @@
+import { Selector } from 'testcafe';
 import { waitForReact } from 'testcafe-react-selectors';
 import { SettlementsPage, SettlementFinalizeModal } from '../page-objects/pages/SettlementsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
@@ -138,13 +139,13 @@ test.meta({
   await t.setFilesToUpload(SettlementFinalizeModal.fileInput, [filename]);
   await t.click(SettlementFinalizeModal.processButton);
 
-  await t.click(SettlementFinalizeModal.closeButton);
+  // This can take some time, use a high timeout
+  await t.click(Selector(SettlementFinalizeModal.closeButton, { timeout: 30000 }));
   const rowsAfter = await SettlementsPage.getResultRows();
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
   ));
-  // This can take some time, use a high timeout
-  await t.expect(settlementRowAfter.state.innerText).eql('Settled', { timeout: 120000 });
+  await t.expect(settlementRowAfter.state.innerText).eql('Settled');
 
   // TODO: check financial positions
 });
