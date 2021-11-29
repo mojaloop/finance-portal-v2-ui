@@ -78,19 +78,19 @@ yarn start
 ```
 
 #### Install integration test npm dependencies
-In the `integration_test/tests` directory:
+In the `integration_test/e2e-ui-tests` directory:
 ```sh
 npm ci
 ```
 
 ### Run tests
-In the `integration_test/tests` directory:
+In the `integration_test/e2e-ui-tests` directory:
 ```sh
 npm run test
 ```
 
 #### View results
-In the `integration_test/tests` directory:
+In the `integration_test/e2e-ui-tests` directory:
 ```sh
 $BROWSER results.html
 ```
