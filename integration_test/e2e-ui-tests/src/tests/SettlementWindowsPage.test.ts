@@ -1,13 +1,22 @@
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementWindowsPage, SettlementWindowStatus } from '../page-objects/pages/SettlementWindowsPage';
+import {
+  SettlementWindowsPage,
+  SettlementWindowStatus,
+  SettlementWindowsSettlementModal,
+} from '../page-objects/pages/SettlementWindowsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
+import api, { ResponseKind } from '../lib/api';
 
 const dateNotPresentRegex = /^-$|^$/;
+
+const { ingressPort, voodooPort, ingressHost } = config;
+const SETTLEMENTS_BASE_PATH = `http://${ingressHost}:${ingressPort}/api/settlement`;
+const VOODOO_URI = `ws://${ingressHost}:${voodooPort}/voodoo`;
 
 const closeOpenSettlementWindow = async (t: TestController): Promise<string> => {
   // TODO: [multi-currency] we expect a single window per currency. Here we assume a single
@@ -29,7 +38,7 @@ fixture `Settlement windows page`
   // isn't handled correctly, causing the root page (i.e. login) to load again.
   .page `${config.financePortalEndpoint}`
   .before(async (ctx) => {
-    const cli = new VoodooClient('ws://localhost:3030/voodoo', { defaultTimeout: config.voodooTimeoutMs });
+    const cli = new VoodooClient(VOODOO_URI, { defaultTimeout: config.voodooTimeoutMs });
     await cli.connected();
 
     const hubAccounts: protocol.HubAccount[] = [
@@ -199,13 +208,31 @@ test.meta({
   );
 
   await t.click(SettlementWindowsPage.settleWindowsButton);
-  const settlements = await cli.getSettlements({
-    state: 'PS_TRANSFERS_RESERVED',
-    settlementWindowId: settlementWindowIds[0],
-  });
+  // Waiting for the "continue viewing" button to be present and ready forces us to wait until the
+  // settlement state change has been processed
+  await t.click(SettlementWindowsSettlementModal.continueViewingWindowsButton);
+  const settlementsResult = await api.settlement.getSettlements(
+    SETTLEMENTS_BASE_PATH,
+    {
+      settlementWindowId: settlementWindowIds[0],
+    },
+  );
+  await t.expect(settlementsResult.kind).notEql(
+    ResponseKind.MojaloopError,
+    'Expect not to receive error from settlements API',
+  );
 
-  await t.expect(settlements.length).eql(1,
-    'Expected our settlement windows to be in exactly one settlement');
+  const settlements = settlementsResult.body as protocol.Settlement[];
+
+  await t.expect(settlements.length).eql(
+    1,
+    'Expected our settlement windows to be in exactly one settlement'
+  );
+  const expectedState: protocol.SettlementState = 'PS_TRANSFERS_RESERVED';
+  await t.expect(settlements[0].state).eql(
+    expectedState,
+    `Expect the new settlement to have state ${expectedState}`,
+  );
   await t.expect(
     settlements[0].settlementWindows.map((sw: protocol.SettlementSettlementWindow) => sw.id).sort()
   ).eql(
