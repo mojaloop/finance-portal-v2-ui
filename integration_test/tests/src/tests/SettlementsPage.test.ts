@@ -144,7 +144,7 @@ test.meta({
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
   ));
   // This can take some time, use a high timeout
-  await t.expect(settlementRowAfter.state.innerText).eql('Settled', { timeout: 30000 });
+  await t.expect(settlementRowAfter.state.innerText).eql('Settled', { timeout: 60000 });
 
   // TODO: check financial positions
 });
