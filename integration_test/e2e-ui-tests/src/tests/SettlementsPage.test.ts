@@ -131,6 +131,7 @@ test.meta({
   // don't? It's not difficult to delete files that aren't version-controlled, and being able to
   // examine the file afterward could be useful.
   wb.xlsx.writeFile(filename);
+  console.log('Test filename', filename);
 
   await t.click(SideMenu.settlementsButton);
 
