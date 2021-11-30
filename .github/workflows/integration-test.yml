@@ -100,8 +100,10 @@ jobs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
-        name: test-report
-        path: integration_test/e2e-ui-tests/report.html
+        name: test-artifacts
+        path: |
+          integration_test/e2e-ui-tests/report.html
+          integration_test/**/*.xlsx
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
