@@ -146,6 +146,7 @@ test.meta({
 
   // This can take some time, use a high timeout
   await t.click(Selector(SettlementFinalizeModal.closeButton, { timeout: 30000 }));
+  await t.wait(30000);
   const rowsAfter = await SettlementsPage.getResultRows();
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
