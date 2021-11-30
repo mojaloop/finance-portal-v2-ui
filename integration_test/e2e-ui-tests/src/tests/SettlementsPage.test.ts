@@ -145,6 +145,7 @@ test.meta({
   await t.click(SettlementFinalizeModal.processButton);
 
   // This can take some time, use a high timeout
+  await t.wait(30000);
   await t.click(Selector(SettlementFinalizeModal.closeButton, { timeout: 30000 }));
   await t.wait(30000);
   const rowsAfter = await SettlementsPage.getResultRows();
