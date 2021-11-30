@@ -11,6 +11,7 @@ const stateProps = (state: State) => ({
   settlementReportError: selectors.getSettlementReportError(state),
   processFundsInOut: selectors.getFinalizeProcessFundsInOut(state),
   processNdc: selectors.getFinalizeProcessNdc(state),
+  settlementFinalizingInProgress: selectors.getSettlementFinalizingInProgress(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -29,8 +30,10 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.hideFinalizeSettlementModal());
     dispatch(actions.requestSettlements());
   },
-  onProcessButtonClick: (report: SettlementReport, settlement: Settlement) =>
-    dispatch(actions.finalizeSettlement({ report, settlement })),
+  onProcessButtonClick: (report: SettlementReport, settlement: Settlement) => {
+    dispatch(actions.setSettlementFinalizingInProgress(true));
+    dispatch(actions.finalizeSettlement({ report, settlement }));
+  },
   onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
   onSettlementReportProcessingError: (err: string) => dispatch(actions.setSettlementReportError(err)),
   onSetFundsInOutChange: (e: React.ChangeEvent<HTMLInputElement>) => {

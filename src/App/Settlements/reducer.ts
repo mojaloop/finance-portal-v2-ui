@@ -27,6 +27,7 @@ import {
   hideFinalizeSettlementModal,
   setFinalizeProcessFundsInOut,
   setFinalizeProcessNdc,
+  setSettlementFinalizingInProgress,
 } from './actions';
 
 const initialState: SettlementsState = {
@@ -50,6 +51,7 @@ const initialState: SettlementsState = {
   finalizingSettlementError: null,
   finalizeProcessFundsInOut: true,
   finalizeProcessNdc: true,
+  settlementFinalizingInProgress: false,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -170,5 +172,9 @@ export default createReducer(initialState, (builder) =>
     .addCase(setFinalizeProcessNdc, (state: SettlementsState, action: PayloadAction<boolean>) => ({
       ...state,
       finalizeProcessNdc: action.payload,
+    }))
+    .addCase(setSettlementFinalizingInProgress, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      settlementFinalizingInProgress: action.payload,
     })),
 );

@@ -18,6 +18,7 @@ import {
   SET_SETTLEMENT_REPORT_ERROR,
   SET_FINALIZE_PROCESS_NDC,
   SET_FINALIZE_PROCESS_FUNDS_IN_OUT,
+  SET_FINALIZE_SETTLEMENT_IN_PROGRESS,
   FINALIZING_SETTLEMENT,
   FinalizeSettlementError,
   Settlement,
@@ -51,3 +52,4 @@ export const hideFinalizeSettlementModal = createAction(HIDE_FINALIZE_SETTLEMENT
 export const showFinalizeSettlementModal = createAction(SHOW_FINALIZE_SETTLEMENT_MODAL);
 export const setFinalizeProcessFundsInOut = createAction<boolean>(SET_FINALIZE_PROCESS_FUNDS_IN_OUT);
 export const setFinalizeProcessNdc = createAction<boolean>(SET_FINALIZE_PROCESS_NDC);
+export const setSettlementFinalizingInProgress = createAction<boolean>(SET_FINALIZE_SETTLEMENT_IN_PROGRESS);

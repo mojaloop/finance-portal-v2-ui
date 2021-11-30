@@ -22,6 +22,7 @@ export const HIDE_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Hide Finalize Settl
 export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settlement Modal';
 export const SET_FINALIZE_PROCESS_NDC = ' Settlements / Finalize Report / Process Net Debit Caps';
 export const SET_FINALIZE_PROCESS_FUNDS_IN_OUT = ' Settlements / Finalize Report / Process Funds In/Out';
+export const SET_FINALIZE_SETTLEMENT_IN_PROGRESS = ' Settlements / Finalize Report / In Progress';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
 
@@ -289,6 +290,7 @@ export interface SettlementsState {
   settlementReportError: null | string;
   finalizeProcessFundsInOut: boolean;
   finalizeProcessNdc: boolean;
+  settlementFinalizingInProgress: boolean;
 }
 
 export type FilterValue = null | boolean | undefined | string | number;

@@ -10,6 +10,7 @@ import './SettlementFinalizingModal.css';
 
 const SettlementFinalizingModal: FC<ConnectorProps> = ({
   settlementReport,
+  settlementFinalizingInProgress,
   finalizingSettlement,
   finalizingSettlementError,
   onModalCloseClick,
@@ -212,7 +213,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         noFill
         size="s"
         label="Process"
-        disabled={settlementReport === null}
+        disabled={settlementReport === null || settlementFinalizingInProgress}
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           if (settlementReport !== null) {
@@ -234,20 +235,12 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     </div>
   );
 
-  const endStates = [SettlementStatus.Settled, SettlementStatus.Aborted];
-
   return (
     <Modal
       title={`Finalizing settlement ${finalizingSettlement.id}`}
       width="1200px"
       onClose={onModalCloseClick}
-      // TODO: this is wrong, the user can't exit the modal early. We only want to prevent them
-      // exiting the modal _while_ we're processing. Try it out: if the settlement was created from
-      // closed settlement windows in the UI, it will begin with its state in PS_TRANSFERS_RESERVED
-      // and the user will not be able to exit the modal.
-      isCloseEnabled={
-        endStates.includes(finalizingSettlement.state) || finalizingSettlementError || settlementReportError
-      }
+      isCloseEnabled={!settlementFinalizingInProgress}
       flex
     >
       {content}

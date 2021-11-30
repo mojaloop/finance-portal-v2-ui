@@ -33,6 +33,7 @@ import {
 } from './types';
 import {
   setFinalizeSettlementError,
+  setSettlementFinalizingInProgress,
   setFinalizingSettlement,
   setSettlements,
   setSettlementsError,
@@ -717,8 +718,10 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         throw new Error(`Unhandled settlement status: ${exhaustiveCheck}`);
       }
     }
+    yield put(setSettlementFinalizingInProgress(false));
   } catch (err) {
     console.error(err);
+    yield put(setSettlementFinalizingInProgress(false));
     if (!(err instanceof FinalizeSettlementAssertionError)) {
       throw err;
     }
