@@ -6,7 +6,7 @@ import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
-import api from '../../../lib/src/api';
+import { settlement as settlementApi, reporting as reportingApi } from 'mojaloop-ts';
 import ExcelJS from 'exceljs';
 
 const { voodooEndpoint, reportBasePath, settlementsBasePath } = config;
@@ -65,7 +65,7 @@ test.meta({
   await cli.completeTransfers(transfers1);
   const openWindows1 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows1.length).eql(1, 'Expected only a single open window');
-  await api.settlement.closeSettlementWindow(
+  await settlementApi.closeSettlementWindow(
     settlementsBasePath,
     openWindows1[0].settlementWindowId,
     'Integration test',
@@ -82,7 +82,7 @@ test.meta({
   await cli.completeTransfers(transfers2);
   const openWindows2 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows2.length).eql(1, 'Expected only a single open window');
-  await api.settlement.closeSettlementWindow(
+  await settlementApi.closeSettlementWindow(
     settlementsBasePath,
     openWindows2[0].settlementWindowId,
     'Integration test',
@@ -93,7 +93,7 @@ test.meta({
     openWindows2[0].settlementWindowId,
   ];
 
-  const settlement = await api.settlement.createSettlement(
+  const settlement = await settlementApi.createSettlement(
     settlementsBasePath,
     {
       reason: 'Integration test',
@@ -105,7 +105,7 @@ test.meta({
   // Get the initiation report, "simulate" some balances returned by the settlement bank, save it
   // as the finalization report.
   const initiationReport =
-    await api.reporting.getSettlementInitiationReport(reportBasePath, settlement.id);
+    await reportingApi.getSettlementInitiationReport(reportBasePath, settlement.id);
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(initiationReport.body);
   const ws = wb.getWorksheet(1);
@@ -128,7 +128,8 @@ test.meta({
   });
   const filename = __dirname + `/settlement-finalization-report-settlement-${settlement.id}.xlsx`;
   // TODO: delete this; don't leave it lying round on the user's machine. Or, use a temp file. Or
-  // don't? It's not difficult to delete files that aren't version-controlled, and 
+  // don't? It's not difficult to delete files that aren't version-controlled, and being able to
+  // examine the file afterward could be useful.
   wb.xlsx.writeFile(filename);
 
   await t.click(SideMenu.settlementsButton);
@@ -149,6 +150,14 @@ test.meta({
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
   ));
+
+  const settlementAfter = await settlementApi.getSettlement(
+    settlementsBasePath,
+    settlement.id,
+  );
+
+  console.log(settlementAfter);
+
   await t.expect(settlementRowAfter.state.innerText).eql('Settled');
 
   // TODO: check financial positions

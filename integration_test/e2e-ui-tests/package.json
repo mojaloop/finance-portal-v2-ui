@@ -11,6 +11,7 @@
     "dotenv": "^10.0.0",
     "exceljs": "^4.3.0",
     "got": "^11.8.3",
+    "mojaloop-ts": "v0.1.0-git-8b57473319fc24f179119ce5107da7a14fe090e2",
     "mojaloop-voodoo-client": "0.7.0",
     "testcafe": "1.15.1",
     "testcafe-react-selectors": "^4.0.0",

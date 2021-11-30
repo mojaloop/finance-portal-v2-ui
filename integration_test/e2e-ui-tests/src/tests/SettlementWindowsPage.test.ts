@@ -10,7 +10,7 @@ import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import * as assert from 'assert';
-import api, { ResponseKind } from '../../../lib/src/api';
+import { settlement as settlementApi, types } from 'mojaloop-ts';
 
 const dateNotPresentRegex = /^-$|^$/;
 
@@ -209,7 +209,7 @@ test.meta({
   // Waiting for the "continue viewing" button to be present and ready forces us to wait until the
   // settlement state change has been processed
   await t.click(SettlementWindowsSettlementModal.continueViewingWindowsButton);
-  const settlements = await api.settlement.getSettlements(
+  const settlements = await settlementApi.getSettlements(
     settlementsBasePath,
     {
       settlementWindowId: settlementWindowIds[0],
@@ -226,7 +226,7 @@ test.meta({
     `Expect the new settlement to have state ${expectedState}`,
   );
   await t.expect(
-    settlements[0].settlementWindows.map((sw: protocol.SettlementSettlementWindow) => sw.id).sort()
+    settlements[0].settlementWindows.map((sw: types.SettlementSettlementWindow) => sw.id).sort()
   ).eql(
     settlementWindowIds.sort(),
     `Expect settlement to contain the settlement windows we nominated and only those settlement
