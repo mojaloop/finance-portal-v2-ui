@@ -130,7 +130,7 @@ test.meta({
   // TODO: delete this; don't leave it lying round on the user's machine. Or, use a temp file. Or
   // don't? It's not difficult to delete files that aren't version-controlled, and being able to
   // examine the file afterward could be useful.
-  wb.xlsx.writeFile(filename);
+  await wb.xlsx.writeFile(filename);
   console.log('Test filename', filename);
 
   await t.click(SideMenu.settlementsButton);
