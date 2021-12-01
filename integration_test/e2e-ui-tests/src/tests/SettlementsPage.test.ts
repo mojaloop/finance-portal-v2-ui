@@ -173,6 +173,13 @@ test.meta({
   ));
 
   await t.expect(settlementRowAfter.state.innerText).eql('Settled');
+  const state = await settlementRowAfter.state.innerText;
+
+  if (state !== 'Settled') {
+    await t.debug();
+  }
+
+  await t.expect(state).eql('Settled');
 
   // TODO: check financial positions
 });
