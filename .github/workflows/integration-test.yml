@@ -96,13 +96,6 @@ jobs:
       run: |-
         INGRESS_PORT="3000" FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
 
-    - name: Archive test report
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-report
-        path: integration_test/e2e-ui-tests/report.html
-
     - name: Archive settlement finalization reports
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
