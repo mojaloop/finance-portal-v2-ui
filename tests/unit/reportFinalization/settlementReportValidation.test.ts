@@ -36,7 +36,6 @@ describe('numeric value extraction', () => {
   test.each(negativeTestCases)(
     'extracts %s to %p',
     (input, expected) => {
-      expect.assertions(1);
       expect(extractReportQuantity(input)).toEqual(expected);
     },
   );
@@ -51,7 +50,6 @@ describe('numeric value extraction', () => {
   test.each(edgeCases)(
     'extracts %s to %p',
     (input, expected) => {
-      expect.assertions(1);
       expect(extractReportQuantity(input)).toEqual(expected);
     },
   );
@@ -96,7 +94,6 @@ describe('numeric value extraction', () => {
   }) as [number, string][])(
     'extracts %p from %s',
     (expected, input) => {
-      expect.assertions(1);
       const result = extractReportQuantity(input);
       expect(result).toEqual(expected);
     },
@@ -1043,14 +1040,12 @@ const testSwitchData = [
 
 describe('Report data validation', () => {
   test('correct settlement id validated correctly', () => {
-    expect.assertions(1);
     const { settlement, report } = testData[0];
     const result = validationFunctions.settlementId(report, settlement);
     expect(result.size).toEqual(0);
   });
 
   test('incorrect settlement id validated correctly', () => {
-    expect.assertions(2);
     let { settlement } = testData[0];
     settlement.id += 5;
     const { report } = testData[0];
@@ -1061,7 +1056,6 @@ describe('Report data validation', () => {
   });
 
   test('transfers match net settlement amounts - positive', () => {
-    expect.assertions(1);
     const { report } = testData[1];
     const { settlementParticipantAccounts } = testSwitchData[1];
     const result = validationFunctions.transfersMatchNetSettlements(
@@ -1072,7 +1066,6 @@ describe('Report data validation', () => {
   });
 
   test('transfers match net settlement amounts - negative', () => {
-    expect.assertions(1);
     let { report } = testData[1];
     const { settlementParticipantAccounts } = testSwitchData[1];
     const testAccountId = report.entries[0].positionAccountId;
