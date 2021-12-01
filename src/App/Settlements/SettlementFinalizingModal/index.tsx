@@ -156,7 +156,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       <br />
       <input
         type="file"
-        // disabled={true}
+        disabled={settlementFinalizingInProgress}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           // This is a little bit funky: we don't want to put any non-serializable state in the
           // store, but redux-saga makes this rather tricky. So we do this transformation here.
@@ -197,6 +197,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         <input
           id="set-process-funds-in-out"
           type="checkbox"
+          disabled={settlementFinalizingInProgress}
           checked={processFundsInOut}
           onChange={onSetFundsInOutChange}
         />
@@ -204,7 +205,13 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       </label>
       <br />
       <label htmlFor="set-process-net-debit-cap">
-        <input id="set-process-net-debit-cap" type="checkbox" checked={processNdc} onChange={onSetNetDebitCapChange} />
+        <input
+          id="set-process-net-debit-cap"
+          type="checkbox"
+          disabled={settlementFinalizingInProgress}
+          checked={processNdc}
+          onChange={onSetNetDebitCapChange}
+        />
         Set net debit cap to balance values in settlement finalization report
       </label>
       <br />
