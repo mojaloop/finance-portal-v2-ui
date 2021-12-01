@@ -154,13 +154,13 @@ function* processAdjustments({
           statePosition !== -1 && newStatePosition !== -1,
           `Runtime error determining relative order of settlement participant account states ${newState}, ${currentState}`,
         );
-        // If the settlement account state is already the target state, then we'll do nothing and
-        // exit here, returning null;
+        // If the settlement account state is already past the target state, then we'll do nothing
+        // and exit here, returning null;
         if (statePosition >= newStatePosition) {
           return null;
         }
         if (adjustNdc) {
-          const ndcResult: ApiResponse = yield call(apis.participantLimits.update, {
+          const request = {
             participantName: adjustment.participant.name,
             body: {
               currency: adjustment.positionAccount.currency,
@@ -169,13 +169,15 @@ function* processAdjustments({
                 value: adjustment.settlementBankBalance,
               },
             },
-          });
+          };
+          const ndcResult: ApiResponse = yield call(apis.participantLimits.update, request);
           if (ndcResult.status !== 200) {
             return {
               type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
               value: {
                 adjustment,
                 error: ndcResult.data,
+                request,
               },
             };
           }
@@ -187,7 +189,7 @@ function* processAdjustments({
         if (adjustment.amount === 0 || !adjustLiquidityAccountBalance) {
           // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
           // Set the settlement participant account to the new state
-          const spaResult = yield call(apis.settlementParticipantAccount.update, {
+          const request = {
             settlementId: settlement.id,
             participantId: adjustment.settlementParticipant.id,
             accountId: adjustment.settlementParticipantAccount.id,
@@ -195,13 +197,15 @@ function* processAdjustments({
               state: newState,
               reason: description,
             },
-          });
+          };
+          const spaResult = yield call(apis.settlementParticipantAccount.update, request);
           if (spaResult.status !== 200) {
             return {
               type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
               value: {
                 adjustment,
                 error: spaResult.data,
+                request,
               },
             };
           }
@@ -210,7 +214,7 @@ function* processAdjustments({
 
         if (adjustment.amount > 0) {
           // Make the call to process funds out, then poll the balance until it's reduced
-          const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, {
+          const request = {
             participantName: adjustment.participant.name,
             accountId: adjustment.settlementAccount.id,
             body: {
@@ -225,7 +229,8 @@ function* processAdjustments({
               },
               transferId: uuidv4(),
             },
-          });
+          };
+          const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, request);
           if (fundsInResult.status !== 202) {
             return {
               type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
@@ -238,7 +243,7 @@ function* processAdjustments({
         } else {
           // Make the call to process funds out, then poll the balance until it's reduced
           const transferId = uuidv4();
-          const fundsOutPrepareReserveResult: ApiResponse = yield call(apis.participantAccount.create, {
+          const fundsOutPrepareReserveRequest = {
             participantName: adjustment.participant.name,
             accountId: adjustment.settlementAccount.id,
             body: {
@@ -251,17 +256,22 @@ function* processAdjustments({
               },
               transferId,
             },
-          });
+          };
+          const fundsOutPrepareReserveResult: ApiResponse = yield call(
+            apis.participantAccount.create,
+            fundsOutPrepareReserveRequest,
+          );
           if (fundsOutPrepareReserveResult.status !== 202) {
             return {
               type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
               value: {
                 adjustment,
                 error: fundsOutPrepareReserveResult.data,
+                request: fundsOutPrepareReserveRequest,
               },
             };
           }
-          const fundsOutCommitResult: ApiResponse = yield call(apis.participantAccountTransfer.update, {
+          const fundsOutCommitRequest = {
             participantName: adjustment.participant.name,
             accountId: adjustment.settlementAccount.id,
             transferId,
@@ -269,13 +279,18 @@ function* processAdjustments({
               action: 'recordFundsOutCommit',
               reason: description,
             },
-          });
+          };
+          const fundsOutCommitResult: ApiResponse = yield call(
+            apis.participantAccountTransfer.update,
+            fundsOutCommitRequest,
+          );
           if (fundsOutCommitResult.status !== 202) {
             return {
               type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
               value: {
                 adjustment,
                 error: fundsOutCommitResult.data,
+                request: fundsOutCommitRequest,
               },
             };
           }
@@ -307,8 +322,7 @@ function* processAdjustments({
                 },
               };
             }
-            // Set the settlement participant account to the new state
-            const spaResult = yield call(apis.settlementParticipantAccount.update, {
+            const request = {
               settlementId: settlement.id,
               participantId: adjustment.settlementParticipant.id,
               accountId: adjustment.settlementParticipantAccount.id,
@@ -316,13 +330,16 @@ function* processAdjustments({
                 state: newState,
                 reason: description,
               },
-            });
+            };
+            // Set the settlement participant account to the new state
+            const spaResult = yield call(apis.settlementParticipantAccount.update, request);
             if (spaResult.status !== 200) {
               return {
                 type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
                 value: {
                   adjustment,
                   error: spaResult.data,
+                  request,
                 },
               };
             }
@@ -449,12 +466,6 @@ function buildAdjustments(
         `Failed to retrieve settlement participant for account ${positionAccountId}`,
       );
 
-      // TODO: uncomment before release
-      // assert.equal(
-      //   reportParticipant.name,
-      //   participant.name,
-      //   `Report participant ${reportParticipant.name} did not match switch participant ${participant.name} for account ${accountId}`,
-      // );
       return {
         settlementBankBalance,
         participant,
