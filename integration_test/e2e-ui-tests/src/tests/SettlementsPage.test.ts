@@ -172,7 +172,6 @@ test.meta({
     2,
   ));
 
-  await t.expect(settlementRowAfter.state.innerText).eql('Settled');
   const state = await settlementRowAfter.state.innerText;
 
   if (state !== 'Settled') {
