@@ -13,10 +13,8 @@
     "got": "^11.8.3",
     "mojaloop-ts": "v0.1.0-git-8b57473319fc24f179119ce5107da7a14fe090e2",
     "mojaloop-voodoo-client": "0.7.0",
-    "testcafe": "1.15.1",
-    "testcafe-react-selectors": "^4.0.0",
-    "testcafe-reporter-allure": "1.0.5",
-    "testcafe-reporter-allure-expanded": "^1.1.0",
+    "testcafe": "^1.17.1",
+    "testcafe-react-selectors": "^4.1.5",
     "testcafe-reporter-html": "^1.4.6",
     "ts4": "npm:typescript@^4.3.5",
     "uuid": "^3.4.0"

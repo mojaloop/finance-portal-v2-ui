@@ -1,8 +1,4 @@
 {
-  "reporter": {
-    "name": "html",
-    "output": "report.html"
-  },
   "src": "src/tests/*.test.ts",
   "compilerOptions": {
     "typescript": {
