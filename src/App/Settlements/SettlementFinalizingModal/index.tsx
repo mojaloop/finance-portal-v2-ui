@@ -74,6 +74,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         if (warnings.length === 0) {
           return <div>Runtime error displaying errors</div>;
         }
+        return <></>;
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {
