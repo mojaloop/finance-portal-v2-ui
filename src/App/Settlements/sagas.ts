@@ -3,7 +3,6 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import apis from 'utils/apis';
 import { all, call, put, select, takeLatest, delay } from 'redux-saga/effects';
 import { v4 as uuidv4 } from 'uuid';
-import { Currency } from '../types';
 import {
   AccountId,
   AccountWithPosition,
@@ -18,9 +17,7 @@ import {
   FinalizeSettlementProcessAdjustmentsErrorKind,
   FspName,
   LedgerAccount,
-  LedgerAccountType,
   LedgerParticipant,
-  Limit,
   REQUEST_SETTLEMENTS,
   SELECT_SETTLEMENTS_FILTER_DATE_RANGE,
   SELECT_SETTLEMENTS_FILTER_DATE_VALUE,
@@ -41,13 +38,12 @@ import {
 } from './actions';
 import { getSettlementsFilters, getFinalizeProcessNdc, getFinalizeProcessFundsInOut } from './selectors';
 import {
+  ApiResponse,
   buildFiltersParams,
   buildUpdateSettlementStateRequest,
   mapApiToModel,
   SettlementFinalizeData,
-  ParticipantsAccounts,
-  AccountParticipant,
-  AccountsParticipants,
+  finalizeDataUtils,
   validateReport,
 } from './helpers';
 
@@ -58,65 +54,6 @@ class FinalizeSettlementAssertionError extends Error {
     super();
     this.data = data;
   }
-}
-
-// TODO: should really be the following type. One of the most dire problems with the usage of TS in
-// this whole repo: the surface of the application should be typed, i.e. the ML API should have
-// types, and all responses should be validated as having those types, perhaps by ajv, if there's
-// some sort of ajv/typescript integration.
-// type ApiResponse<T> =
-//   | { kind: 'ERROR', status: number, data: MojaloopError }
-//   | { kind: 'SUCCESS', status: number, data: T }
-interface ApiResponse {
-  status: number;
-  data: any;
-}
-function ensureResponse(response: ApiResponse, status: number, msg: string) {
-  assert.equal(response.status, status, msg);
-  return response.data;
-}
-
-function transformParticipantsLimits(
-  limits: { name: FspName; currency: Currency; limit: Limit }[],
-): Map<FspName, Map<Currency, Limit>> {
-  return limits.reduce((result, e) => {
-    if (result.get(e.name)?.set(e.currency, e.limit) === undefined) {
-      result.set(e.name, new Map([[e.currency, e.limit]]));
-    }
-    return result;
-  }, new Map<FspName, Map<Currency, Limit>>());
-}
-
-function getAccountsParticipants(participants: LedgerParticipant[]): AccountsParticipants {
-  return participants
-    .filter((fsp) => !/hub/i.test(fsp.name))
-    .reduce(
-      (result, fsp) => fsp.accounts.reduce((map, acc) => map.set(acc.id, { participant: fsp, account: acc }), result),
-      new Map<AccountId, AccountParticipant>(),
-    );
-}
-
-function getParticipantsAccounts(participants: LedgerParticipant[]): ParticipantsAccounts {
-  return participants
-    .filter((fsp) => !/hub/i.test(fsp.name))
-    .reduce(
-      (result, fsp) =>
-        fsp.accounts.reduce((map, acc) => {
-          const leaf = { participant: fsp, account: acc };
-          const fspNode = map.get(fsp.name);
-          if (fspNode) {
-            const currencyNode = fspNode.get(acc.currency);
-            if (currencyNode) {
-              currencyNode.set(acc.ledgerAccountType, leaf);
-              return map;
-            }
-            fspNode.set(acc.currency, new Map([[acc.ledgerAccountType, leaf]]));
-            return map;
-          }
-          return map.set(fsp.name, new Map([[acc.currency, new Map([[acc.ledgerAccountType, leaf]])]]));
-        }, result),
-      new Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>(),
-    );
 }
 
 function* processAdjustments({
@@ -136,8 +73,8 @@ function* processAdjustments({
     adjustments.map((adjustment) => {
       return call(function* processAdjustment() {
         // TODO: we need state order here and in the display later. It might pay to make
-        // SettlementStatus a sum type. Like
-        //   type SettlementStatus = { 'ABORTED', 0 } | { 'PENDING_SETTLEMENT', 1 } | ...etc.
+        // SettlementStatus a union type. Like
+        //   type SettlementStatus = { state: 'ABORTED', order: 0 } | { state: 'PENDING_SETTLEMENT', order: 1 } | ...etc.
         const stateOrder = [
           SettlementStatus.Aborted,
           SettlementStatus.PendingSettlement,
@@ -363,6 +300,15 @@ function* collectSettlementFinalizeData(report: SettlementReport, settlement: Se
   // TODO: parallelize requests in this function
   // We need to get limits before we can set limits, because `alarmPercentage` is a required
   // field when we set a limit, and we don't want to change that here.
+  const {
+    transformParticipantsLimits,
+    ensureResponse,
+    getParticipantsAccounts,
+    getAccountsParticipants,
+    getSettlementParticipantAccounts,
+    getSettlementParticipants,
+    getAccountsPositions,
+  } = finalizeDataUtils;
   const participantsLimits = transformParticipantsLimits(
     ensureResponse(yield call(apis.participantsLimits.read, {}), 200, 'Failed to retrieve participants limits'),
   );
@@ -377,31 +323,22 @@ function* collectSettlementFinalizeData(report: SettlementReport, settlement: Se
 
   // Get the participants current positions such that we can determine which will decrease and
   // which will increase
-  const accountsPositions: Map<AccountId, AccountWithPosition> = (yield all(
-    report.entries.map(function* getParticipantAccount({ positionAccountId }) {
-      const participantName = accountsParticipants.get(positionAccountId)?.participant.name;
-      assert(participantName, `Couldn't find participant for account ${positionAccountId}`);
-      const result = yield call(apis.participantAccounts.read, { participantName });
-      return [participantName, result];
-    }),
-  ))
-    .flatMap(([participantName, result]: [FspName, ApiResponse]) =>
+  const accountsPositions: Map<AccountId, AccountWithPosition> = getAccountsPositions(
+    (yield all(
+      report.entries.map(function* getParticipantAccount({ positionAccountId }) {
+        const participantName = accountsParticipants.get(positionAccountId)?.participant.name;
+        assert(participantName, `Couldn't find participant for account ${positionAccountId}`);
+        const result = yield call(apis.participantAccounts.read, { participantName });
+        return [participantName, result];
+      }),
+    )).flatMap(([participantName, result]: [FspName, ApiResponse]) =>
       ensureResponse(result, 200, `Failed to retrieve accounts for participant ${participantName}`),
-    )
-    .reduce(
-      (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
-      new Map<AccountId, AccountWithPosition>(),
-    );
-
-  const settlementParticipantAccounts = settlement.participants.reduce(
-    (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, acc), mapP),
-    new Map<AccountId, SettlementParticipantAccount>(),
+    ),
   );
 
-  const settlementParticipants = settlement.participants.reduce(
-    (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, p), mapP),
-    new Map<AccountId, SettlementParticipant>(),
-  );
+  const settlementParticipantAccounts = getSettlementParticipantAccounts(settlement.participants);
+
+  const settlementParticipants = getSettlementParticipants(settlement.participants);
 
   return {
     participantsLimits,
@@ -503,6 +440,30 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
 
+    const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
+
+    console.log('validating report');
+    const reportValidations = validateReport(report, finalizeData, settlement);
+    console.log('validated report', reportValidations);
+    assert(
+      reportValidations.size === 0,
+      new FinalizeSettlementAssertionError({
+        type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION,
+        value: reportValidations,
+      }),
+    );
+
+    const adjustments = buildAdjustments(report, finalizeData);
+
+    console.log('adjustments', adjustments);
+
+    const [debits, credits] = adjustments.reduce(
+      ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
+      [new Set<Adjustment>(), new Set<Adjustment>()],
+    );
+
+    console.log(debits, credits);
+
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
         yield put(
@@ -548,30 +509,6 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
         console.log(SettlementStatus.PsTransfersReserved);
-        // TODO: much of this data would be useful throughout the portal, perhaps hoist it up and
-        // make it available everywhere. This might also mean we can validate the report when we
-        // ingest it.
-        const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
-
-        const reportValidations = validateReport(report, finalizeData, settlement);
-        assert(
-          reportValidations.size !== 0,
-          new FinalizeSettlementAssertionError({
-            type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION,
-            value: reportValidations,
-          }),
-        );
-
-        const adjustments = buildAdjustments(report, finalizeData);
-
-        console.log('adjustments', adjustments);
-
-        const [debits, credits] = adjustments.reduce(
-          ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
-          [new Set<Adjustment>(), new Set<Adjustment>()],
-        );
-
-        console.log(debits, credits);
 
         const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, {
           settlement,

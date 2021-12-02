@@ -3,10 +3,32 @@ import React, { FC, useState } from 'react';
 import { Button, ErrorBox, Modal, Spinner, DataList } from 'components';
 import { MD5 as hash } from 'object-hash';
 import connector, { ConnectorProps } from './connectors';
-import { readFileAsArrayBuffer, deserializeReport, describeSettlementReportValidation } from '../helpers';
-import { SettlementStatus, FinalizeSettlementError, FinalizeSettlementErrorKind } from '../types';
+import {
+  readFileAsArrayBuffer,
+  deserializeReport,
+  generateSettlementReportValidationDetail,
+  explainSettlementReportValidationKind,
+} from '../helpers';
+import {
+  FinalizeSettlementError,
+  FinalizeSettlementErrorKind,
+  SettlementReportValidation,
+  SettlementReportValidationKind,
+  SettlementStatus,
+} from '../types';
 
 import './SettlementFinalizingModal.css';
+
+function displaySettlementReportValidation(v: SettlementReportValidation) {
+  const detail = generateSettlementReportValidationDetail(v);
+  return (
+    <div>
+      <b>{`Description: ${v.kind}`}</b>
+      {detail && <p>{`Detail: ${generateSettlementReportValidationDetail(v)}`}</p>}
+      <p>{`Explanation: ${explainSettlementReportValidationKind(v.kind)}`}</p>
+    </div>
+  );
+}
 
 const SettlementFinalizingModal: FC<ConnectorProps> = ({
   settlementReport,
@@ -27,16 +49,31 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
 
   function computeErrorDetails(err: FinalizeSettlementError) {
     switch (err.type) {
-      case FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION:
-        return (
-          <div>
-            {[...err.value.values()].map((v) => (
-              // TODO: anything. Probably a table. This is just a description of the error, but
-              // some could occur multiple times, confusing the user.
-              <div key={hash(v)}>{describeSettlementReportValidation(v.kind)}</div>
-            ))}
-          </div>
-        );
+      case FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION: {
+        const errorKinds = [
+          SettlementReportValidationKind.AccountIsIncorrectType,
+          SettlementReportValidationKind.ExtraAccountsPresentInReport,
+          SettlementReportValidationKind.InvalidAccountId,
+          SettlementReportValidationKind.NewBalanceAmountInvalid,
+          SettlementReportValidationKind.ReportIdentifiersNonMatching,
+          SettlementReportValidationKind.SettlementIdNonMatching,
+          SettlementReportValidationKind.TransferAmountInvalid,
+        ];
+        const errors = [...err.value.values()].filter(({ kind }) => errorKinds.includes(kind));
+        const warnings = [...err.value.values()].filter(({ kind }) => !errorKinds.includes(kind));
+        if (errors.length > 0) {
+          return (
+            <div>
+              <h3>The following errors were present in the settlement finalization report:</h3>
+              {errors.map((e) => (
+                <div key={hash(e)}>{displaySettlementReportValidation(e)}</div>
+              ))}
+            </div>
+          );
+        }
+        if (warnings.length === 0) {
+          return <div>Runtime error displaying errors</div>;
+        }
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {

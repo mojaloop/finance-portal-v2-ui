@@ -74,17 +74,17 @@ export interface LedgerParticipant {
 }
 
 export enum SettlementReportValidationKind {
-  SettlementIdNonMatching = 'selected settlement ID does not match report settlement ID',
-  TransfersSumNonZero = 'sum of transfers in the report is non-zero',
-  TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
-  BalanceNotAsExpected = 'balance not modified corresponding to transfer amount',
-  AccountsNotPresentInReport = 'accounts in settlement not present in report',
-  ExtraAccountsPresentInReport = 'accounts in report not present in settlement',
-  ReportIdentifiersNonMatching = 'report identifiers do not match - participant ID, account ID and participant name must match',
-  AccountIsIncorrectType = 'account type should be POSITION',
-  NewBalanceAmountInvalid = 'new balance amount not valid for currency',
-  TransferAmountInvalid = 'transfer amount not valid for currency',
-  InvalidAccountId = 'report account ID does not exist in switch',
+  SettlementIdNonMatching = 'Selected settlement ID does not match report settlement ID',
+  TransfersSumNonZero = 'Sum of transfers in the report is non-zero',
+  TransferDoesNotMatchNetSettlementAmount = 'Transfer amount does not match net settlement amount',
+  BalanceNotAsExpected = 'Balance not modified corresponding to transfer amount',
+  AccountsNotPresentInReport = 'Accounts in settlement not present in report',
+  ExtraAccountsPresentInReport = 'Accounts in report not present in settlement',
+  ReportIdentifiersNonMatching = 'Report identifiers do not match - participant ID, account ID and participant name must match',
+  AccountIsIncorrectType = 'Account type should be POSITION',
+  NewBalanceAmountInvalid = 'New balance amount not valid for currency',
+  TransferAmountInvalid = 'Transfer amount not valid for currency',
+  InvalidAccountId = 'Report account ID does not exist in switch',
 }
 
 export type MinorUnit = 0 | 2 | 3 | 4 | '.';
@@ -118,7 +118,7 @@ export type SettlementReportValidation =
         reportBalance: number;
         expectedBalance: number;
         transferAmount: number;
-        account: LedgerAccount;
+        account: AccountWithPosition;
       };
     }
   | {
@@ -130,14 +130,14 @@ export type SettlementReportValidation =
     }
   | {
       kind: SettlementReportValidationKind.InvalidAccountId;
-      data: SettlementReportEntry[];
+      data: { entry: SettlementReportEntry };
     }
   | {
       kind: SettlementReportValidationKind.ExtraAccountsPresentInReport;
       data: {
         participant?: FspName;
         entry: SettlementReportEntry;
-      }[];
+      };
     }
   | {
       kind: SettlementReportValidationKind.ReportIdentifiersNonMatching;

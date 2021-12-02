@@ -207,6 +207,99 @@ export const CURRENCY_DATA = new Map<Currency, CurrencyData>([
   ['ZWL', { alpha: 'ZWL', numeric: 932, minorUnit: 2 }],
 ]);
 
+// TODO: should really be the following type. One of the most dire problems with the usage of TS in
+// this whole repo: the surface of the application should be typed, i.e. the ML API should have
+// types, and all responses should be validated as having those types, perhaps by ajv, if there's
+// some sort of ajv/typescript integration.
+// type ApiResponse<T> =
+//   | { kind: 'ERROR', status: number, data: MojaloopError }
+//   | { kind: 'SUCCESS', status: number, data: T }
+export interface ApiResponse {
+  status: number;
+  data: any;
+}
+
+export const finalizeDataUtils = {
+  getParticipantsAccounts: function getParticipantsAccounts(
+    participants: LedgerParticipant[],
+  ): SettlementFinalizeData['participantsAccounts'] {
+    return participants
+      .filter((fsp) => !/hub/i.test(fsp.name))
+      .reduce(
+        (result, fsp) =>
+          fsp.accounts.reduce((map, acc) => {
+            const leaf = { participant: fsp, account: acc };
+            const fspNode = map.get(fsp.name);
+            if (fspNode) {
+              const currencyNode = fspNode.get(acc.currency);
+              if (currencyNode) {
+                currencyNode.set(acc.ledgerAccountType, leaf);
+                return map;
+              }
+              fspNode.set(acc.currency, new Map([[acc.ledgerAccountType, leaf]]));
+              return map;
+            }
+            return map.set(fsp.name, new Map([[acc.currency, new Map([[acc.ledgerAccountType, leaf]])]]));
+          }, result),
+        new Map<FspName, Map<Currency, Map<LedgerAccountType, AccountParticipant>>>(),
+      );
+  },
+
+  ensureResponse: function ensureResponse(response: ApiResponse, status: number, msg: string) {
+    assert.equal(response.status, status, msg);
+    return response.data;
+  },
+
+  transformParticipantsLimits: function transformParticipantsLimits(
+    limits: { name: FspName; currency: Currency; limit: Limit }[],
+  ): SettlementFinalizeData['participantsLimits'] {
+    return limits.reduce((result, e) => {
+      if (result.get(e.name)?.set(e.currency, e.limit) === undefined) {
+        result.set(e.name, new Map([[e.currency, e.limit]]));
+      }
+      return result;
+    }, new Map<FspName, Map<Currency, Limit>>());
+  },
+
+  getAccountsParticipants: function getAccountsParticipants(
+    participants: LedgerParticipant[],
+  ): SettlementFinalizeData['accountsParticipants'] {
+    return participants
+      .filter((fsp) => !/hub/i.test(fsp.name))
+      .reduce(
+        (result, fsp) => fsp.accounts.reduce((map, acc) => map.set(acc.id, { participant: fsp, account: acc }), result),
+        new Map<AccountId, AccountParticipant>(),
+      );
+  },
+
+  getSettlementParticipantAccounts: function getSettlementParticipantAccounts(
+    settlementParticipants: SettlementParticipant[],
+  ): SettlementFinalizeData['settlementParticipantAccounts'] {
+    return settlementParticipants.reduce(
+      (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, acc), mapP),
+      new Map<AccountId, SettlementParticipantAccount>(),
+    );
+  },
+
+  getSettlementParticipants: function getSettlementParticipants(
+    settlementParticipants: SettlementParticipant[],
+  ): SettlementFinalizeData['settlementParticipants'] {
+    return settlementParticipants.reduce(
+      (mapP, p) => p.accounts.reduce((mapA, acc) => mapA.set(acc.id, p), mapP),
+      new Map<AccountId, SettlementParticipant>(),
+    );
+  },
+
+  getAccountsPositions: function getAccountsPositions(
+    data: AccountWithPosition[],
+  ): SettlementFinalizeData['accountsPositions'] {
+    return data.reduce(
+      (map: Map<AccountId, AccountWithPosition>, acc: AccountWithPosition) => map.set(acc.id, acc),
+      new Map<AccountId, AccountWithPosition>(),
+    );
+  },
+};
+
 export interface AccountParticipant {
   participant: LedgerParticipant;
   account: LedgerAccount;
@@ -338,8 +431,84 @@ export function mapApiToModel(item: any): Settlement {
   };
 }
 
-export function describeSettlementReportValidation(validation: SettlementReportValidationKind) {
-  switch (validation) {
+export function generateSettlementReportValidationDetail(val: SettlementReportValidation) {
+  switch (val.kind) {
+    case SettlementReportValidationKind.SettlementIdNonMatching:
+      return (
+        `The settlement ID in the report is: ${val.data.reportId}. The settlement ID selected ` +
+        `was: ${val.data.settlementId}.`
+      );
+    case SettlementReportValidationKind.TransfersSumNonZero:
+      return null;
+    case SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount:
+      return (
+        `Row ${val.data.entry.row.rowNumber} of the report is for account ID ` +
+        `${val.data.entry.positionAccountId}. In the settlement, this account has a net ` +
+        `settlement amount of ${val.data.account.netSettlementAmount}.`
+      );
+    case SettlementReportValidationKind.BalanceNotAsExpected:
+      return (
+        `Row ${val.data.entry.row.rowNumber} of the report has a balance of ` +
+        `${val.data.reportBalance} and a transfer amount of ${val.data.transferAmount}. ` +
+        `${val.data.entry.participant.name} presently has a liquidity account balance of ` +
+        `${val.data.account.value}. Applying the transfer to this balance results in an ` +
+        `expected balance of ${val.data.expectedBalance}. The balance in the report is ` +
+        `${val.data.reportBalance}.`
+      );
+    case SettlementReportValidationKind.AccountsNotPresentInReport: {
+      // prettier-ignore
+      const printAccount = (
+        { participant, account }: { participant?: FspName; account: SettlementParticipantAccount }
+      ) => `${account.id}` + (participant ? ` (${participant})` : ''); // eslint-disable-line prefer-template
+      return (
+        `Reports present in the settlement, but not present in the report are: ` + // eslint-disable-line prefer-template
+        val.data.map(printAccount).join(',') +
+        '.'
+      );
+    }
+    case SettlementReportValidationKind.ExtraAccountsPresentInReport:
+      return (
+        `The account on row ${val.data.entry.row.rowNumber}, account ID: ` +
+        `${val.data.entry.positionAccountId} is not present in the settlement.`
+      );
+    case SettlementReportValidationKind.ReportIdentifiersNonMatching:
+      return `The switch identifiers in row ${val.data.entry.row.rowNumber} did not match each other.`;
+    case SettlementReportValidationKind.AccountIsIncorrectType:
+      return (
+        `The account ID in row ${val.data.entry.row.rowNumber} of the report should be a ` +
+        `position account, but is instead a ${val.data.switchAccount.ledgerAccountType} type.`
+      );
+    case SettlementReportValidationKind.NewBalanceAmountInvalid:
+      return (
+        `Row ${val.data.entry.row.rowNumber} of the report contains a balance of ` +
+        `${val.data.entry.row.balance} and an account ID of ` +
+        `${val.data.entry.positionAccountId} with a currency of ` +
+        `${val.data.currencyData.alpha}. This balance is not a valid amount in this currency.`
+      );
+    case SettlementReportValidationKind.TransferAmountInvalid:
+      return (
+        `Row ${val.data.entry.row.rowNumber} of the report contains a transfer amount of ` +
+        `${val.data.entry.row.transferAmount} and an account ID of ` +
+        `${val.data.entry.positionAccountId} with a currency of ` +
+        `${val.data.currencyData.alpha}. This transfer amount is not a valid amount in this ` +
+        'currency.'
+      );
+    case SettlementReportValidationKind.InvalidAccountId:
+      return (
+        `Row ${val.data.entry.row.rowNumber} contains account ID ` +
+        `${val.data.entry.positionAccountId}, which does not exist in the switch.`
+      );
+    default: {
+      // Did you get a compile error here? This code is written such that if every
+      // case in the above switch state is not handled, compilation will fail.
+      const exhaustiveCheck: never = val;
+      throw new Error(`Unhandled validation: ${exhaustiveCheck}`);
+    }
+  }
+}
+
+export function explainSettlementReportValidationKind(kind: SettlementReportValidationKind) {
+  switch (kind) {
     case SettlementReportValidationKind.SettlementIdNonMatching:
       return (
         'The settlement ID for the settlement selected to finalize is compared against the settlement ID in the ' +
@@ -394,7 +563,7 @@ export function describeSettlementReportValidation(validation: SettlementReportV
     default: {
       // Did you get a compile error here? This code is written such that if every
       // case in the above switch state is not handled, compilation will fail.
-      const exhaustiveCheck: never = validation;
+      const exhaustiveCheck: never = kind;
       throw new Error(`Unhandled validation: ${exhaustiveCheck}`);
     }
   }
@@ -402,7 +571,7 @@ export function describeSettlementReportValidation(validation: SettlementReportV
 
 // Because no currency has more than four decimal places, we can have quite a large epsilon value
 const EPSILON = 1e-5;
-const equal = (a: number, b: number) => Math.abs(a - b) > EPSILON;
+const equal = (a: number, b: number) => Math.abs(a - b) < EPSILON;
 
 export const validationFunctions = {
   union: function union<T>(...args: Set<T>[]) {
@@ -453,8 +622,6 @@ export const validationFunctions = {
   },
 
   balancesAsExpected: function checkBalancesAsExpected(report: SettlementReport, data: SettlementFinalizeData) {
-    // TODO: should we notify anyone about this? Perhaps not; sometimes the balance will change as a
-    // result of normal business processes.
     const result = new Set<SettlementReportValidation>();
     report.entries
       .map((entry) => {
@@ -526,13 +693,16 @@ export const validationFunctions = {
     accountsParticipants: SettlementFinalizeData['accountsParticipants'],
   ) {
     const result = new Set<SettlementReportValidation>();
-    const invalidAccounts = report.entries.filter((entry) => !accountsParticipants.has(entry.positionAccountId));
-    if (invalidAccounts.length !== 0) {
-      result.add({
-        kind: SettlementReportValidationKind.InvalidAccountId,
-        data: invalidAccounts,
+    report.entries
+      .filter((entry) => !accountsParticipants.has(entry.positionAccountId))
+      .forEach((entry) => {
+        result.add({
+          kind: SettlementReportValidationKind.InvalidAccountId,
+          data: {
+            entry,
+          },
+        });
       });
-    }
     return result;
   },
 
@@ -543,16 +713,17 @@ export const validationFunctions = {
   ) {
     const result = new Set<SettlementReportValidation>();
     const settlementAccountIds = new Set(settlement.participants.flatMap((p) => p.accounts.map((acc) => acc.id)));
-    const entriesNotInSettlement = report.entries.filter((entry) => !settlementAccountIds.has(entry.positionAccountId));
-    if (entriesNotInSettlement.length !== 0) {
-      result.add({
-        kind: SettlementReportValidationKind.ExtraAccountsPresentInReport,
-        data: entriesNotInSettlement.map((entry) => ({
-          entry,
-          participant: accountsParticipants.get(entry.positionAccountId)?.participant.name,
-        })),
+    report.entries
+      .filter((entry) => !settlementAccountIds.has(entry.positionAccountId))
+      .forEach((entry) => {
+        result.add({
+          kind: SettlementReportValidationKind.ExtraAccountsPresentInReport,
+          data: {
+            entry,
+            participant: accountsParticipants.get(entry.positionAccountId)?.participant.name,
+          },
+        });
       });
-    }
     return result;
   },
 
@@ -753,7 +924,7 @@ export function deserializeReport(buf: ArrayBuffer): PromiseLike<SettlementRepor
         // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
         // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML
         // spec might differently, or further restrict it.
-        const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]+)$/g;
+        const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]{1,29})$/g;
         assert(
           re.test(switchIdentifiers),
           `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${switchIdentifiers}]. Matching regex: ${re}`,
