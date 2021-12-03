@@ -312,9 +312,14 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
             <ErrorBox>
               <div>
                 <h3>Warning: the following was found in the settlement finalization report:</h3>
+                <hr />
                 {settlementReportValidationWarnings?.map((e: SettlementReportValidation) => (
                   <div key={hash(e)}>{displaySettlementReportValidation(e)}</div>
                 ))}
+                <hr />
+                <h3>
+                  These are not fatal errors. After closing this dialog, it will be possible to process the report.
+                </h3>
               </div>
             </ErrorBox>
           </Modal>
