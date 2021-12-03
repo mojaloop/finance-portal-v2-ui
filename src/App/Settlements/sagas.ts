@@ -44,7 +44,8 @@ import {
 import {
   getSettlementAdjustments,
   getSettlementsFilters,
-  getFinalizeProcessNdc,
+  getFinalizeProcessNdcIncreases,
+  getFinalizeProcessNdcDecreases,
   getFinalizeProcessFundsInOut,
   getFinalizingSettlement,
   getSettlementReport,
@@ -78,7 +79,7 @@ function* processAdjustments({
   settlement: Settlement;
   adjustments: Adjustment[];
   newState: SettlementStatus;
-  adjustNdc: boolean;
+  adjustNdc: { increases: boolean; decreases: boolean };
   adjustLiquidityAccountBalance: boolean;
 }) {
   const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
@@ -108,7 +109,10 @@ function* processAdjustments({
         if (statePosition >= newStatePosition) {
           return 'OK';
         }
-        if (adjustNdc) {
+        if (
+          (adjustNdc.increases && adjustment.currentLimit.value < adjustment.settlementBankBalance) ||
+          (adjustNdc.decreases && adjustment.currentLimit.value > adjustment.settlementBankBalance)
+        ) {
           const request = {
             participantName: adjustment.participant.name,
             body: {
@@ -500,7 +504,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
 
-
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
         yield put(
@@ -547,11 +550,16 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       case SettlementStatus.PsTransfersReserved: {
         console.log(SettlementStatus.PsTransfersReserved);
 
+        const adjustNdc = {
+          increases: yield select(getFinalizeProcessNdcIncreases),
+          decreases: yield select(getFinalizeProcessNdcDecreases),
+        };
+
         const debtorsErrors: FinalizeSettlementProcessAdjustmentsError[] = yield call(processAdjustments, {
           settlement,
           adjustments: [...debits.values()],
           newState: SettlementStatus.PsTransfersCommitted,
-          adjustNdc: yield select(getFinalizeProcessNdc),
+          adjustNdc,
           adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
         });
 
@@ -569,7 +577,7 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           settlement,
           adjustments: [...credits.values()],
           newState: SettlementStatus.PsTransfersCommitted,
-          adjustNdc: yield select(getFinalizeProcessNdc),
+          adjustNdc,
           adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
         });
 

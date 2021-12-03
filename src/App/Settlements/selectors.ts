@@ -14,7 +14,8 @@ export const getFinalizingSettlement = (state: State) => state.subApp.settlement
 export const getFinalizingSettlementError = (state: State) => state.subApp.settlements.finalizingSettlementError;
 export const getSettlementReportError = (state: State) => state.subApp.settlements.settlementReportError;
 export const getFinalizeProcessFundsInOut = (state: State) => state.subApp.settlements.finalizeProcessFundsInOut;
-export const getFinalizeProcessNdc = (state: State) => state.subApp.settlements.finalizeProcessNdc;
+export const getFinalizeProcessNdcIncreases = (state: State) => state.subApp.settlements.finalizeProcessNdcIncreases;
+export const getFinalizeProcessNdcDecreases = (state: State) => state.subApp.settlements.finalizeProcessNdcDecreases;
 export const getSettlementFinalizingInProgress = (state: State) =>
   state.subApp.settlements.settlementFinalizingInProgress;
 export const getSettlementAdjustments = (state: State) => state.subApp.settlements.settlementAdjustments;

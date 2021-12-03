@@ -10,7 +10,8 @@ const stateProps = (state: State) => ({
   finalizingSettlementError: selectors.getFinalizingSettlementError(state),
   settlementReportError: selectors.getSettlementReportError(state),
   processFundsInOut: selectors.getFinalizeProcessFundsInOut(state),
-  processNdc: selectors.getFinalizeProcessNdc(state),
+  processNdcIncreases: selectors.getFinalizeProcessNdcIncreases(state),
+  processNdcDecreases: selectors.getFinalizeProcessNdcDecreases(state),
   settlementFinalizingInProgress: selectors.getSettlementFinalizingInProgress(state),
   settlementReportValidationWarnings: selectors.getSettlementReportValidationWarnings(state),
   settlementReportValidationErrors: selectors.getSettlementReportValidationErrors(state),
@@ -45,8 +46,10 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onSetFundsInOutChange: (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(actions.setFinalizeProcessFundsInOut(e.target.checked));
   },
-  onSetNetDebitCapChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-    dispatch(actions.setFinalizeProcessNdc(e.target.checked)),
+  onSetNetDebitCapDecreasesChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+    dispatch(actions.setFinalizeProcessNdcDecreases(e.target.checked)),
+  onSetNetDebitCapIncreasesChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+    dispatch(actions.setFinalizeProcessNdcIncreases(e.target.checked)),
   onClearSettlementReportWarnings: () => dispatch(actions.setSettlementReportValidationWarnings(null)),
 });
 

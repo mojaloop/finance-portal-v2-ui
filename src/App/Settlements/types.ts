@@ -20,7 +20,8 @@ export const SET_SETTLEMENT_REPORT_ERROR = 'Settlements / Settlement Report Erro
 export const FINALIZING_SETTLEMENT = 'Settlements / Finalizing Settlement';
 export const HIDE_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Hide Finalize Settlement Modal';
 export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settlement Modal';
-export const SET_FINALIZE_PROCESS_NDC = ' Settlements / Finalize Report / Process Net Debit Caps';
+export const SET_FINALIZE_PROCESS_NDC_INCREASES = ' Settlements / Finalize Report / Process Net Debit Cap Increases';
+export const SET_FINALIZE_PROCESS_NDC_DECREASES = ' Settlements / Finalize Report / Process Net Debit Cap Decreases';
 export const SET_FINALIZE_PROCESS_FUNDS_IN_OUT = ' Settlements / Finalize Report / Process Funds In/Out';
 export const SET_FINALIZE_SETTLEMENT_IN_PROGRESS = ' Settlements / Finalize Report / In Progress';
 export const SET_SETTLEMENT_ADJUSTMENTS = 'Settlements / Finalize Report / Set Adjustments';
@@ -298,7 +299,8 @@ export interface SettlementsState {
   settlementReport: null | SettlementReport;
   settlementReportError: null | string;
   finalizeProcessFundsInOut: boolean;
-  finalizeProcessNdc: boolean;
+  finalizeProcessNdcDecreases: boolean;
+  finalizeProcessNdcIncreases: boolean;
   settlementFinalizingInProgress: boolean;
   settlementAdjustments: null | SettlementAdjustments;
   settlementReportValidationWarnings: null | SettlementReportValidation[];

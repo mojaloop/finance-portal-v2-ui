@@ -40,10 +40,12 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   onSelectSettlementReport,
   onSettlementReportProcessingError,
   settlementReportError,
-  onSetNetDebitCapChange,
+  onSetNetDebitCapIncreasesChange,
+  onSetNetDebitCapDecreasesChange,
   onSetFundsInOutChange,
   processFundsInOut,
-  processNdc,
+  processNdcIncreases,
+  processNdcDecreases,
   settlementReportValidationErrors,
   settlementReportValidationWarnings,
   onClearSettlementReportWarnings,
@@ -229,15 +231,26 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         Set liquidity account balance to balance values in settlement finalization report
       </label>
       <br />
-      <label htmlFor="set-process-net-debit-cap">
+      <label htmlFor="set-process-net-debit-cap-decreases">
         <input
-          id="set-process-net-debit-cap"
+          id="set-process-net-debit-cap-decreases"
           type="checkbox"
           disabled={settlementFinalizingInProgress}
-          checked={processNdc}
-          onChange={onSetNetDebitCapChange}
+          checked={processNdcDecreases}
+          onChange={onSetNetDebitCapDecreasesChange}
         />
-        Set net debit cap to balance values in settlement finalization report
+        <i>Decrease</i> net debit caps to balance values in settlement finalization report
+      </label>
+      <br />
+      <label htmlFor="set-process-net-debit-cap-increases">
+        <input
+          id="set-process-net-debit-cap-increases"
+          type="checkbox"
+          disabled={settlementFinalizingInProgress}
+          checked={processNdcIncreases}
+          onChange={onSetNetDebitCapIncreasesChange}
+        />
+        <i>Increase</i> net debit caps to balance values in settlement finalization report
       </label>
       <br />
       <Button
