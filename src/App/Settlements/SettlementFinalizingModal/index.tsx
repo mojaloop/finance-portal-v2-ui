@@ -253,6 +253,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           }
         }}
       />
+      <br />
       <Button
         kind="secondary"
         noFill

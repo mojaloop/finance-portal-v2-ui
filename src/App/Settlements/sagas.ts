@@ -81,7 +81,7 @@ function* processAdjustments({
   adjustNdc: boolean;
   adjustLiquidityAccountBalance: boolean;
 }) {
-  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK' | null)[] = yield all(
+  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
     adjustments.map((adjustment) => {
       return call(function* processAdjustment() {
         // TODO: we need state order here and in the display later. It might pay to make
@@ -106,7 +106,7 @@ function* processAdjustments({
         // If the settlement account state is already past the target state, then we'll do nothing
         // and exit here, returning null;
         if (statePosition >= newStatePosition) {
-          return null;
+          return 'OK';
         }
         if (adjustNdc) {
           const request = {
@@ -472,13 +472,13 @@ function* validateSettlementReport(): any {
   console.log('adjustments', adjustments);
 
   const [debits, credits] = adjustments.reduce(
-    ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
-    [new Set<Adjustment>(), new Set<Adjustment>()],
+    ([dr, cr], adj) => (adj.amount < 0 ? [[...dr, adj], cr] : [dr, [...cr, adj]]),
+    [[], []],
   );
 
   console.log(debits, credits);
 
-  yield put(setSettlementAdjustments({ debits, credits }));
+  yield put(setSettlementAdjustments({ debits: [...debits.values()], credits: [...credits.values()] }));
 }
 
 function* finalizeSettlement(action: PayloadAction<Settlement>) {

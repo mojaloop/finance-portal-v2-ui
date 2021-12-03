@@ -229,7 +229,7 @@ export type FinalizeSettlementProcessAdjustmentsError =
     };
 
 export type FinalizeSettlementError =
-  | { type: FinalizeSettlementErrorKind.ABORTED_SETTLEMENT; }
+  | { type: FinalizeSettlementErrorKind.ABORTED_SETTLEMENT }
   | { type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS; value: FinalizeSettlementProcessAdjustmentsError[] }
   | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
@@ -280,8 +280,8 @@ export interface SettlementFilters {
 }
 
 export interface SettlementAdjustments {
-  debits: Set<Adjustment>;
-  credits: Set<Adjustment>;
+  debits: Adjustment[];
+  credits: Adjustment[];
 }
 
 export interface SettlementsState {
