@@ -592,12 +592,31 @@ export const validationFunctions = {
     return result;
   },
 
-  transfersSum: function validateTransfersSum(report: SettlementReport) {
+  transfersSum: function validateTransfersSum(
+    report: SettlementReport,
+    accountsParticipants: SettlementFinalizeData['accountsParticipants'],
+  ) {
     const result = new Set<SettlementReportValidation>();
-    const reportTransfersSum = report.entries.reduce((sum, e) => sum + e.transferAmount, 0);
-    if (!equal(reportTransfersSum, 0)) {
-      result.add({ kind: SettlementReportValidationKind.TransfersSumNonZero });
-    }
+    const reportTransfersSums: Map<Currency, number> = report.entries.reduce((map, e) => {
+      const account = accountsParticipants.get(e.positionAccountId);
+      assert(
+        account !== undefined,
+        `Runtime error retrieving account for row ${e.row.rowNumber}, account ID: ${e.positionAccountId}`,
+      );
+      const currentSum = map.get(account.account.currency) || 0;
+      return map.set(account.account.currency, currentSum + e.transferAmount);
+    }, new Map<Currency, number>());
+    reportTransfersSums.forEach((sum, currency) => {
+      if (!equal(sum, 0)) {
+        result.add({
+          kind: SettlementReportValidationKind.TransfersSumNonZero,
+          data: {
+            currency,
+            sum,
+          },
+        });
+      }
+    });
     return result;
   },
 
@@ -833,7 +852,7 @@ export function validateReport(
   const settlementIdResult = validationFunctions.settlementId(report, settlement);
 
   // TransfersSumNonZero = 'sum of transfers in the report is non-zero',
-  const transferSumResult = validationFunctions.transfersSum(report);
+  const transferSumResult = validationFunctions.transfersSum(report, data.accountsParticipants);
 
   // TransferDoesNotMatchNetSettlementAmount = 'transfer amount does not match net settlement amount',
   const transfersMatchResult = validationFunctions.transfersMatchNetSettlements(

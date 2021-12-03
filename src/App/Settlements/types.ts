@@ -108,7 +108,13 @@ export type SettlementReportValidation =
         settlementId: number;
       };
     }
-  | { kind: SettlementReportValidationKind.TransfersSumNonZero }
+  | {
+      kind: SettlementReportValidationKind.TransfersSumNonZero;
+      data: {
+        currency: Currency;
+        sum: number;
+      };
+    }
   | {
       kind: SettlementReportValidationKind.TransferDoesNotMatchNetSettlementAmount;
       data: {
