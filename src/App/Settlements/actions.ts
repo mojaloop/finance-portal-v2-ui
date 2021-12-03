@@ -19,10 +19,16 @@ import {
   SET_FINALIZE_PROCESS_NDC,
   SET_FINALIZE_PROCESS_FUNDS_IN_OUT,
   SET_FINALIZE_SETTLEMENT_IN_PROGRESS,
+  SET_SETTLEMENT_ADJUSTMENTS,
+  SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
+  SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS,
+  VALIDATE_SETTLEMENT_REPORT,
   FINALIZING_SETTLEMENT,
   FinalizeSettlementError,
   Settlement,
+  SettlementAdjustments,
   SettlementReport,
+  SettlementReportValidation,
   DateRanges,
   FilterNameValue,
 } from './types';
@@ -42,8 +48,7 @@ export const setSettlementsFilterValue = createAction<FilterNameValue>(SET_SETTL
 export const clearSettlementsFilters = createAction(CLEAR_SETTLEMENTS_FILTERS);
 
 export const selectSettlement = createAction<null | Settlement>(SELECT_SETTLEMENT);
-export const finalizeSettlement =
-  createAction<{ settlement: Settlement; report: SettlementReport }>(FINALIZE_SETTLEMENT);
+export const finalizeSettlement = createAction<Settlement>(FINALIZE_SETTLEMENT);
 export const setSettlementReport = createAction<null | SettlementReport>(SET_SETTLEMENT_REPORT);
 export const setFinalizeSettlementError = createAction<null | FinalizeSettlementError>(FINALIZE_SETTLEMENT_ERROR);
 export const setSettlementReportError = createAction<null | string>(SET_SETTLEMENT_REPORT_ERROR);
@@ -53,3 +58,11 @@ export const showFinalizeSettlementModal = createAction(SHOW_FINALIZE_SETTLEMENT
 export const setFinalizeProcessFundsInOut = createAction<boolean>(SET_FINALIZE_PROCESS_FUNDS_IN_OUT);
 export const setFinalizeProcessNdc = createAction<boolean>(SET_FINALIZE_PROCESS_NDC);
 export const setSettlementFinalizingInProgress = createAction<boolean>(SET_FINALIZE_SETTLEMENT_IN_PROGRESS);
+export const setSettlementAdjustments = createAction<null | SettlementAdjustments>(SET_SETTLEMENT_ADJUSTMENTS);
+export const setSettlementReportValidationWarnings = createAction<null | SettlementReportValidation[]>(
+  SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS,
+);
+export const setSettlementReportValidationErrors = createAction<null | SettlementReportValidation[]>(
+  SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
+);
+export const validateSettlementReport = createAction(VALIDATE_SETTLEMENT_REPORT);

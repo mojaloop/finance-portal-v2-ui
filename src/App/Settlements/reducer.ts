@@ -5,6 +5,8 @@ import {
   FinalizeSettlementError,
   Settlement,
   SettlementReport,
+  SettlementAdjustments,
+  SettlementReportValidation,
   SettlementsState,
 } from './types';
 import { getDateRangeTimestamp } from './helpers';
@@ -28,6 +30,9 @@ import {
   setFinalizeProcessFundsInOut,
   setFinalizeProcessNdc,
   setSettlementFinalizingInProgress,
+  setSettlementAdjustments,
+  setSettlementReportValidationErrors,
+  setSettlementReportValidationWarnings,
 } from './actions';
 
 const initialState: SettlementsState = {
@@ -52,6 +57,9 @@ const initialState: SettlementsState = {
   finalizeProcessFundsInOut: true,
   finalizeProcessNdc: true,
   settlementFinalizingInProgress: false,
+  settlementAdjustments: null,
+  settlementReportValidationErrors: null,
+  settlementReportValidationWarnings: null,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -176,5 +184,26 @@ export default createReducer(initialState, (builder) =>
     .addCase(setSettlementFinalizingInProgress, (state: SettlementsState, action: PayloadAction<boolean>) => ({
       ...state,
       settlementFinalizingInProgress: action.payload,
-    })),
+    }))
+    .addCase(
+      setSettlementAdjustments,
+      (state: SettlementsState, action: PayloadAction<null | SettlementAdjustments>) => ({
+        ...state,
+        settlementAdjustments: action.payload,
+      }),
+    )
+    .addCase(
+      setSettlementReportValidationErrors,
+      (state: SettlementsState, action: PayloadAction<null | SettlementReportValidation[]>) => ({
+        ...state,
+        settlementReportValidationErrors: action.payload,
+      }),
+    )
+    .addCase(
+      setSettlementReportValidationWarnings,
+      (state: SettlementsState, action: PayloadAction<null | SettlementReportValidation[]>) => ({
+        ...state,
+        settlementReportValidationWarnings: action.payload,
+      }),
+    ),
 );

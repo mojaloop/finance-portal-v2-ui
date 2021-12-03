@@ -22,21 +22,33 @@ import {
   SELECT_SETTLEMENTS_FILTER_DATE_RANGE,
   SELECT_SETTLEMENTS_FILTER_DATE_VALUE,
   SET_SETTLEMENTS_FILTER_VALUE,
+  VALIDATE_SETTLEMENT_REPORT,
   Settlement,
   SettlementParticipant,
   SettlementParticipantAccount,
   SettlementReport,
+  SettlementReportValidationKind,
   SettlementStatus,
 } from './types';
 import {
   setFinalizeSettlementError,
   setSettlementFinalizingInProgress,
   setFinalizingSettlement,
+  setSettlementAdjustments,
   setSettlements,
+  setSettlementReportValidationErrors,
+  setSettlementReportValidationWarnings,
   setSettlementsError,
   requestSettlements,
 } from './actions';
-import { getSettlementsFilters, getFinalizeProcessNdc, getFinalizeProcessFundsInOut } from './selectors';
+import {
+  getSettlementAdjustments,
+  getSettlementsFilters,
+  getFinalizeProcessNdc,
+  getFinalizeProcessFundsInOut,
+  getFinalizingSettlement,
+  getSettlementReport,
+} from './selectors';
 import {
   ApiResponse,
   buildFiltersParams,
@@ -417,16 +429,64 @@ function buildAdjustments(
   );
 }
 
-function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; report: SettlementReport }>) {
+function* validateSettlementReport(): any {
   // TODO: timeout
-  const { settlement, report } = action.payload;
+  const [settlement, report] = yield all([select(getFinalizingSettlement), select(getSettlementReport)]);
+  // Process in this order:
+  // 0. ensure all settlement participant accounts are in PS_TRANSFERS_RESERVED
+  // 1. apply the new debit NDCs
+  // 2. process the debit funds out, reducing the debtors liquidity account balances
+  // 3. process the credit funds in, increasing the creditors liquidity account balances
+  // 4. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
+  //    positions by the corresponding net settlement amounts
+  // 5. apply the new credit NDCs
+  // Because (2) and (4) do not have any effect on the ability of a participant to make transfers
+  // but (1) and (5) reduce the switch's exposure to unfunded transfers and (3) and (6) increase the
+  // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
+  // processing in this order means we're least likely to leave the switch in a risky state.
+
+  // TODO: much of this data would be useful throughout the portal, perhaps hoist it up and
+  // make it available everywhere. This might also mean we can validate the report more when we
+  // ingest it.
+  const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
+
+  console.log('validating report');
+  const errorKinds = [
+    SettlementReportValidationKind.AccountIsIncorrectType,
+    SettlementReportValidationKind.ExtraAccountsPresentInReport,
+    SettlementReportValidationKind.InvalidAccountId,
+    SettlementReportValidationKind.NewBalanceAmountInvalid,
+    SettlementReportValidationKind.ReportIdentifiersNonMatching,
+    SettlementReportValidationKind.SettlementIdNonMatching,
+    SettlementReportValidationKind.TransferAmountInvalid,
+  ];
+  const reportValidations = validateReport(report, finalizeData, settlement);
+  const errors = [...reportValidations.values()].filter((val) => errorKinds.includes(val.kind));
+  const warnings = [...reportValidations.values()].filter((val) => !errorKinds.includes(val.kind));
+  console.log('validated report', reportValidations);
+  yield put(setSettlementReportValidationErrors(errors));
+  yield put(setSettlementReportValidationWarnings(warnings));
+
+  const adjustments = buildAdjustments(report, finalizeData);
+
+  console.log('adjustments', adjustments);
+
+  const [debits, credits] = adjustments.reduce(
+    ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
+    [new Set<Adjustment>(), new Set<Adjustment>()],
+  );
+
+  console.log(debits, credits);
+
+  yield put(setSettlementAdjustments({ debits, credits }));
+}
+
+function* finalizeSettlement(action: PayloadAction<Settlement>) {
+  // TODO: timeout
+  const settlement = action.payload;
+  const { debits, credits } = yield select(getSettlementAdjustments);
+  console.log(debits, credits);
   try {
-    // TODO: is there a problem here when the settlement bank transfer amounts don't correspond
-    // correctly to the netSettlementAmount? I.e. when the position accounts are adjusted, will
-    // they subsequently be correct? I expect so, because this is merely saying "this set of
-    // transfers is no longer relevant to the position account", and the NDC and
-    // settlement/liquidity account balances are decoupled from the position account.
-    //
     // Process in this order:
     // 0. ensure all settlement participant accounts are in PS_TRANSFERS_RESERVED
     // 1. apply the new debit NDCs
@@ -440,29 +500,6 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
 
-    const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
-
-    console.log('validating report');
-    const reportValidations = validateReport(report, finalizeData, settlement);
-    console.log('validated report', reportValidations);
-    assert(
-      reportValidations.size === 0,
-      new FinalizeSettlementAssertionError({
-        type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION,
-        value: reportValidations,
-      }),
-    );
-
-    const adjustments = buildAdjustments(report, finalizeData);
-
-    console.log('adjustments', adjustments);
-
-    const [debits, credits] = adjustments.reduce(
-      ([dr, cr], adj) => (adj.amount < 0 ? [dr.add(adj), cr] : [dr, cr.add(adj)]),
-      [new Set<Adjustment>(), new Set<Adjustment>()],
-    );
-
-    console.log(debits, credits);
 
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
@@ -652,13 +689,9 @@ function* finalizeSettlement(action: PayloadAction<{ settlement: Settlement; rep
         );
         break;
       case SettlementStatus.Aborted:
-        yield put(
-          setFinalizingSettlement({
-            ...settlement,
-            state: SettlementStatus.Settled,
-          }),
-        );
-        break;
+        throw new FinalizeSettlementAssertionError({
+          type: FinalizeSettlementErrorKind.ABORTED_SETTLEMENT,
+        });
       default: {
         // Did you get a compile error here? This code is written such that if every
         // case in the above switch state is not handled, compilation will fail.
@@ -739,6 +772,15 @@ export function* FetchSettlementAfterFiltersChangeSaga(): Generator {
   );
 }
 
+export function* ValidateSettlementReportSaga(): Generator {
+  yield takeLatest(VALIDATE_SETTLEMENT_REPORT, validateSettlementReport);
+}
+
 export default function* rootSaga(): Generator {
-  yield all([FetchSettlementsSaga(), FetchSettlementAfterFiltersChangeSaga(), FinalizeSettlementSaga()]);
+  yield all([
+    FetchSettlementsSaga(),
+    FetchSettlementAfterFiltersChangeSaga(),
+    FinalizeSettlementSaga(),
+    ValidateSettlementReportSaga(),
+  ]);
 }

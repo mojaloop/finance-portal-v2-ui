@@ -12,6 +12,8 @@ const stateProps = (state: State) => ({
   processFundsInOut: selectors.getFinalizeProcessFundsInOut(state),
   processNdc: selectors.getFinalizeProcessNdc(state),
   settlementFinalizingInProgress: selectors.getSettlementFinalizingInProgress(state),
+  settlementReportValidationWarnings: selectors.getSettlementReportValidationWarnings(state),
+  settlementReportValidationErrors: selectors.getSettlementReportValidationErrors(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -20,6 +22,9 @@ const dispatchProps = (dispatch: Dispatch) => ({
     // of settlement finalizing. This might mean that the finalizeSettlement saga repeatedly
     // dispatches actions that call the finalizeSettlement saga as the settlement state
     // transitions.
+    dispatch(actions.setSettlementReportValidationErrors(null));
+    dispatch(actions.setSettlementReportValidationWarnings(null));
+    dispatch(actions.setSettlementAdjustments(null));
     dispatch(actions.setFinalizingSettlement(null));
     dispatch(actions.setFinalizeSettlementError(null));
     // Clear the settlement report such that the operator does not open another settlement and have
@@ -30,9 +35,10 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.hideFinalizeSettlementModal());
     dispatch(actions.requestSettlements());
   },
-  onProcessButtonClick: (report: SettlementReport, settlement: Settlement) => {
+  onValidateButtonClick: () => dispatch(actions.validateSettlementReport()),
+  onProcessButtonClick: (settlement: Settlement) => {
     dispatch(actions.setSettlementFinalizingInProgress(true));
-    dispatch(actions.finalizeSettlement({ report, settlement }));
+    dispatch(actions.finalizeSettlement(settlement));
   },
   onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
   onSettlementReportProcessingError: (err: string) => dispatch(actions.setSettlementReportError(err)),
@@ -41,6 +47,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   },
   onSetNetDebitCapChange: (e: React.ChangeEvent<HTMLInputElement>) =>
     dispatch(actions.setFinalizeProcessNdc(e.target.checked)),
+  onClearSettlementReportWarnings: () => dispatch(actions.setSettlementReportValidationWarnings(null)),
 });
 
 const connector = connect(stateProps, dispatchProps);

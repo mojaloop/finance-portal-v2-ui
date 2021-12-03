@@ -13,7 +13,6 @@ import {
   FinalizeSettlementError,
   FinalizeSettlementErrorKind,
   SettlementReportValidation,
-  SettlementReportValidationKind,
   SettlementStatus,
 } from '../types';
 
@@ -37,6 +36,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   finalizingSettlementError,
   onModalCloseClick,
   onProcessButtonClick,
+  onValidateButtonClick,
   onSelectSettlementReport,
   onSettlementReportProcessingError,
   settlementReportError,
@@ -44,38 +44,16 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
   onSetFundsInOutChange,
   processFundsInOut,
   processNdc,
+  settlementReportValidationErrors,
+  settlementReportValidationWarnings,
+  onClearSettlementReportWarnings,
 }) => {
   const [controller, setController] = useState<AbortController | undefined>(undefined);
 
   function computeErrorDetails(err: FinalizeSettlementError) {
     switch (err.type) {
-      case FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION: {
-        const errorKinds = [
-          SettlementReportValidationKind.AccountIsIncorrectType,
-          SettlementReportValidationKind.ExtraAccountsPresentInReport,
-          SettlementReportValidationKind.InvalidAccountId,
-          SettlementReportValidationKind.NewBalanceAmountInvalid,
-          SettlementReportValidationKind.ReportIdentifiersNonMatching,
-          SettlementReportValidationKind.SettlementIdNonMatching,
-          SettlementReportValidationKind.TransferAmountInvalid,
-        ];
-        const errors = [...err.value.values()].filter(({ kind }) => errorKinds.includes(kind));
-        const warnings = [...err.value.values()].filter(({ kind }) => !errorKinds.includes(kind));
-        if (errors.length > 0) {
-          return (
-            <div>
-              <h3>The following errors were present in the settlement finalization report:</h3>
-              {errors.map((e) => (
-                <div key={hash(e)}>{displaySettlementReportValidation(e)}</div>
-              ))}
-            </div>
-          );
-        }
-        if (warnings.length === 0) {
-          return <div>Runtime error displaying errors</div>;
-        }
-        return <></>;
-      }
+      case FinalizeSettlementErrorKind.ABORTED_SETTLEMENT:
+        return <div>Unable to finalize an aborted settlement.</div>;
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {
@@ -180,14 +158,22 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     return pending;
   }
 
-  // eslint-disable-next-line no-nested-ternary
-  const content = finalizingSettlementError ? (
+  const content = finalizingSettlementError ? ( // eslint-disable-line no-nested-ternary
     <ErrorBox>{computeErrorDetails(finalizingSettlementError)}</ErrorBox>
-  ) : settlementReportError ? (
+  ) : settlementReportError ? ( // eslint-disable-line no-nested-ternary
     <ErrorBox>
       <div>Error validating report:</div>
       {settlementReportError}
       <div>Please review the report format and content and try again.</div>
+    </ErrorBox>
+  ) : settlementReportValidationErrors !== null && settlementReportValidationErrors.length > 0 ? (
+    <ErrorBox>
+      <div>
+        <h3>The following errors were present in the settlement finalization report:</h3>
+        {settlementReportValidationErrors.map((e: SettlementReportValidation) => (
+          <div key={hash(e)}>{displaySettlementReportValidation(e)}</div>
+        ))}
+      </div>
     </ErrorBox>
   ) : (
     <div>
@@ -258,12 +244,27 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         kind="secondary"
         noFill
         size="s"
-        label="Process"
+        label="Validate"
         disabled={settlementReport === null || settlementFinalizingInProgress}
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           if (settlementReport !== null) {
-            onProcessButtonClick(settlementReport, finalizingSettlement);
+            onValidateButtonClick();
+          }
+        }}
+      />
+      <Button
+        kind="secondary"
+        noFill
+        size="s"
+        label="Process"
+        disabled={
+          settlementReport === null || settlementFinalizingInProgress || settlementReportValidationErrors === null
+        }
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.stopPropagation();
+          if (settlementReport !== null) {
+            onProcessButtonClick(finalizingSettlement);
           }
         }}
       />
@@ -290,6 +291,20 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       flex
     >
       {content}
+      {settlementReportValidationWarnings?.length &&
+        settlementReportValidationWarnings?.length > 0 &&
+        settlementReportValidationErrors?.length === 0 && (
+          <Modal title="Settlement Report Validation Warnings" width="1200px" onClose={onClearSettlementReportWarnings}>
+            <ErrorBox>
+              <div>
+                <h3>Warning: the following was found in the settlement finalization report:</h3>
+                {settlementReportValidationWarnings?.map((e: SettlementReportValidation) => (
+                  <div key={hash(e)}>{displaySettlementReportValidation(e)}</div>
+                ))}
+              </div>
+            </ErrorBox>
+          </Modal>
+        )}
     </Modal>
   );
 };

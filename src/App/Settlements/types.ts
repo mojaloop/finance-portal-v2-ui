@@ -23,6 +23,10 @@ export const SHOW_FINALIZE_SETTLEMENT_MODAL = 'Settlements / Show Finalize Settl
 export const SET_FINALIZE_PROCESS_NDC = ' Settlements / Finalize Report / Process Net Debit Caps';
 export const SET_FINALIZE_PROCESS_FUNDS_IN_OUT = ' Settlements / Finalize Report / Process Funds In/Out';
 export const SET_FINALIZE_SETTLEMENT_IN_PROGRESS = ' Settlements / Finalize Report / In Progress';
+export const SET_SETTLEMENT_ADJUSTMENTS = 'Settlements / Finalize Report / Set Adjustments';
+export const SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS = 'Settlements / Finalize Report / Set Validation Warnings';
+export const SET_SETTLEMENT_REPORT_VALIDATION_ERRORS = 'Settlements / Finalize Report / Set Validation Errors';
+export const VALIDATE_SETTLEMENT_REPORT = 'Settlements / Finalize Report / Validate Report';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
 
@@ -167,12 +171,12 @@ export type SettlementReportValidation =
 
 // prettier-ignore
 export enum FinalizeSettlementErrorKind {
+  ABORTED_SETTLEMENT                    = 'Attempted to finalize an aborted settlement',
   PROCESS_ADJUSTMENTS                   = 'Error processing adjustments',
   SET_SETTLEMENT_PS_TRANSFERS_RECORDED  = 'Error attempting to set settlement state to PS_TRANSFERS_RECORDED',
   SET_SETTLEMENT_PS_TRANSFERS_RESERVED  = 'Error attempting to set settlement state to PS_TRANSFERS_RESERVED',
   SET_SETTLEMENT_PS_TRANSFERS_COMMITTED = 'Error attempting to set settlement state to PS_TRANSFERS_COMMITTED',
   SETTLE_ACCOUNTS                       = 'Errors attempting to settle accounts',
-  FINALIZE_REPORT_VALIDATION            = 'Errors when validating the settlement report',
 }
 
 export interface FinalizeSettlementTransferError {
@@ -225,11 +229,11 @@ export type FinalizeSettlementProcessAdjustmentsError =
     };
 
 export type FinalizeSettlementError =
+  | { type: FinalizeSettlementErrorKind.ABORTED_SETTLEMENT; }
   | { type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS; value: FinalizeSettlementProcessAdjustmentsError[] }
   | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }
-  | { type: FinalizeSettlementErrorKind.FINALIZE_REPORT_VALIDATION; value: Set<SettlementReportValidation> }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError };
 
 export interface MojaloopError {
@@ -275,6 +279,11 @@ export interface SettlementFilters {
   end?: number;
 }
 
+export interface SettlementAdjustments {
+  debits: Set<Adjustment>;
+  credits: Set<Adjustment>;
+}
+
 export interface SettlementsState {
   settlements: Settlement[];
   settlementsError: ErrorMessage;
@@ -291,6 +300,9 @@ export interface SettlementsState {
   finalizeProcessFundsInOut: boolean;
   finalizeProcessNdc: boolean;
   settlementFinalizingInProgress: boolean;
+  settlementAdjustments: null | SettlementAdjustments;
+  settlementReportValidationWarnings: null | SettlementReportValidation[];
+  settlementReportValidationErrors: null | SettlementReportValidation[];
 }
 
 export type FilterValue = null | boolean | undefined | string | number;
