@@ -193,7 +193,7 @@ export interface FinalizeSettlementTransferError {
   transferId: string;
 }
 
-export interface FinalizeSettlementSettleAccountError {
+export interface FinalizeSettlementSettlementParticipantAccountUpdateError {
   apiResponse: MojaloopError;
   participant: LedgerParticipant;
   account: SettlementParticipantAccount;
@@ -238,10 +238,16 @@ export type FinalizeSettlementProcessAdjustmentsError =
 export type FinalizeSettlementError =
   | { type: FinalizeSettlementErrorKind.ABORTED_SETTLEMENT }
   | { type: FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS; value: FinalizeSettlementProcessAdjustmentsError[] }
-  | { type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS; value: FinalizeSettlementSettleAccountError[] }
+  | {
+      type: FinalizeSettlementErrorKind.SETTLE_ACCOUNTS;
+      value: FinalizeSettlementSettlementParticipantAccountUpdateError[];
+    }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED; value: MojaloopError }
   | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED; value: MojaloopError }
-  | { type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED; value: MojaloopError };
+  | {
+      type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED;
+      value: FinalizeSettlementSettlementParticipantAccountUpdateError[];
+    };
 
 export interface MojaloopError {
   errorCode: string;

@@ -56,7 +56,6 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     switch (err.type) {
       case FinalizeSettlementErrorKind.ABORTED_SETTLEMENT:
         return <div>Unable to finalize an aborted settlement.</div>;
-      case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RECORDED:
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_RESERVED: {
         return (
@@ -65,6 +64,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           </div>
         );
       }
+      case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SETTLE_ACCOUNTS: {
         const columns = [
           { key: 'participantName', label: 'Participant' },

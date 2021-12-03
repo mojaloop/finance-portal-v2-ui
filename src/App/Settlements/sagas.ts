@@ -42,13 +42,13 @@ import {
   requestSettlements,
 } from './actions';
 import {
-  getSettlementAdjustments,
-  getSettlementsFilters,
-  getFinalizeProcessNdcIncreases,
-  getFinalizeProcessNdcDecreases,
   getFinalizeProcessFundsInOut,
+  getFinalizeProcessNdcDecreases,
+  getFinalizeProcessNdcIncreases,
   getFinalizingSettlement,
+  getSettlementAdjustments,
   getSettlementReport,
+  getSettlementsFilters,
 } from './selectors';
 import {
   ApiResponse,
@@ -175,7 +175,7 @@ function* processAdjustments({
               action: 'recordFundsIn',
               reason: description,
               amount: {
-                amount: Math.abs(adjustment.amount), // TODO: MLNumber
+                amount: Math.abs(adjustment.amount),
                 // TODO: I think the transfer fails if currency is missing, but it is advertised as
                 // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
                 currency: adjustment.settlementAccount.currency,
@@ -204,7 +204,7 @@ function* processAdjustments({
               action: 'recordFundsOutPrepareReserve',
               reason: description,
               amount: {
-                amount: Math.abs(adjustment.amount), // TODO: MLNumber
+                amount: Math.abs(adjustment.amount),
                 currency: adjustment.settlementAccount.currency,
               },
               transferId,
@@ -313,9 +313,11 @@ function* processAdjustments({
 }
 
 function* collectSettlementFinalizeData(report: SettlementReport, settlement: Settlement) {
-  // TODO: parallelize requests in this function
-  // We need to get limits before we can set limits, because `alarmPercentage` is a required
-  // field when we set a limit, and we don't want to change that here.
+  // TODO: parallelize requests in this function. Probably by throwing the function out entirely
+  // and using an async version with Promise.all. That lets us reuse the code elsewhere, and means
+  // we don't have to put up with the limitations of redux-saga.
+  // Why get limits? We need to get limits before we can set limits, because `alarmPercentage` is a
+  // required field when we set a limit, and we don't want to change that here.
   const {
     transformParticipantsLimits,
     ensureResponse,
@@ -377,60 +379,56 @@ function buildAdjustments(
     settlementParticipants,
   }: SettlementFinalizeData,
 ): Adjustment[] {
-  return report.entries.map(
-    // TODO: amount, settlementBankBalance, etc. should be MLNumbers
-    ({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
-      const accountParticipant = accountsParticipants.get(positionAccountId);
-      assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
-      const { participant } = accountParticipant;
-      const positionAccount = accountsPositions.get(positionAccountId);
-      assert(positionAccount !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
-      const { currency } = positionAccount;
-      const currentLimit = participantsLimits.get(participant.name)?.get(currency);
-      assert(
-        currentLimit !== undefined,
-        `Failed to retrieve limit for participant ${participant.name} currency ${currency}`,
-      );
-      const settlementAccountId = participantsAccounts.get(participant.name)?.get(currency)?.get('SETTLEMENT')
-        ?.account?.id;
-      assert(settlementAccountId, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
-      const settlementAccount = accountsPositions.get(settlementAccountId);
-      assert(settlementAccount, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
-      assert(
-        settlementAccount.currency === positionAccount.currency,
-        `Unexpected data validation error: position account and settlement account currencies are not equal for ${participant.name}. This is most likely a bug.`,
-      );
-      // TODO: Mojaloop arithmetic?
-      // We use the negative settlement account balance because the switch presents a credit
-      // balance as a negative.
-      const switchBalance = -settlementAccount.value;
-      assert(switchBalance !== undefined, `Failed to retrieve position for account ${settlementAccountId}`);
-      const amount = settlementBankBalance - switchBalance;
+  return report.entries.map(({ positionAccountId, balance: settlementBankBalance }): Adjustment => {
+    const accountParticipant = accountsParticipants.get(positionAccountId);
+    assert(accountParticipant !== undefined, `Failed to retrieve participant for account ${positionAccountId}`);
+    const { participant } = accountParticipant;
+    const positionAccount = accountsPositions.get(positionAccountId);
+    assert(positionAccount !== undefined, `Failed to retrieve position for account ${positionAccountId}`);
+    const { currency } = positionAccount;
+    const currentLimit = participantsLimits.get(participant.name)?.get(currency);
+    assert(
+      currentLimit !== undefined,
+      `Failed to retrieve limit for participant ${participant.name} currency ${currency}`,
+    );
+    const settlementAccountId = participantsAccounts.get(participant.name)?.get(currency)?.get('SETTLEMENT')
+      ?.account?.id;
+    assert(settlementAccountId, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
+    const settlementAccount = accountsPositions.get(settlementAccountId);
+    assert(settlementAccount, `Failed to retrieve ${currency} settlement account for ${participant.name}`);
+    assert(
+      settlementAccount.currency === positionAccount.currency,
+      `Unexpected data validation error: position account and settlement account currencies are not equal for ${participant.name}. This is most likely a bug.`,
+    );
+    // We use the negative settlement account balance because the switch presents a credit
+    // balance as a negative.
+    const switchBalance = -settlementAccount.value;
+    assert(switchBalance !== undefined, `Failed to retrieve position for account ${settlementAccountId}`);
+    const amount = settlementBankBalance - switchBalance;
 
-      const settlementParticipantAccount = settlementParticipantAccounts.get(positionAccountId);
-      assert(
-        settlementParticipantAccount !== undefined,
-        `Failed to retrieve settlement participant account for account ${positionAccountId}`,
-      );
+    const settlementParticipantAccount = settlementParticipantAccounts.get(positionAccountId);
+    assert(
+      settlementParticipantAccount !== undefined,
+      `Failed to retrieve settlement participant account for account ${positionAccountId}`,
+    );
 
-      const settlementParticipant = settlementParticipants.get(settlementParticipantAccount.id);
-      assert(
-        settlementParticipant !== undefined,
-        `Failed to retrieve settlement participant for account ${positionAccountId}`,
-      );
+    const settlementParticipant = settlementParticipants.get(settlementParticipantAccount.id);
+    assert(
+      settlementParticipant !== undefined,
+      `Failed to retrieve settlement participant for account ${positionAccountId}`,
+    );
 
-      return {
-        settlementBankBalance,
-        participant,
-        amount,
-        positionAccount,
-        settlementAccount,
-        currentLimit,
-        settlementParticipantAccount,
-        settlementParticipant,
-      };
-    },
-  );
+    return {
+      settlementBankBalance,
+      participant,
+      amount,
+      positionAccount,
+      settlementAccount,
+      currentLimit,
+      settlementParticipantAccount,
+      settlementParticipant,
+    };
+  });
 }
 
 function* validateSettlementReport(): any {
@@ -491,6 +489,24 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
     // but (1) and (5) reduce the switch's exposure to unfunded transfers and (3) and (6) increase the
     // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
     // processing in this order means we're least likely to leave the switch in a risky state.
+
+    const participantsResult = yield call(apis.participants.read, {});
+    const participants: LedgerParticipant[] = participantsResult.data;
+    const accountParticipantMap: Map<LedgerAccount['id'], LedgerParticipant> = new Map(
+      participants
+        .filter((p: LedgerParticipant) => p.name !== 'Hub' && p.name !== 'hub')
+        .flatMap((p: LedgerParticipant) => p.accounts.map(({ id }) => [id, p])),
+    );
+
+    // Ensure we have participant info for every account in our settlement. This ensures the
+    // result of accountParticipantsMap.get will not be undefined for any of our accounts. It
+    // lets us safely use accountParticipantsMap.get without checking the result.
+    assert(
+      settlement.participants
+        .flatMap((p: SettlementParticipant) => p.accounts)
+        .every((a: SettlementParticipantAccount) => accountParticipantMap.has(a.id)),
+      'Expected every account id present in settlement to be returned by GET /participants',
+    );
 
     switch (settlement.state) {
       case SettlementStatus.PendingSettlement: {
@@ -579,15 +595,74 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           }),
         );
 
-        // TODO: there will be an error as we transition to the next stage if not every account is
-        // handled by the adjustments. This is somewhat acceptable, because the user will have been
-        // warned that this could happen. We could prevent an error and simply issue the user with
-        // a notice. We could detect whether the state has changed by collecting the results of all
-        // the above settlement participant account state changes, and if any of them have been
-        // returned with `result.data.state` in the next state (PS_TRANSFERS_COMMITTED) at the time
-        // of writing, then we can continue. Else we should display the notice to the user.
-        // could be easily transmitted as a `FinalizeSettlementAssertionError`, though it isn't
-        // really an error..
+        const newSettlement: { status: number; data: Omit<Settlement, 'totalValue'> } = yield call(
+          apis.settlement.read,
+          {
+            settlementId: settlement.id,
+          },
+        );
+        assert.strictEqual(newSettlement.status, 200, `Failed to retrieve settlement state`);
+
+        const unprocessedStates: SettlementStatus[] = [
+          SettlementStatus.PendingSettlement,
+          SettlementStatus.PsTransfersRecorded,
+          SettlementStatus.PsTransfersReserved,
+        ];
+        const requests = newSettlement.data.participants.flatMap((p) =>
+          p.accounts
+            .filter((a) => unprocessedStates.includes(a.state))
+            .filter((a) => a.netSettlementAmount.amount === 0)
+            .map((a: SettlementParticipantAccount) => ({
+              request: {
+                settlementId: settlement.id,
+                participantId: p.id,
+                accountId: a.id,
+                body: {
+                  state: SettlementStatus.Settled,
+                  reason: `Business operations portal settlement ${settlement.id} finalization report processing`,
+                },
+              },
+              account: a,
+            })),
+        );
+        const accountSettlementResults: { status: number; data: any }[] = yield all(
+          requests.map((r) => call(apis.settlementParticipantAccount.update, r.request)),
+        );
+        const requestResultZip = accountSettlementResults.map((res, i) => ({
+          req: requests[i],
+          res,
+        }));
+        const accountSettlementErrors = requestResultZip
+          .filter(({ res }) => res.status !== 200)
+          .map(({ req, res }) => {
+            return {
+              participant: <LedgerParticipant>accountParticipantMap.get(req.account.id),
+              apiResponse: res.data.errorInformation,
+              account: req.account,
+            };
+          });
+        assert.strictEqual(
+          accountSettlementErrors.length,
+          0,
+          new FinalizeSettlementAssertionError({
+            type: FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED,
+            value: accountSettlementErrors,
+          }),
+        );
+
+        // These are accounts that are in an "unprocessed" state, i.e. their state is before
+        // PS_TRANSFERS_COMMITTED and they have a non-zero net settlement amount.
+        const unprocessableAccounts = newSettlement.data.participants.flatMap((p) =>
+          p.accounts
+            .filter((a) => unprocessedStates.includes(a.state))
+            .filter((a) => a.netSettlementAmount.amount !== 0),
+        );
+
+        if (unprocessableAccounts.length > 0) {
+          // TODO: need to tell the user something
+          yield put(setSettlementFinalizingInProgress(false));
+          return;
+        }
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
@@ -604,26 +679,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           }),
         );
 
-        // TODO: we get this data above in collectFinalizeData, use that instead of re-retrieving
-        // here.
-        const participantsResult = yield call(apis.participants.read, {});
-        const participants: LedgerParticipant[] = participantsResult.data;
-        const accountParticipantMap: Map<LedgerAccount['id'], LedgerParticipant> = new Map(
-          participants
-            .filter((p: LedgerParticipant) => p.name !== 'Hub' && p.name !== 'hub')
-            .flatMap((p: LedgerParticipant) => p.accounts.map(({ id }) => [id, p])),
-        );
-
-        // Ensure we have participant info for every account in our settlement. This ensures the
-        // result of accountParticipantsMap.get will not be undefined for any of our accounts. It
-        // lets us safely use accountParticipantsMap.get without checking the result.
-        assert(
-          settlement.participants
-            .flatMap((p: SettlementParticipant) => p.accounts)
-            .every((a: SettlementParticipantAccount) => accountParticipantMap.has(a.id)),
-          'Expected every account id present in settlement to be returned by GET /participants',
-        );
-
         const requests = settlement.participants.flatMap((p: SettlementParticipant) =>
           p.accounts
             .filter((a: SettlementParticipantAccount) => a.state !== SettlementStatus.Settled)
@@ -634,7 +689,7 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
                 accountId: a.id,
                 body: {
                   state: SettlementStatus.Settled,
-                  reason: 'Business operations portal request',
+                  reason: `Business operations portal settlement ${settlement.id} finalization report processing`,
                 },
               },
               account: a,
