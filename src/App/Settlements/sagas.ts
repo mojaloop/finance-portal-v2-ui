@@ -436,18 +436,6 @@ function buildAdjustments(
 function* validateSettlementReport(): any {
   // TODO: timeout
   const [settlement, report] = yield all([select(getFinalizingSettlement), select(getSettlementReport)]);
-  // Process in this order:
-  // 0. ensure all settlement participant accounts are in PS_TRANSFERS_RESERVED
-  // 1. apply the new debit NDCs
-  // 2. process the debit funds out, reducing the debtors liquidity account balances
-  // 3. process the credit funds in, increasing the creditors liquidity account balances
-  // 4. progress the settlement state to PS_TRANSFERS_COMMITTED, this will modify the creditors
-  //    positions by the corresponding net settlement amounts
-  // 5. apply the new credit NDCs
-  // Because (2) and (4) do not have any effect on the ability of a participant to make transfers
-  // but (1) and (5) reduce the switch's exposure to unfunded transfers and (3) and (6) increase the
-  // switch's exposure to unfunded transfers, if a partial failure of this process occurs,
-  // processing in this order means we're least likely to leave the switch in a risky state.
 
   // TODO: much of this data would be useful throughout the portal, perhaps hoist it up and
   // make it available everywhere. This might also mean we can validate the report more when we
