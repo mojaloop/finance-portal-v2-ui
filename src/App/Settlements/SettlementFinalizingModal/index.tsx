@@ -133,7 +133,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     SettlementStatus.Settled,
   ];
 
-  function computeStateCharacter(displayState: SettlementStatus, currentState: SettlementStatus) {
+  function computeStateCharacter(displayState: SettlementStatus, currentState: SettlementStatus, animating: boolean) {
     const done = (
       <span role="img" aria-label="completed">
         ✅
@@ -149,11 +149,11 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     const currentStatePosition = orderedStates.indexOf(currentState);
     const displayStatePosition = orderedStates.indexOf(displayState);
 
-    if (currentStatePosition > displayStatePosition) {
+    if (currentStatePosition >= displayStatePosition) {
       return done;
     }
 
-    if (currentStatePosition === displayStatePosition) {
+    if (currentStatePosition + 1 === displayStatePosition && animating) {
       return inProgress;
     }
 
@@ -287,7 +287,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         <tbody>
           {orderedStates.map((s) => (
             <tr key={s}>
-              <td>{computeStateCharacter(s, finalizingSettlement.state)}</td>
+              <td>{computeStateCharacter(s, finalizingSettlement.state, settlementFinalizingInProgress)}</td>
               <td>{s}</td>
             </tr>
           ))}
