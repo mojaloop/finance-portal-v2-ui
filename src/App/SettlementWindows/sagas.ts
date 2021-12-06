@@ -78,8 +78,12 @@ function* fetchSettlementWindows() {
         assert(resp.status >= 200 && resp.status < 300, `Failed to retrieve settlement window data`);
         return resp.data;
       })
-      .flat();
-    yield put(setSettlementWindows(windows));
+      .flat()
+      .reduce(
+        (map: Map<number, SettlementWindow>, win: SettlementWindow) => map.set(win.settlementWindowId, win),
+        new Map<number, SettlementWindow>(),
+      );
+    yield put(setSettlementWindows([...windows.values()]));
   } catch (e) {
     console.error(e);
     yield put(setSettlementWindowsError(e.message));

@@ -24,7 +24,7 @@ export const REQUEST_CLOSE_SETTLEMENT_WINDOW = 'Settlement Windows / Request Clo
 export const SET_CLOSE_SETTLEMENT_WINDOW_FINISHED = 'Settlement Windows / Set Close Settlement Window Finished';
 
 export interface SettlementWindow {
-  settlementWindowId: string;
+  settlementWindowId: number;
   state: SettlementWindowStatus;
   createdDate: string;
   changedDate: string;
