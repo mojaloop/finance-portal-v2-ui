@@ -82,233 +82,231 @@ function* processAdjustments({
   adjustNdc: { increases: boolean; decreases: boolean };
   adjustLiquidityAccountBalance: boolean;
 }) {
-  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = yield all(
-    adjustments.map((adjustment) => {
-      return call(function* processAdjustment() {
-        // TODO: we need state order here and in the display later. It might pay to make
-        // SettlementStatus a union type. Like
-        //   type SettlementStatus = { state: 'ABORTED', order: 0 } | { state: 'PENDING_SETTLEMENT', order: 1 } | ...etc.
-        const stateOrder = [
-          SettlementStatus.Aborted,
-          SettlementStatus.PendingSettlement,
-          SettlementStatus.PsTransfersRecorded,
-          SettlementStatus.PsTransfersReserved,
-          SettlementStatus.PsTransfersCommitted,
-          SettlementStatus.Settling,
-          SettlementStatus.Settled,
-        ];
-        const currentState = adjustment.settlementParticipantAccount.state;
-        const statePosition = stateOrder.indexOf(currentState);
-        const newStatePosition = stateOrder.indexOf(newState);
-        assert(
-          statePosition !== -1 && newStatePosition !== -1,
-          `Runtime error determining relative order of settlement participant account states ${newState}, ${currentState}`,
-        );
-        // If the settlement account state is already past the target state, then we'll do nothing
-        // and exit here, returning null;
-        if (statePosition >= newStatePosition) {
-          return 'OK';
-        }
-        if (
-          (adjustNdc.increases && adjustment.currentLimit.value < adjustment.settlementBankBalance) ||
-          (adjustNdc.decreases && adjustment.currentLimit.value > adjustment.settlementBankBalance)
-        ) {
-          const request = {
-            participantName: adjustment.participant.name,
-            body: {
-              currency: adjustment.positionAccount.currency,
-              limit: {
-                ...adjustment.currentLimit,
-                value: adjustment.settlementBankBalance,
-              },
-            },
-          };
-          const ndcResult: ApiResponse = yield call(apis.participantLimits.update, request);
-          if (ndcResult.status !== 200) {
-            return {
-              type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
-              value: {
-                adjustment,
-                error: ndcResult.data,
-                request,
-              },
-            };
-          }
-        }
-
-        const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
-        // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
-        // just skip the remaining steps.
-        if (adjustment.amount === 0 || !adjustLiquidityAccountBalance) {
-          // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
-          // Set the settlement participant account to the new state
-          const request = {
-            settlementId: settlement.id,
-            participantId: adjustment.settlementParticipant.id,
-            accountId: adjustment.settlementParticipantAccount.id,
-            body: {
-              state: newState,
-              reason: description,
-            },
-          };
-          const spaResult = yield call(apis.settlementParticipantAccount.update, request);
-          if (spaResult.status !== 200) {
-            return {
-              type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
-              value: {
-                adjustment,
-                error: spaResult.data,
-                request,
-              },
-            };
-          }
-          return 'OK';
-        }
-
-        if (adjustment.amount > 0) {
-          // Make the call to process funds out, then poll the balance until it's reduced
-          const request = {
-            participantName: adjustment.participant.name,
-            accountId: adjustment.settlementAccount.id,
-            body: {
-              externalReference: description,
-              action: 'recordFundsIn',
-              reason: description,
-              amount: {
-                amount: Math.abs(adjustment.amount),
-                // TODO: I think the transfer fails if currency is missing, but it is advertised as
-                // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
-                currency: adjustment.settlementAccount.currency,
-              },
-              transferId: uuidv4(),
-            },
-          };
-          const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, request);
-          if (fundsInResult.status !== 202) {
-            return {
-              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
-              value: {
-                adjustment,
-                error: fundsInResult.data,
-              },
-            };
-          }
-        } else {
-          // Make the call to process funds out, then poll the balance until it's reduced
-          const transferId = uuidv4();
-          const fundsOutPrepareReserveRequest = {
-            participantName: adjustment.participant.name,
-            accountId: adjustment.settlementAccount.id,
-            body: {
-              externalReference: description,
-              action: 'recordFundsOutPrepareReserve',
-              reason: description,
-              amount: {
-                amount: Math.abs(adjustment.amount),
-                currency: adjustment.settlementAccount.currency,
-              },
-              transferId,
-            },
-          };
-          const fundsOutPrepareReserveResult: ApiResponse = yield call(
-            apis.participantAccount.create,
-            fundsOutPrepareReserveRequest,
-          );
-          if (fundsOutPrepareReserveResult.status !== 202) {
-            return {
-              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
-              value: {
-                adjustment,
-                error: fundsOutPrepareReserveResult.data,
-                request: fundsOutPrepareReserveRequest,
-              },
-            };
-          }
-          const fundsOutCommitRequest = {
-            participantName: adjustment.participant.name,
-            accountId: adjustment.settlementAccount.id,
-            transferId,
-            body: {
-              action: 'recordFundsOutCommit',
-              reason: description,
-            },
-          };
-          const fundsOutCommitResult: ApiResponse = yield call(
-            apis.participantAccountTransfer.update,
-            fundsOutCommitRequest,
-          );
-          if (fundsOutCommitResult.status !== 202) {
-            return {
-              type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
-              value: {
-                adjustment,
-                error: fundsOutCommitResult.data,
-                request: fundsOutCommitRequest,
-              },
-            };
-          }
-        }
-
-        // Poll for a while to confirm the new balance
-        for (let i = 0; i < 5; i++) {
-          const SECONDS = 1000;
-          yield delay(2 * SECONDS);
-          const newBalanceResult: ApiResponse = yield call(apis.participantAccounts.read, {
-            participantName: adjustment.participant.name,
-            accountId: adjustment.settlementAccount.id,
-          });
-
-          // If the call fails, we'll just try again- so don't handle a failure status code
-          const newBalance = newBalanceResult?.data?.find(
-            (acc: AccountWithPosition) => acc.id === adjustment.settlementAccount.id,
-          )?.value;
-
-          if (newBalanceResult.status === 200 && newBalance && newBalance !== adjustment.settlementAccount.value) {
-            // We use "negative" newBalance because the switch returns a negative value for credit
-            // balances. The switch doesn't have a concept of debit balances for settlement
-            // accounts.
-            if (-newBalance !== adjustment.settlementBankBalance) {
-              return {
-                type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
-                value: {
-                  adjustment,
-                },
-              };
-            }
-            const request = {
-              settlementId: settlement.id,
-              participantId: adjustment.settlementParticipant.id,
-              accountId: adjustment.settlementParticipantAccount.id,
-              body: {
-                state: newState,
-                reason: description,
-              },
-            };
-            // Set the settlement participant account to the new state
-            const spaResult = yield call(apis.settlementParticipantAccount.update, request);
-            if (spaResult.status !== 200) {
-              return {
-                type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
-                value: {
-                  adjustment,
-                  error: spaResult.data,
-                  request,
-                },
-              };
-            }
-
-            return 'OK';
-          }
-        }
+  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = [];
+  for (let i = 0; i < adjustments.length; i++) {
+    const adjustment = adjustments[i];
+    // TODO: we need state order here and in the display later. It might pay to make
+    // SettlementStatus a union type. Like
+    //   type SettlementStatus = { state: 'ABORTED', order: 0 } | { state: 'PENDING_SETTLEMENT', order: 1 } | ...etc.
+    const stateOrder = [
+      SettlementStatus.Aborted,
+      SettlementStatus.PendingSettlement,
+      SettlementStatus.PsTransfersRecorded,
+      SettlementStatus.PsTransfersReserved,
+      SettlementStatus.PsTransfersCommitted,
+      SettlementStatus.Settling,
+      SettlementStatus.Settled,
+    ];
+    const currentState = adjustment.settlementParticipantAccount.state;
+    const statePosition = stateOrder.indexOf(currentState);
+    const newStatePosition = stateOrder.indexOf(newState);
+    assert(
+      statePosition !== -1 && newStatePosition !== -1,
+      `Runtime error determining relative order of settlement participant account states ${newState}, ${currentState}`,
+    );
+    // If the settlement account state is already past the target state, then we'll do nothing
+    // and exit here, returning null;
+    if (statePosition >= newStatePosition) {
+      return 'OK';
+    }
+    if (
+      (adjustNdc.increases && adjustment.currentLimit.value < adjustment.settlementBankBalance) ||
+      (adjustNdc.decreases && adjustment.currentLimit.value > adjustment.settlementBankBalance)
+    ) {
+      const request = {
+        participantName: adjustment.participant.name,
+        body: {
+          currency: adjustment.positionAccount.currency,
+          limit: {
+            ...adjustment.currentLimit,
+            value: adjustment.settlementBankBalance,
+          },
+        },
+      };
+      const ndcResult: ApiResponse = yield call(apis.participantLimits.update, request);
+      if (ndcResult.status !== 200) {
         return {
-          type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
           value: {
             adjustment,
+            error: ndcResult.data,
+            request,
           },
         };
+      }
+    }
+
+    const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
+    // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
+    // just skip the remaining steps.
+    if (adjustment.amount === 0 || !adjustLiquidityAccountBalance) {
+      // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
+      // Set the settlement participant account to the new state
+      const request = {
+        settlementId: settlement.id,
+        participantId: adjustment.settlementParticipant.id,
+        accountId: adjustment.settlementParticipantAccount.id,
+        body: {
+          state: newState,
+          reason: description,
+        },
+      };
+      const spaResult = yield call(apis.settlementParticipantAccount.update, request);
+      if (spaResult.status !== 200) {
+        return {
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
+          value: {
+            adjustment,
+            error: spaResult.data,
+            request,
+          },
+        };
+      }
+      return 'OK';
+    }
+
+    if (adjustment.amount > 0) {
+      // Make the call to process funds out, then poll the balance until it's reduced
+      const request = {
+        participantName: adjustment.participant.name,
+        accountId: adjustment.settlementAccount.id,
+        body: {
+          externalReference: description,
+          action: 'recordFundsIn',
+          reason: description,
+          amount: {
+            amount: Math.abs(adjustment.amount),
+            // TODO: I think the transfer fails if currency is missing, but it is advertised as
+            // optional in the spec: https://github.com/mojaloop/central-ledger/blob/f0268fe56c76cc73f254d794ad09eb50569d5b58/src/api/interface/swagger.json#L1428
+            currency: adjustment.settlementAccount.currency,
+          },
+          transferId: uuidv4(),
+        },
+      };
+      const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, request);
+      if (fundsInResult.status !== 202) {
+        return {
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+          value: {
+            adjustment,
+            error: fundsInResult.data,
+          },
+        };
+      }
+    } else {
+      // Make the call to process funds out, then poll the balance until it's reduced
+      const transferId = uuidv4();
+      const fundsOutPrepareReserveRequest = {
+        participantName: adjustment.participant.name,
+        accountId: adjustment.settlementAccount.id,
+        body: {
+          externalReference: description,
+          action: 'recordFundsOutPrepareReserve',
+          reason: description,
+          amount: {
+            amount: Math.abs(adjustment.amount),
+            currency: adjustment.settlementAccount.currency,
+          },
+          transferId,
+        },
+      };
+      const fundsOutPrepareReserveResult: ApiResponse = yield call(
+        apis.participantAccount.create,
+        fundsOutPrepareReserveRequest,
+      );
+      if (fundsOutPrepareReserveResult.status !== 202) {
+        return {
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+          value: {
+            adjustment,
+            error: fundsOutPrepareReserveResult.data,
+            request: fundsOutPrepareReserveRequest,
+          },
+        };
+      }
+      const fundsOutCommitRequest = {
+        participantName: adjustment.participant.name,
+        accountId: adjustment.settlementAccount.id,
+        transferId,
+        body: {
+          action: 'recordFundsOutCommit',
+          reason: description,
+        },
+      };
+      const fundsOutCommitResult: ApiResponse = yield call(
+        apis.participantAccountTransfer.update,
+        fundsOutCommitRequest,
+      );
+      if (fundsOutCommitResult.status !== 202) {
+        return {
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
+          value: {
+            adjustment,
+            error: fundsOutCommitResult.data,
+            request: fundsOutCommitRequest,
+          },
+        };
+      }
+    }
+
+    // Poll for a while to confirm the new balance
+    for (let j = 0; j < 5; j++) {
+      const SECONDS = 1000;
+      yield delay(2 * SECONDS);
+      const newBalanceResult: ApiResponse = yield call(apis.participantAccounts.read, {
+        participantName: adjustment.participant.name,
+        accountId: adjustment.settlementAccount.id,
       });
-    }),
-  );
+
+      // If the call fails, we'll just try again- so don't handle a failure status code
+      const newBalance = newBalanceResult?.data?.find(
+        (acc: AccountWithPosition) => acc.id === adjustment.settlementAccount.id,
+      )?.value;
+
+      if (newBalanceResult.status === 200 && newBalance && newBalance !== adjustment.settlementAccount.value) {
+        // We use "negative" newBalance because the switch returns a negative value for credit
+        // balances. The switch doesn't have a concept of debit balances for settlement
+        // accounts.
+        if (-newBalance !== adjustment.settlementBankBalance) {
+          return {
+            type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
+            value: {
+              adjustment,
+            },
+          };
+        }
+        const request = {
+          settlementId: settlement.id,
+          participantId: adjustment.settlementParticipant.id,
+          accountId: adjustment.settlementParticipantAccount.id,
+          body: {
+            state: newState,
+            reason: description,
+          },
+        };
+        // Set the settlement participant account to the new state
+        const spaResult = yield call(apis.settlementParticipantAccount.update, request);
+        if (spaResult.status !== 200) {
+          return {
+            type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
+            value: {
+              adjustment,
+              error: spaResult.data,
+              request,
+            },
+          };
+        }
+
+        return 'OK';
+      }
+    }
+    results.push({
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
+      value: {
+        adjustment,
+      },
+    });
+  }
   return results.filter((res) => res !== 'OK');
 }
 
