@@ -14,6 +14,7 @@ import {
   CLEAR_SETTLEMENT_WINDOWS_FILTER_STATE,
   CLEAR_SETTLEMENT_WINDOWS_FILTERS,
   SettlementWindow,
+  SettlementWindowStatus,
   SettlementStatus,
 } from './types';
 import {
@@ -33,30 +34,52 @@ function* fetchSettlementWindows() {
     const filters = yield select(getSettlementWindowsFilters);
     const params = helpers.buildFiltersParams(filters);
 
-    const response = yield call(apis.settlementWindows.read, {
-      params,
-    });
-    // Because when we call
-    //   GET /v2/settlementWindows?fromDateTime=2021-06-29T23:00:00.000Z&toDateTime=2021-06-30T22:59:59.999Z
-    // and there are no windows, central settlement returns
-    //   400 Bad Request
-    //   {
-    //     "errorInformation": {
-    //       "errorCode": "3100",
-    //       "errorDescription": "Generic validation error - settlementWindow by filters: {fromDateTime:2021-06-29T23:00:00.000Z,toDateTime:2021-06-30T22:59:59.999Z} not found"
-    //     }
-    //   }
-    // We translate this response to an empty array.
-    // Source here:
-    //   https://github.com/mojaloop/central-settlement/blob/45ecfe32d1039870aa9572e23747c24cd6d53c86/src/domain/settlementWindow/index.js#L75
-    if (
-      response.status === 400 &&
-      /Generic validation error.*not found/.test(response.data?.errorInformation?.errorDescription)
-    ) {
-      yield put(setSettlementWindows([]));
-    } else {
-      yield put(setSettlementWindows(response.data));
-    }
+    // prettier-ignore
+    const now = (new Date()).toISOString();
+
+    const windows = (yield all(
+      params.toDateTime > now
+        ? [
+            call(apis.settlementWindows.read, {
+              params,
+            }),
+            call(apis.settlementWindows.read, {
+              params: {
+                state: SettlementWindowStatus.Open,
+              },
+            }),
+          ]
+        : [
+            call(apis.settlementWindows.read, {
+              params,
+            }),
+          ],
+    ))
+      .map((resp: { data: any; status: number }) => {
+        // Because when we call
+        //   GET /v2/settlementWindows?fromDateTime=2021-06-29T23:00:00.000Z&toDateTime=2021-06-30T22:59:59.999Z
+        // and there are no windows, central settlement returns
+        //   400 Bad Request
+        //   {
+        //     "errorInformation": {
+        //       "errorCode": "3100",
+        //       "errorDescription": "Generic validation error - settlementWindow by filters: {fromDateTime:2021-06-29T23:00:00.000Z,toDateTime:2021-06-30T22:59:59.999Z} not found"
+        //     }
+        //   }
+        // We translate this response to an empty array.
+        // Source here:
+        //   https://github.com/mojaloop/central-settlement/blob/45ecfe32d1039870aa9572e23747c24cd6d53c86/src/domain/settlementWindow/index.js#L75
+        if (
+          resp.status === 400 &&
+          /Generic validation error.*not found/.test(resp.data?.errorInformation?.errorDescription)
+        ) {
+          return [];
+        }
+        assert(resp.status >= 200 && resp.status < 300, `Failed to retrieve settlement window data`);
+        return resp.data;
+      })
+      .flat();
+    yield put(setSettlementWindows(windows));
   } catch (e) {
     console.error(e);
     yield put(setSettlementWindowsError(e.message));
