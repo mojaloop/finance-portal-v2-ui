@@ -145,15 +145,6 @@ test.meta({
   await t.setFilesToUpload(SettlementFinalizeModal.fileInput, [filename]);
   await t.click(SettlementFinalizeModal.processButton);
 
-  console.log('settlement before:', JSON.stringify(
-    await settlementApi.getSettlement(
-      settlementsBasePath,
-      settlement.id,
-    ),
-    null,
-    2,
-  ));
-
   // This can take some time, use a high timeout
   await t.wait(30000);
   await t.click(Selector(SettlementFinalizeModal.closeButton, { timeout: 30000 }));
@@ -161,15 +152,6 @@ test.meta({
   const rowsAfter = await SettlementsPage.getResultRows();
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
-  ));
-
-  console.log('settlement after:', JSON.stringify(
-    await settlementApi.getSettlement(
-      settlementsBasePath,
-      settlement.id,
-    ),
-    null,
-    2,
   ));
 
   const state = await settlementRowAfter.state.innerText;
