@@ -1,12 +1,6 @@
 name: Integration test
 
 on:
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
-        required: false
-        default: false
   push:
     branches:
     - '**'
@@ -125,6 +119,6 @@ jobs:
         kubectl get secrets -o json | jq -r '.items[] | { name: .metadata.name, data: .data | map_values(@base64d) }'
 
     - name: Setup tmate session
-      if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+      if: ${{ failure() }}
       uses: mxschmitt/action-tmate@v3
       timeout-minutes: 10
