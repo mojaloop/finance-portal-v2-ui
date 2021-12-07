@@ -38,7 +38,7 @@ function* fetchSettlementWindows() {
     const now = (new Date()).toISOString();
 
     const windows = (yield all(
-      params.toDateTime > now
+      params.toDateTime > now && params.state === 'OPEN'
         ? [
             call(apis.settlementWindows.read, {
               params,
