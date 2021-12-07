@@ -140,5 +140,12 @@ export const SettlementsPage = {
       await t.click(this.state);
       await t.click(this.state.findReact('Option').withProps({ value: filters.state }));
     }
+
+    // There's a built-in 500ms delay between selecting a different filter value and the query
+    // occurring, so we wait 1000ms here. The author of this comment did not write the filter
+    // logic, and is therefore somewhat reluctant to modify it; although future readers might
+    // consider what function this 500ms delay performs (i.e. whether it's long enough to debounce
+    // filter changes).
+    await t.wait(1000);
   },
 };
