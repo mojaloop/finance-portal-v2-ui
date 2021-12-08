@@ -276,7 +276,10 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
         size="s"
         label="Process"
         disabled={
-          settlementReport === null || settlementFinalizingInProgress || settlementReportValidationErrors === null
+          settlementReport === null ||
+          settlementFinalizingInProgress ||
+          settlementReportValidationErrors === null ||
+          finalizingSettlement.state === 'SETTLED'
         }
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
