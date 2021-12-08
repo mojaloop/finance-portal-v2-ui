@@ -6,6 +6,7 @@ import {
   AccountWithPosition,
   CurrencyData,
   DateRanges,
+  FspId,
   FspName,
   LedgerAccount,
   LedgerAccountType,
@@ -317,6 +318,21 @@ export interface SettlementFinalizeData {
 }
 
 export { buildUpdateSettlementStateRequest } from '../helpers';
+
+export function extractSwitchIdentifiers(text: string): [FspId, AccountId, FspName] {
+  const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]{1,29})$/g;
+  assert(
+    re.test(text),
+    `Unable to extract participant ID, account ID and participant name from "${text}". Matching regex: ${re}`,
+  );
+  const [idText, accountIdText, name] = text.split(' ');
+  const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
+  assert(
+    !Number.isNaN(id) && !Number.isNaN(positionAccountId) && name,
+    `Unable to extract participant ID, account ID and participant name from "${text}"`,
+  );
+  return [id, positionAccountId, name];
+}
 
 const isNumericTextRe =
   /^(\((?<parenthesized>(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?)\)|(?<positive>(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?)|(?<negative>-(([0-9]{1,3}(,[0-9]{3})*)|([0-9]+))(\.[0-9]+)?))$/g;
@@ -943,17 +959,15 @@ export function deserializeReport(buf: ArrayBuffer): PromiseLike<SettlementRepor
         // TODO: check valid FSP name. It *should* be ASCII; because it has to go into an HTTP
         // header verbatim, and HTTP headers are restricted to printable ASCII. However, the ML
         // spec might differently, or further restrict it.
-        const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]{1,29})$/g;
-        assert(
-          re.test(switchIdentifiers),
-          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${switchIdentifiers}]. Matching regex: ${re}`,
-        );
-        const [idText, accountIdText, name] = switchIdentifiers.split(' ');
-        const [id, positionAccountId] = [Number(idText), Number(accountIdText)];
-        assert(
-          !Number.isNaN(id) && !Number.isNaN(positionAccountId) && name,
-          `Unable to extract participant ID, account ID and participant name from ${PARTICIPANT_INFO_COL}${r.number}. Cell contents: [${switchIdentifiers}]`,
-        );
+        const [id, positionAccountId, name] = (() => {
+          try {
+            return extractSwitchIdentifiers(switchIdentifiers);
+          } catch (err) {
+            throw new Error(
+              `Error extracting switch identifiers from cell ${PARTICIPANT_INFO_COL}${r.number}: ${err.message}`,
+            );
+          }
+        })();
 
         const balanceText = r.getCell(BALANCE_COL).text;
         const balance = extractReportQuantity(balanceText);

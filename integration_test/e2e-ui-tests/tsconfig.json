@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "downlevelIteration": true,
     "resolveJsonModule": true,
     "outDir": "dist",
     "noImplicitAny": true,

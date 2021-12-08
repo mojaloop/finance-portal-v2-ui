@@ -220,7 +220,7 @@ test.meta({
     1,
     'Expected our settlement windows to be in exactly one settlement'
   );
-  const expectedState: protocol.SettlementState = 'PS_TRANSFERS_RESERVED';
+  const expectedState: types.SettlementStatus = types.SettlementStatus.PsTransfersReserved;
   await t.expect(settlements[0].state).eql(
     expectedState,
     `Expect the new settlement to have state ${expectedState}`,

@@ -6,10 +6,12 @@ import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
 import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
-import { settlement as settlementApi, reporting as reportingApi } from 'mojaloop-ts';
+import { ledger as ledgerApi, settlement as settlementApi, reporting as reportingApi, types } from 'mojaloop-ts';
 import ExcelJS from 'exceljs';
+import { extractSwitchIdentifiers } from '../../../../src/App/Settlements/helpers';
 
-const { voodooEndpoint, reportBasePath, settlementsBasePath } = config;
+const { voodooEndpoint, reportBasePath, settlementsBasePath, ledgerBasePath } = config;
+const CURRENCY: types.Currency = 'MMK';
 
 fixture `Settlements Feature`
   .page`${config.financePortalEndpoint}`
@@ -20,11 +22,11 @@ fixture `Settlements Feature`
     const hubAccounts: protocol.HubAccount[] = [
       {
         type: "HUB_MULTILATERAL_SETTLEMENT",
-        currency: "MMK",
+        currency: CURRENCY,
       },
       {
         type: "HUB_RECONCILIATION",
-        currency: "MMK",
+        currency: CURRENCY,
       },
     ];
     await cli.createHubAccounts(hubAccounts);
@@ -32,8 +34,8 @@ fixture `Settlements Feature`
   })
   .beforeEach(async (t) => {
     const accounts: protocol.AccountInitialization[] = [
-      { currency: 'MMK', initial_position: '0', ndc: 10000 },
-      { currency: 'MMK', initial_position: '0', ndc: 10000 },
+      { currency: CURRENCY, initial_position: '0', ndc: 10000 },
+      { currency: CURRENCY, initial_position: '0', ndc: 10000 },
     ];
     const participants = await t.fixtureCtx.cli.createParticipants(accounts);
 
@@ -53,7 +55,8 @@ test.meta({
   description:
     `Close two settlement windows. Add them to a settlement. Settle the settlement.`,
 })('Settle settlement containing two closed windows', async (t) => {
-  const { cli, participants } = t.fixtureCtx;
+  type Context = { cli: VoodooClient; participants: protocol.ClientParticipant[] };
+  const { cli, participants }  = t.fixtureCtx as Context;
   // Run a transfer to ensure the settlement window can be closed
   const transfers1: protocol.TransferMessage[] = [{
     msg_sender: participants[1].name,
@@ -63,7 +66,8 @@ test.meta({
     transfer_id: uuidv4(),
   }];
   await cli.completeTransfers(transfers1);
-  const openWindows1 = await cli.getSettlementWindows({ state: "OPEN" });
+  const nullWindowQueryParams = { currency: null, participantId: null, state: null, fromDateTime: null, toDateTime: null };
+  const openWindows1 = await cli.getSettlementWindows({ ...nullWindowQueryParams, state: "OPEN" });
   await t.expect(openWindows1.length).eql(1, 'Expected only a single open window');
   await settlementApi.closeSettlementWindow(
     settlementsBasePath,
@@ -80,7 +84,7 @@ test.meta({
     transfer_id: uuidv4(),
   }];
   await cli.completeTransfers(transfers2);
-  const openWindows2 = await cli.getSettlementWindows({ state: "OPEN" });
+  const openWindows2 = await cli.getSettlementWindows({ ...nullWindowQueryParams, state: "OPEN" });
   await t.expect(openWindows2.length).eql(1, 'Expected only a single open window');
   await settlementApi.closeSettlementWindow(
     settlementsBasePath,
@@ -116,35 +120,57 @@ test.meta({
   while (ws.getCell(`A${endOfData}`).text !== '') {
     endOfData += 1;
   }
-  const balanceInfo = ws.getRows(START_OF_DATA, endOfData - START_OF_DATA)?.map((row) => ({
-    balance: Math.trunc(Math.random() * 5000),
-    participantInfo: row.getCell(PARTICIPANT_INFO_COL),
-    rowNum: row.number,
-    row,
-  }));
-  await t.expect(balanceInfo).notEql(undefined, 'Expect some data rows in the settlement initiation report');
+  const participantBalances = new Map(
+    participants.map((p) => [p.name, Math.trunc(Math.random() * 5000)]),
+  );
+  const balanceInfo = ws.getRows(START_OF_DATA, endOfData - START_OF_DATA)?.map((row) => {
+    const participantInfo = row.getCell(PARTICIPANT_INFO_COL);
+    const [,,name] = extractSwitchIdentifiers(participantInfo.text);
+    const balance = participantBalances.get(name);
+    return {
+      balance,
+      participantInfo,
+      rowNum: row.number,
+      row,
+    }
+  });
+  await t.expect(balanceInfo).notEql(
+    undefined,
+    'Expect some data rows in the settlement initiation report'
+  );
+  await t.expect(balanceInfo?.filter((inf) => inf.balance !== undefined).length).eql(
+    balanceInfo?.length,
+    'Expect all participants in report to be present in participants generated for this test',
+  );
   balanceInfo?.forEach(({ balance, row }) => {
     row.getCell(BALANCE_COL).value = balance;
   });
   const filename = __dirname + `/settlement-finalization-report-settlement-${settlement.id}.xlsx`;
-  // TODO: delete this; don't leave it lying round on the user's machine. Or, use a temp file. Or
-  // don't? It's not difficult to delete files that aren't version-controlled, and being able to
-  // examine the file afterward could be useful.
   await wb.xlsx.writeFile(filename);
 
   await t.click(SideMenu.settlementsButton);
 
   const rowsBefore = await SettlementsPage.getResultRows();
   const settlementRowBefore = await Promise.any(rowsBefore.map(
-    (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
+    (r) => r.id.innerText.then(
+      id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject(),
+    ),
   ));
   await t.expect(settlementRowBefore.state.innerText).eql('Pending Settlement');
   await t.click(settlementRowBefore.finalizeButton);
 
   await t.setFilesToUpload(SettlementFinalizingModal.fileInput, [filename]);
+  if (!await SettlementFinalizingModal.setLiquidityAccountBalanceCheckbox.checked) {
+    await t.click(SettlementFinalizingModal.setLiquidityAccountBalanceCheckbox);
+  }
+  if (!await SettlementFinalizingModal.increaseNdcCheckbox.checked) {
+    await t.click(SettlementFinalizingModal.increaseNdcCheckbox);
+  }
+  if (!await SettlementFinalizingModal.decreaseNdcCheckbox.checked) {
+    await t.click(SettlementFinalizingModal.decreaseNdcCheckbox);
+  }
   await t.click(SettlementFinalizingModal.validateButton);
-  // The warning dialog will appear, dismiss it
-  // Validation can take some time, use a high timeout
+  // The warning dialog will appear, dismiss it. Validation can take some time, use a high timeout.
   await t.click(Selector(SettlementFinalizationWarningModal.closeButton, { timeout: 60000 }));
   await t.click(SettlementFinalizingModal.processButton);
 
@@ -155,15 +181,44 @@ test.meta({
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
   ));
 
-  const state = await settlementRowAfter.state.innerText;
+  await t.expect(settlementRowAfter.state.innerText).eql('Settled');
 
-  if (state !== 'Settled') {
-    await t.debug();
+  async function getParticipantSettlementAccount(
+    p: protocol.ClientParticipant
+  ): Promise<[types.FspName, types.AccountWithPosition | undefined]> {
+    return ledgerApi.getParticipantAccounts(ledgerBasePath, p.name).then((accs) => [
+      p.name,
+      accs.find(
+        (acc) => acc.ledgerAccountType === 'SETTLEMENT' && acc.currency === p.account.currency
+      ),
+    ]);
   }
-
-  await t.expect(state).eql('Settled');
-
-  // TODO: check financial positions
+  const [limits, accounts] = await Promise.all([
+    ledgerApi.getParticipantsLimits(ledgerBasePath).then((lims) => lims
+      .filter((lim) => lim.currency === CURRENCY && lim.limit.type === 'NET_DEBIT_CAP')
+      .reduce(
+        (map, lim) => map.set(lim.name, lim),
+        new Map<types.FspName, types.ParticipantLimit>(),
+      )
+    ),
+    Promise.all(participants.map(getParticipantSettlementAccount)).then(
+      (accounts) => new Map<types.FspName, types.AccountWithPosition | undefined>(accounts)
+    ),
+  ]);
+  const expectedAccountState = Object.fromEntries(
+    [...participantBalances.entries()].map(
+      ([name, bal]) => [name, { balance: -bal, limit: bal }]
+    ),
+  );
+  const actualAccountState = Object.fromEntries(
+    [...participantBalances.keys()].map(
+      (name) => [name, { balance: accounts.get(name)?.value, limit: limits.get(name)?.limit.value }]
+    ),
+  );
+  await t.expect(actualAccountState).eql(
+    expectedAccountState,
+    'All participant settlement account balances and NDCs should have been set correctly'
+  );
 });
 
 

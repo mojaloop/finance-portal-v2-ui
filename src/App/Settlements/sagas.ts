@@ -70,6 +70,8 @@ class FinalizeSettlementAssertionError extends Error {
   }
 }
 
+// TODO: the processAdjustments function has grown incrementally and could do to be broken apart,
+// or modeled completely differently.
 function* processAdjustments({
   settlement,
   adjustments,
@@ -83,12 +85,24 @@ function* processAdjustments({
   adjustNdc: { increases: boolean; decreases: boolean };
   adjustLiquidityAccountBalance: boolean;
 }) {
+  // TODO:
+  // We ideally wouldn't serialize these requests. Unfortunately, when we simultaneously process
+  // NDC updates for multiple FSPs, sometimes we receive the following error from the central
+  // ledger service:
+  // {
+  //   "errorInformation": {
+  //     "errorCode": "2001",
+  //     "errorDescription": "Internal server error - update `participantLimit` set `isActive` = 0 where `participantLimitId` = 143 - ER_LOCK_DEADLOCK: Deadlock found when trying to get lock; try restarting transaction"
+  //   }
+  // }
+  // This could be reproduced in isolation, e.g. by creating a script to attempt to process
+  // multiple NDC updates in parallel.
+  // One partial resolution to this problem might be to process the NDC updates serially and
+  // perform all other processing concurrently. At the time of writing, modifying the following
+  // (working) code to do so was not considered a priority.
   const results: FinalizeSettlementProcessAdjustmentsError[] = [];
   for (let i = 0; i < adjustments.length; i++) {
     const adjustment = adjustments[i];
-    // TODO: we need state order here and in the display later. It might pay to make
-    // SettlementStatus a union type. Like
-    //   type SettlementStatus = { state: 'ABORTED', order: 0 } | { state: 'PENDING_SETTLEMENT', order: 1 } | ...etc.
     const stateOrder = [
       SettlementStatus.Aborted,
       SettlementStatus.PendingSettlement,
@@ -106,7 +120,7 @@ function* processAdjustments({
       `Runtime error determining relative order of settlement participant account states ${newState}, ${currentState}`,
     );
     // If the settlement account state is already past the target state, then we'll do nothing
-    // and exit here, returning null;
+    // and exit here.
     if (statePosition >= newStatePosition) {
       break;
     }
@@ -140,9 +154,8 @@ function* processAdjustments({
 
     const description = `Business Operations Portal settlement ID ${settlement.id} finalization report processing`;
     // We can't make a transfer of zero amount, so we have nothing to do. In this case, we can
-    // just skip the remaining steps.
+    // update the settlement participant account state and skip the remaining steps.
     if (adjustment.amount === 0 || !adjustLiquidityAccountBalance) {
-      // TODO: this is duplicated from below, is there a tidy way to rearrange the logic here?
       // Set the settlement participant account to the new state
       const request = {
         settlementId: settlement.id,

@@ -30,6 +30,7 @@ export const config = {
   voodooEndpoint: `ws://${ingressHost}:${voodooPort}/voodoo`,
   reportBasePath: `http://${ingressHost}:${ingressPort}/report`,
   settlementsBasePath: `http://${ingressHost}:${ingressPort}/api/settlement`,
+  ledgerBasePath: `http://${ingressHost}:${ingressPort}/api/ledger`,
   credentials: {
     admin: {
       username: users[0].username,
