@@ -463,7 +463,6 @@ function* validateSettlementReport(): any {
   // ingest it.
   const finalizeData: SettlementFinalizeData = yield call(collectSettlementFinalizeData, report, settlement);
 
-  console.log('validating report');
   const errorKinds = [
     SettlementReportValidationKind.AccountIsIncorrectType,
     SettlementReportValidationKind.ExtraAccountsPresentInReport,
@@ -476,20 +475,15 @@ function* validateSettlementReport(): any {
   const reportValidations = validateReport(report, finalizeData, settlement);
   const errors = [...reportValidations.values()].filter((val) => errorKinds.includes(val.kind));
   const warnings = [...reportValidations.values()].filter((val) => !errorKinds.includes(val.kind));
-  console.log('validated report', reportValidations);
   yield put(setSettlementReportValidationErrors(errors));
   yield put(setSettlementReportValidationWarnings(warnings));
 
   const adjustments = buildAdjustments(report, finalizeData);
 
-  console.log('adjustments', adjustments);
-
   const [debits, credits] = adjustments.reduce(
     ([dr, cr], adj) => (adj.amount < 0 ? [[...dr, adj], cr] : [dr, [...cr, adj]]),
     [[], []],
   );
-
-  console.log(debits, credits);
 
   yield put(setSettlementReportValidationInProgress(false));
   yield put(setSettlementAdjustments({ debits: [...debits.values()], credits: [...credits.values()] }));
@@ -499,7 +493,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
   // TODO: timeout
   const settlement = action.payload;
   const { debits, credits } = yield select(getSettlementAdjustments);
-  console.log(debits, credits);
   try {
     // Process in this order:
     // 0. ensure all settlement participant accounts are in PS_TRANSFERS_RESERVED
@@ -576,8 +569,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersReserved: {
-        console.log(SettlementStatus.PsTransfersReserved);
-
         const adjustNdc = {
           increases: yield select(getFinalizeProcessNdcIncreases),
           decreases: yield select(getFinalizeProcessNdcDecreases),
@@ -590,8 +581,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           adjustNdc,
           adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
         });
-
-        console.log('debtorsErrors', debtorsErrors);
 
         assert(
           debtorsErrors.length === 0,
@@ -608,8 +597,6 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
           adjustNdc,
           adjustLiquidityAccountBalance: yield select(getFinalizeProcessFundsInOut),
         });
-
-        console.log('creditorsErrors', creditorsErrors);
 
         assert(
           creditorsErrors.length === 0,
@@ -690,12 +677,10 @@ function* finalizeSettlement(action: PayloadAction<Settlement>) {
       }
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.PsTransfersCommitted:
-        console.log(SettlementStatus.PsTransfersCommitted);
       // We could transition to PS_TRANSFERS_COMMITTED, but then we'd immediately transition to
       // SETTLING anyway, so we do nothing here.
       // eslint-ignore-next-line: no-fallthrough
       case SettlementStatus.Settling: {
-        console.log(SettlementStatus.Settling);
         yield put(
           setFinalizingSettlement({
             ...settlement,

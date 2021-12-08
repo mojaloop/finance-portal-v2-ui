@@ -28,7 +28,8 @@ export const SET_SETTLEMENT_ADJUSTMENTS = 'Settlements / Finalize Report / Set A
 export const SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS = 'Settlements / Finalize Report / Set Validation Warnings';
 export const SET_SETTLEMENT_REPORT_VALIDATION_ERRORS = 'Settlements / Finalize Report / Set Validation Errors';
 export const VALIDATE_SETTLEMENT_REPORT = 'Settlements / Finalize Report / Validate Report';
-export const SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS = 'Settlements / Finalize Report / Validate Report In Progress';
+export const SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS =
+  'Settlements / Finalize Report / Validate Report In Progress';
 
 export const SELECT_SETTLEMENT_DETAIL = 'Settlements / Select Settlement Detail';
 
