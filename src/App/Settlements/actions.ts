@@ -24,6 +24,7 @@ import {
   SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
   SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS,
   VALIDATE_SETTLEMENT_REPORT,
+  SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS,
   FINALIZING_SETTLEMENT,
   FinalizeSettlementError,
   Settlement,
@@ -68,3 +69,6 @@ export const setSettlementReportValidationErrors = createAction<null | Settlemen
   SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
 );
 export const validateSettlementReport = createAction(VALIDATE_SETTLEMENT_REPORT);
+export const setSettlementReportValidationInProgress = createAction<boolean>(
+  SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS,
+);

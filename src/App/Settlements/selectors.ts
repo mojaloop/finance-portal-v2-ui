@@ -23,3 +23,5 @@ export const getSettlementReportValidationWarnings = (state: State) =>
   state.subApp.settlements.settlementReportValidationWarnings;
 export const getSettlementReportValidationErrors = (state: State) =>
   state.subApp.settlements.settlementReportValidationErrors;
+export const getSettlementReportValidationInProgress = (state: State) =>
+  state.subApp.settlements.settlementReportValidationInProgress;

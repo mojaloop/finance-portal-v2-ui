@@ -32,6 +32,7 @@ function displaySettlementReportValidation(v: SettlementReportValidation) {
 const SettlementFinalizingModal: FC<ConnectorProps> = ({
   settlementReport,
   settlementFinalizingInProgress,
+  settlementReportValidationInProgress,
   finalizingSettlement,
   finalizingSettlementError,
   onModalCloseClick,
@@ -254,6 +255,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       </label>
       <br />
       <Button
+        pending={settlementReportValidationInProgress}
         kind="secondary"
         noFill
         size="s"
@@ -268,6 +270,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       />
       <br />
       <Button
+        pending={settlementFinalizingInProgress}
         kind="secondary"
         noFill
         size="s"

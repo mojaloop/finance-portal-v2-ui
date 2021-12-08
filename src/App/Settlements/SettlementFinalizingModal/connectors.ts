@@ -15,6 +15,7 @@ const stateProps = (state: State) => ({
   settlementFinalizingInProgress: selectors.getSettlementFinalizingInProgress(state),
   settlementReportValidationWarnings: selectors.getSettlementReportValidationWarnings(state),
   settlementReportValidationErrors: selectors.getSettlementReportValidationErrors(state),
+  settlementReportValidationInProgress: selectors.getSettlementReportValidationInProgress(state),
 });
 
 const dispatchProps = (dispatch: Dispatch) => ({
@@ -36,7 +37,10 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.hideFinalizeSettlementModal());
     dispatch(actions.requestSettlements());
   },
-  onValidateButtonClick: () => dispatch(actions.validateSettlementReport()),
+  onValidateButtonClick: () => {
+    dispatch(actions.validateSettlementReport());
+    dispatch(actions.setSettlementReportValidationInProgress(true));
+  },
   onProcessButtonClick: (settlement: Settlement) => {
     dispatch(actions.setSettlementFinalizingInProgress(true));
     dispatch(actions.finalizeSettlement(settlement));

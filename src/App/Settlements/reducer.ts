@@ -34,6 +34,7 @@ import {
   setSettlementAdjustments,
   setSettlementReportValidationErrors,
   setSettlementReportValidationWarnings,
+  setSettlementReportValidationInProgress,
 } from './actions';
 
 const initialState: SettlementsState = {
@@ -62,6 +63,7 @@ const initialState: SettlementsState = {
   settlementAdjustments: null,
   settlementReportValidationErrors: null,
   settlementReportValidationWarnings: null,
+  settlementReportValidationInProgress: false,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -211,5 +213,9 @@ export default createReducer(initialState, (builder) =>
         ...state,
         settlementReportValidationWarnings: action.payload,
       }),
-    ),
+    )
+    .addCase(setSettlementReportValidationInProgress, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      settlementReportValidationInProgress: action.payload,
+    })),
 );

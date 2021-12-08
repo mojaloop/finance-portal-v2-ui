@@ -35,6 +35,7 @@ import {
   setSettlementFinalizingInProgress,
   setFinalizingSettlement,
   setSettlementAdjustments,
+  setSettlementReportValidationInProgress,
   setSettlements,
   setSettlementReportValidationErrors,
   setSettlementReportValidationWarnings,
@@ -477,6 +478,7 @@ function* validateSettlementReport(): any {
 
   console.log(debits, credits);
 
+  yield put(setSettlementReportValidationInProgress(false));
   yield put(setSettlementAdjustments({ debits: [...debits.values()], credits: [...credits.values()] }));
 }
 
