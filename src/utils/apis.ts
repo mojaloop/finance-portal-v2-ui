@@ -4,7 +4,7 @@ import { ApiConfig } from './api/types';
 
 // Note that prefixes are used to conceptually separate backend services even though they may
 // be served by the same ingress/service.
-const services = {
+export const services = {
   authService: {
     withCredentials: true,
     baseUrl: '/api/auth',

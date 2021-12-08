@@ -1,10 +1,12 @@
 import { strict as assert } from 'assert';
 import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, select, takeLatest, takeEvery } from 'redux-saga/effects';
+import retry from 'async-retry';
+import axios from 'axios';
 import { getDfsps } from '../DFSPs/selectors';
 import { DFSP } from '../DFSPs/types';
 import { Currency } from '../types';
-import apis from '../../utils/apis';
+import apis, { services } from '../../utils/apis';
 import {
   REQUEST_FINANCIAL_POSITIONS,
   SUBMIT_FINANCIAL_POSITION_UPDATE_MODAL,
@@ -28,6 +30,32 @@ import {
   getFinancialPositionUpdateAmount,
   getSelectedFinancialPositionUpdateAction,
 } from './selectors';
+
+// Adding and withdrawing funds in the central ledger are not synchronous.
+// So we poll the account endpoint a bit until there is a change before reloading the UI.
+async function pollAccountFundsUpdate(oldAccountFunds: number, dfspName: string) {
+  await retry(
+    async () => {
+      const accounts = await axios.get(`${services.ledgerService.baseUrl}/participants/${dfspName}/accounts`);
+      if (accounts.status !== 200) {
+        throw new Error('Account poll update failed - Request Failed');
+      }
+
+      const account = accounts.data.filter(
+        (acc: { ledgerAccountType: string }) => acc.ledgerAccountType === 'SETTLEMENT',
+      )[0];
+
+      if (account.value !== oldAccountFunds) {
+        // eslint-disable-next-line consistent-return
+        return true;
+      }
+      throw new Error('Account poll update failed - Funds are the same');
+    },
+    {
+      retries: 5,
+    },
+  );
+}
 
 function* fetchDFSPPositions(dfsp: DFSP) {
   const accounts = yield call(apis.participantAccounts.read, { participantName: dfsp.name });
@@ -130,6 +158,8 @@ function* updateFinancialPositionsParticipant() {
 
       assert(response.status === 200, 'Unable to update Financial Position Balance');
 
+      yield call(pollAccountFundsUpdate, position.settlementAccount.value, position.dfsp.name);
+
       break;
     }
     case FinancialPositionsUpdateAction.WithdrawFunds: {
@@ -149,6 +179,8 @@ function* updateFinancialPositionsParticipant() {
       const response = yield call(apis.fundsOut.create, args);
 
       assert(response.status === 200, 'Unable to update Financial Position Balance');
+
+      yield call(pollAccountFundsUpdate, position.settlementAccount.value, position.dfsp.name);
 
       break;
     }
