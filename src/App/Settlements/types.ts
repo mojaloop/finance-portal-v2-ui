@@ -215,6 +215,7 @@ export interface FinalizeSettlementProcessAdjustmentsBaseError {
 export interface FinalizeSettlementProcessAdjustmentsRequestError
   extends FinalizeSettlementProcessAdjustmentsBaseError {
   error: MojaloopError;
+  request: any;
 }
 
 export type FinalizeSettlementProcessAdjustmentsError =
@@ -232,6 +233,10 @@ export type FinalizeSettlementProcessAdjustmentsError =
     }
   | {
       type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED;
+      value: FinalizeSettlementProcessAdjustmentsRequestError;
+    }
+  | {
+      type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED;
       value: FinalizeSettlementProcessAdjustmentsRequestError;
     };
 

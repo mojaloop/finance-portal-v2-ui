@@ -327,5 +327,6 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
     </Modal>
   );
 };
+SettlementFinalizingModal.displayName = 'SettlementFinalizingModal';
 
 export default connector(SettlementFinalizingModal);

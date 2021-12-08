@@ -82,7 +82,7 @@ function* processAdjustments({
   adjustNdc: { increases: boolean; decreases: boolean };
   adjustLiquidityAccountBalance: boolean;
 }) {
-  const results: (FinalizeSettlementProcessAdjustmentsError | 'OK')[] = [];
+  const results: FinalizeSettlementProcessAdjustmentsError[] = [];
   for (let i = 0; i < adjustments.length; i++) {
     const adjustment = adjustments[i];
     // TODO: we need state order here and in the display later. It might pay to make
@@ -107,7 +107,7 @@ function* processAdjustments({
     // If the settlement account state is already past the target state, then we'll do nothing
     // and exit here, returning null;
     if (statePosition >= newStatePosition) {
-      return 'OK';
+      break;
     }
     if (
       (adjustNdc.increases && adjustment.currentLimit.value < adjustment.settlementBankBalance) ||
@@ -125,14 +125,15 @@ function* processAdjustments({
       };
       const ndcResult: ApiResponse = yield call(apis.participantLimits.update, request);
       if (ndcResult.status !== 200) {
-        return {
+        results.push({
           type: FinalizeSettlementProcessAdjustmentsErrorKind.SET_NDC_FAILED,
           value: {
             adjustment,
             error: ndcResult.data,
             request,
           },
-        };
+        });
+        break;
       }
     }
 
@@ -153,16 +154,17 @@ function* processAdjustments({
       };
       const spaResult = yield call(apis.settlementParticipantAccount.update, request);
       if (spaResult.status !== 200) {
-        return {
+        results.push({
           type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
           value: {
             adjustment,
             error: spaResult.data,
             request,
           },
-        };
+        });
+        break;
       }
-      return 'OK';
+      break;
     }
 
     if (adjustment.amount > 0) {
@@ -185,13 +187,15 @@ function* processAdjustments({
       };
       const fundsInResult: ApiResponse = yield call(apis.participantAccount.create, request);
       if (fundsInResult.status !== 202) {
-        return {
+        results.push({
           type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
           value: {
             adjustment,
             error: fundsInResult.data,
+            request,
           },
-        };
+        });
+        break;
       }
     } else {
       // Make the call to process funds out, then poll the balance until it's reduced
@@ -215,14 +219,15 @@ function* processAdjustments({
         fundsOutPrepareReserveRequest,
       );
       if (fundsOutPrepareReserveResult.status !== 202) {
-        return {
+        results.push({
           type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
           value: {
             adjustment,
             error: fundsOutPrepareReserveResult.data,
             request: fundsOutPrepareReserveRequest,
           },
-        };
+        });
+        break;
       }
       const fundsOutCommitRequest = {
         participantName: adjustment.participant.name,
@@ -238,19 +243,21 @@ function* processAdjustments({
         fundsOutCommitRequest,
       );
       if (fundsOutCommitResult.status !== 202) {
-        return {
+        results.push({
           type: FinalizeSettlementProcessAdjustmentsErrorKind.FUNDS_PROCESSING_FAILED,
           value: {
             adjustment,
             error: fundsOutCommitResult.data,
             request: fundsOutCommitRequest,
           },
-        };
+        });
+        break;
       }
     }
 
     // Poll for a while to confirm the new balance
-    for (let j = 0; j < 5; j++) {
+    const POLL_ATTEMPTS = 5;
+    for (let j = 0; j < POLL_ATTEMPTS; j++) {
       const SECONDS = 1000;
       yield delay(2 * SECONDS);
       const newBalanceResult: ApiResponse = yield call(apis.participantAccounts.read, {
@@ -268,12 +275,13 @@ function* processAdjustments({
         // balances. The switch doesn't have a concept of debit balances for settlement
         // accounts.
         if (-newBalance !== adjustment.settlementBankBalance) {
-          return {
+          results.push({
             type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_INCORRECT,
             value: {
               adjustment,
             },
-          };
+          });
+          break;
         }
         const request = {
           settlementId: settlement.id,
@@ -287,27 +295,30 @@ function* processAdjustments({
         // Set the settlement participant account to the new state
         const spaResult = yield call(apis.settlementParticipantAccount.update, request);
         if (spaResult.status !== 200) {
-          return {
+          results.push({
             type: FinalizeSettlementProcessAdjustmentsErrorKind.SETTLEMENT_PARTICIPANT_ACCOUNT_UPDATE_FAILED,
             value: {
               adjustment,
               error: spaResult.data,
               request,
             },
-          };
+          });
+          break;
         }
-
-        return 'OK';
+        break;
+      }
+      const wasLastAttempt = j + 1 === POLL_ATTEMPTS;
+      if (wasLastAttempt) {
+        results.push({
+          type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
+          value: {
+            adjustment,
+          },
+        });
       }
     }
-    results.push({
-      type: FinalizeSettlementProcessAdjustmentsErrorKind.BALANCE_UNCHANGED,
-      value: {
-        adjustment,
-      },
-    });
   }
-  return results.filter((res) => res !== 'OK');
+  return results;
 }
 
 function* collectSettlementFinalizeData(report: SettlementReport, settlement: Settlement) {

@@ -61,10 +61,17 @@ export type WindowRow = {
   viewNetPositionsButton: Selector,
 };
 
-export const SettlementFinalizeModal = {
-  closeButton: ReactSelector('Modal').findReact('Button').withText('Close'),
-  processButton: ReactSelector('Modal').findReact('Button').withText('Process'),
-  fileInput: ReactSelector('Modal').find('input'),
+const settlementFinalizingModalRootReactSelector = 'SettlementFinalizingModal Modal ModalPortal ModalBackground';
+export const SettlementFinalizingModal = {
+  closeButton: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalFooter Button`).withText('Close'),
+  processButton: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent Button`).withText('Process'),
+  validateButton: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent Button`).withText('Validate'),
+  fileInput: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).findReact(`input`),
+};
+
+const settlementFinalizationWarningModalRoot = ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent Modal`);
+export const SettlementFinalizationWarningModal = {
+  closeButton: settlementFinalizationWarningModalRoot.findReact('Button'),
 };
 
 const SettlementDetailModalRoot = ReactSelector('Modal').withProps({ title: 'Settlement Details' });

@@ -1,6 +1,6 @@
 import { Selector } from 'testcafe';
 import { waitForReact } from 'testcafe-react-selectors';
-import { SettlementsPage, SettlementFinalizeModal } from '../page-objects/pages/SettlementsPage';
+import { SettlementsPage, SettlementFinalizingModal, SettlementFinalizationWarningModal } from '../page-objects/pages/SettlementsPage';
 import { LoginPage } from '../page-objects/pages/LoginPage';
 import { config } from '../config';
 import { SideMenu } from '../page-objects/components/SideMenu';
@@ -131,7 +131,6 @@ test.meta({
   // don't? It's not difficult to delete files that aren't version-controlled, and being able to
   // examine the file afterward could be useful.
   await wb.xlsx.writeFile(filename);
-  console.log('Test filename', filename);
 
   await t.click(SideMenu.settlementsButton);
 
@@ -142,13 +141,15 @@ test.meta({
   await t.expect(settlementRowBefore.state.innerText).eql('Pending Settlement');
   await t.click(settlementRowBefore.finalizeButton);
 
-  await t.setFilesToUpload(SettlementFinalizeModal.fileInput, [filename]);
-  await t.click(SettlementFinalizeModal.processButton);
+  await t.setFilesToUpload(SettlementFinalizingModal.fileInput, [filename]);
+  await t.click(SettlementFinalizingModal.validateButton);
+  // The warning dialog will appear, dismiss it
+  // Validation can take some time, use a high timeout
+  await t.click(Selector(SettlementFinalizationWarningModal.closeButton, { timeout: 60000 }));
+  await t.click(SettlementFinalizingModal.processButton);
 
-  // This can take some time, use a high timeout
-  await t.wait(30000);
-  await t.click(Selector(SettlementFinalizeModal.closeButton, { timeout: 30000 }));
-  await t.wait(30000);
+  // Processing can take some time, use a high timeout
+  await t.click(Selector(SettlementFinalizingModal.closeButton, { timeout: 60000 }));
   const rowsAfter = await SettlementsPage.getResultRows();
   const settlementRowAfter = await Promise.any(rowsAfter.map(
     (r) => r.id.innerText.then(id => Number(id) === settlement.id ? Promise.resolve(r) : Promise.reject()),
