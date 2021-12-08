@@ -495,7 +495,7 @@ test('no_data.xlsx', async () => {
 test('bad_mojaloop_identifier_column.xlsx', async () => {
   expect.assertions(1);
   const f = await readFile(path.join(__dirname, '/mock_data/bad_mojaloop_identifier_column.xlsx'));
-  await expect(deserializeReport(f)).rejects.toThrow(/^Unable to extract participant ID, account ID and participant name from A9. Cell contents: \[3 hana 25\].*$/);
+  await expect(deserializeReport(f)).rejects.toThrow(/^Error extracting switch identifiers from cell A9: Unable to extract participant ID, account ID and participant name from "3 hana 25".*$/);
 });
 
 // TODO: we *could* check for a gap
