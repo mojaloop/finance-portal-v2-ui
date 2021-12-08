@@ -61,7 +61,7 @@ test.meta({
   const transfers1: protocol.TransferMessage[] = [{
     msg_sender: participants[1].name,
     msg_recipient: participants[0].name,
-    currency: 'MMK',
+    currency: CURRENCY,
     amount: '10',
     transfer_id: uuidv4(),
   }];
@@ -79,7 +79,7 @@ test.meta({
   const transfers2: protocol.TransferMessage[] = [{
     msg_sender: participants[1].name,
     msg_recipient: participants[0].name,
-    currency: 'MMK',
+    currency: CURRENCY,
     amount: '10',
     transfer_id: uuidv4(),
   }];
