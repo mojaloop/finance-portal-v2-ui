@@ -1,3 +1,4 @@
+import { strict as assert } from 'assert';
 import { Selector } from 'testcafe';
 import { waitForReact } from 'testcafe-react-selectors';
 import { SettlementsPage, SettlementFinalizingModal, SettlementFinalizationWarningModal } from '../page-objects/pages/SettlementsPage';
@@ -8,7 +9,19 @@ import { VoodooClient, protocol } from 'mojaloop-voodoo-client';
 import { v4 as uuidv4 } from 'uuid';
 import { ledger as ledgerApi, settlement as settlementApi, reporting as reportingApi, types } from 'mojaloop-ts';
 import ExcelJS from 'exceljs';
-import { extractSwitchIdentifiers } from '../../../../src/App/Settlements/helpers';
+
+// This has really come from:
+// import { extractSwitchIdentifiers } from '../../../../src/App/Settlements/helpers';
+// and been copy-pasted and modified. Preferably it would be shared somehow.
+function extractParticipantName(text: string): types.FspName {
+  const re = /^([0-9]+) ([0-9]+) ([a-zA-Z][a-zA-Z0-9]{1,29})$/g;
+  assert(
+    re.test(text),
+    `Unable to extract participant ID, account ID and participant name from "${text}". Matching regex: ${re}`,
+  );
+  const [,, name] = text.split(' ');
+  return name;
+}
 
 const { voodooEndpoint, reportBasePath, settlementsBasePath, ledgerBasePath } = config;
 const CURRENCY: types.Currency = 'MMK';
@@ -125,14 +138,14 @@ test.meta({
   );
   const balanceInfo = ws.getRows(START_OF_DATA, endOfData - START_OF_DATA)?.map((row) => {
     const participantInfo = row.getCell(PARTICIPANT_INFO_COL);
-    const [,,name] = extractSwitchIdentifiers(participantInfo.text);
+    const name = extractParticipantName(participantInfo.text);
     const balance = participantBalances.get(name);
     return {
       balance,
       participantInfo,
       rowNum: row.number,
       row,
-    }
+    };
   });
   await t.expect(balanceInfo).notEql(
     undefined,
