@@ -67,7 +67,7 @@ export const SettlementFinalizingModal = {
   processButton: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent Button`).withText('Process'),
   validateButton: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent Button`).withText('Validate'),
   fileInput: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).findReact('input').withProps({ type: 'file' }),
-  setLiquidityAccountBalanceCheckbox: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).find('label').withText('liquidity account balance').find('input'),
+  setLiquidityAccountBalanceCheckbox: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).find('label').withText('Set liquidity account balance').find('input'),
   increaseNdcCheckbox: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).find('label').withText('Increase net debit caps').find('input'),
   decreaseNdcCheckbox: ReactSelector(`${settlementFinalizingModalRootReactSelector} ModalContent`).find('label').withText('Decrease net debit caps').find('input'),
 };
