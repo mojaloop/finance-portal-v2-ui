@@ -44,8 +44,8 @@ const FinancialPositions: FC<ConnectorProps> = ({
   const columns = [
     { key: 'dfsp.name', label: 'DFSP' },
     { key: 'currency', label: 'Currency' },
-    { key: 'settlementAccount.value', label: 'Balance', func: formatNum },
-    { key: 'positionAccount.value', label: 'Current Position', func: formatNum },
+    { key: 'settlementAccount.value', label: 'Balance', func: formatNum, searchable: false },
+    { key: 'positionAccount.value', label: 'Current Position', func: formatNum, searchable: false },
     { key: 'ndc', label: 'NDC', func: (v: number) => (v === undefined ? 'Disabled' : formatNum(v)) },
     {
       key: '',

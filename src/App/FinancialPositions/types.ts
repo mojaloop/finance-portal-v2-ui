@@ -1,5 +1,5 @@
-import { ErrorMessage, Currency } from 'App/types';
-import { DFSP } from 'App/DFSPs/types';
+import { ErrorMessage, Currency } from '../types';
+import { DFSP } from '../DFSPs/types';
 // Removed because we reverted the version of this package due to a bug
 // import { composeOptions } from '@modusbox/modusbox-ui-components/dist/utils/html';
 

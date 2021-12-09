@@ -1,12 +1,13 @@
 import { createReducer, PayloadAction } from '@reduxjs/toolkit';
 import {
-  FinalizeSettlementError,
-  SettlementsState,
-  Settlement,
-  SettlementDetail,
-  SettlementDetailPosition,
   DateRanges,
   FilterNameValue,
+  FinalizeSettlementError,
+  Settlement,
+  SettlementReport,
+  SettlementAdjustments,
+  SettlementReportValidation,
+  SettlementsState,
 } from './types';
 import { getDateRangeTimestamp } from './helpers';
 import {
@@ -20,17 +21,20 @@ import {
   setSettlementsFilterValue,
   clearSettlementsFilters,
   selectSettlement,
-  setSettlementDetailsError,
-  setSettlementDetails,
-  selectSettlementDetail,
-  closeSettlementDetailsModal,
-  setSettlementDetailPositions,
-  setSettlementDetailPositionsError,
-  closeSettlementDetailPositionsModal,
   setFinalizeSettlementError,
   setFinalizingSettlement,
+  setSettlementReport,
+  setSettlementReportError,
   showFinalizeSettlementModal,
   hideFinalizeSettlementModal,
+  setFinalizeProcessFundsInOut,
+  setFinalizeProcessNdcIncreases,
+  setFinalizeProcessNdcDecreases,
+  setSettlementFinalizingInProgress,
+  setSettlementAdjustments,
+  setSettlementReportValidationErrors,
+  setSettlementReportValidationWarnings,
+  setSettlementReportValidationInProgress,
 } from './actions';
 
 const initialState: SettlementsState = {
@@ -45,21 +49,21 @@ const initialState: SettlementsState = {
     state: undefined,
   },
 
-  selectedSettlement: undefined,
-
-  isSettlementDetailsPending: false,
-  settlementDetails: [],
-  settlementDetailsError: null,
-
-  selectedSettlementDetail: undefined,
-
-  isSettlementDetailPositionsPending: false,
-  settlementDetailPositions: [],
-  settlementDetailPositionsError: null,
+  selectedSettlement: null,
 
   showFinalizeSettlementModal: false,
+  settlementReport: null,
+  settlementReportError: null,
   finalizingSettlement: null,
   finalizingSettlementError: null,
+  finalizeProcessFundsInOut: true,
+  finalizeProcessNdcIncreases: true,
+  finalizeProcessNdcDecreases: true,
+  settlementFinalizingInProgress: false,
+  settlementAdjustments: null,
+  settlementReportValidationErrors: null,
+  settlementReportValidationWarnings: null,
+  settlementReportValidationInProgress: false,
 };
 
 export default createReducer(initialState, (builder) =>
@@ -145,52 +149,9 @@ export default createReducer(initialState, (builder) =>
       ...state,
       filters: initialState.filters,
     }))
-    .addCase(selectSettlement, (state: SettlementsState, action: PayloadAction<Settlement>) => ({
+    .addCase(selectSettlement, (state: SettlementsState, action: PayloadAction<Settlement | null>) => ({
       ...state,
       selectedSettlement: action.payload,
-      settlementDetails: initialState.settlementDetails,
-      settlementDetailsError: initialState.settlementDetailsError,
-      isSettlementDetailsPending: true,
-    }))
-    .addCase(setSettlementDetails, (state: SettlementsState, action: PayloadAction<SettlementDetail[]>) => ({
-      ...state,
-      settlementDetails: action.payload,
-      isSettlementDetailsPending: false,
-    }))
-    .addCase(setSettlementDetailsError, (state: SettlementsState, action: PayloadAction<string>) => ({
-      ...state,
-      settlementDetailsError: action.payload,
-      isSettlementDetailsPending: false,
-    }))
-    .addCase(selectSettlementDetail, (state: SettlementsState, action: PayloadAction<SettlementDetail>) => ({
-      ...state,
-      selectedSettlementDetail: action.payload,
-      isSettlementDetailPositionsPending: true,
-    }))
-    .addCase(closeSettlementDetailsModal, (state: SettlementsState) => ({
-      ...state,
-      selectedSettlement: initialState.selectedSettlement,
-      settlementDetails: initialState.settlementDetails,
-      settlementDetailsError: initialState.settlementDetailsError,
-    }))
-    .addCase(
-      setSettlementDetailPositions,
-      (state: SettlementsState, action: PayloadAction<SettlementDetailPosition[]>) => ({
-        ...state,
-        isSettlementDetailPositionsPending: false,
-        settlementDetailPositions: action.payload,
-      }),
-    )
-    .addCase(setSettlementDetailPositionsError, (state: SettlementsState, action: PayloadAction<string>) => ({
-      ...state,
-      isSettlementDetailPositionsPending: false,
-      settlementDetailPositionsError: action.payload,
-    }))
-    .addCase(closeSettlementDetailPositionsModal, (state: SettlementsState) => ({
-      ...state,
-      selectedSettlementDetail: initialState.selectedSettlementDetail,
-      settlementDetailPositions: initialState.settlementDetailPositions,
-      settlementDetailPositionsError: initialState.settlementDetailPositionsError,
     }))
     .addCase(setFinalizeSettlementError, (state: SettlementsState, action: PayloadAction<FinalizeSettlementError>) => ({
       ...state,
@@ -207,5 +168,54 @@ export default createReducer(initialState, (builder) =>
     .addCase(showFinalizeSettlementModal, (state: SettlementsState) => ({
       ...state,
       showFinalizeSettlementModal: true,
+    }))
+    .addCase(setSettlementReport, (state: SettlementsState, action: PayloadAction<SettlementReport>) => ({
+      ...state,
+      settlementReport: action.payload,
+    }))
+    .addCase(setSettlementReportError, (state: SettlementsState, action: PayloadAction<string>) => ({
+      ...state,
+      settlementReportError: action.payload,
+    }))
+    .addCase(setFinalizeProcessFundsInOut, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      finalizeProcessFundsInOut: action.payload,
+    }))
+    .addCase(setFinalizeProcessNdcIncreases, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      finalizeProcessNdcIncreases: action.payload,
+    }))
+    .addCase(setFinalizeProcessNdcDecreases, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      finalizeProcessNdcDecreases: action.payload,
+    }))
+    .addCase(setSettlementFinalizingInProgress, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      settlementFinalizingInProgress: action.payload,
+    }))
+    .addCase(
+      setSettlementAdjustments,
+      (state: SettlementsState, action: PayloadAction<null | SettlementAdjustments>) => ({
+        ...state,
+        settlementAdjustments: action.payload,
+      }),
+    )
+    .addCase(
+      setSettlementReportValidationErrors,
+      (state: SettlementsState, action: PayloadAction<null | SettlementReportValidation[]>) => ({
+        ...state,
+        settlementReportValidationErrors: action.payload,
+      }),
+    )
+    .addCase(
+      setSettlementReportValidationWarnings,
+      (state: SettlementsState, action: PayloadAction<null | SettlementReportValidation[]>) => ({
+        ...state,
+        settlementReportValidationWarnings: action.payload,
+      }),
+    )
+    .addCase(setSettlementReportValidationInProgress, (state: SettlementsState, action: PayloadAction<boolean>) => ({
+      ...state,
+      settlementReportValidationInProgress: action.payload,
     })),
 );

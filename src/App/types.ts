@@ -2,13 +2,11 @@ export type ErrorMessage = string | null;
 
 export type Currency =
   | 'AED'
-  | 'AFA'
   | 'AFN'
   | 'ALL'
   | 'AMD'
   | 'ANG'
   | 'AOA'
-  | 'AOR'
   | 'ARS'
   | 'AUD'
   | 'AWG'
@@ -28,7 +26,6 @@ export type Currency =
   | 'BTN'
   | 'BWP'
   | 'BYN'
-  | 'BYR'
   | 'BZD'
   | 'CAD'
   | 'CDF'
@@ -49,7 +46,6 @@ export type Currency =
   | 'DKK'
   | 'DOP'
   | 'DZD'
-  | 'EEK'
   | 'EGP'
   | 'ERN'
   | 'ETB'
@@ -58,7 +54,6 @@ export type Currency =
   | 'FKP'
   | 'GBP'
   | 'GEL'
-  | 'GGP'
   | 'GHS'
   | 'GIP'
   | 'GMD'
@@ -72,12 +67,10 @@ export type Currency =
   | 'HUF'
   | 'IDR'
   | 'ILS'
-  | 'IMP'
   | 'INR'
   | 'IQD'
   | 'IRR'
   | 'ISK'
-  | 'JEP'
   | 'JMD'
   | 'JOD'
   | 'JPY'
@@ -95,8 +88,6 @@ export type Currency =
   | 'LKR'
   | 'LRD'
   | 'LSL'
-  | 'LTL'
-  | 'LVL'
   | 'LYD'
   | 'MAD'
   | 'MDL'
@@ -105,7 +96,7 @@ export type Currency =
   | 'MMK'
   | 'MNT'
   | 'MOP'
-  | 'MRO'
+  | 'MRU'
   | 'MUR'
   | 'MVR'
   | 'MWK'
@@ -141,10 +132,9 @@ export type Currency =
   | 'SHP'
   | 'SLL'
   | 'SOS'
-  | 'SPL'
   | 'SRD'
   | 'SSP'
-  | 'STD'
+  | 'STN'
   | 'SVC'
   | 'SYP'
   | 'SZL'
@@ -155,7 +145,6 @@ export type Currency =
   | 'TOP'
   | 'TRY'
   | 'TTD'
-  | 'TVD'
   | 'TWD'
   | 'TZS'
   | 'UAH'
@@ -164,18 +153,22 @@ export type Currency =
   | 'USN'
   | 'UYI'
   | 'UYU'
+  | 'UYW'
   | 'UZS'
-  | 'VEF'
+  | 'VED'
+  | 'VES'
   | 'VND'
   | 'VUV'
   | 'WST'
   | 'XAF'
   | 'XAG'
   | 'XAU'
+  | 'XBA'
+  | 'XBB'
+  | 'XBC'
+  | 'XBD'
   | 'XCD'
   | 'XDR'
-  | 'XFO'
-  | 'XFU'
   | 'XOF'
   | 'XPD'
   | 'XPF'
@@ -186,9 +179,46 @@ export type Currency =
   | 'XXX'
   | 'YER'
   | 'ZAR'
-  | 'ZMK'
   | 'ZMW'
-  | 'ZWD'
-  | 'ZWL'
-  | 'ZWN'
-  | 'ZWR';
+  | 'ZWL';
+
+export enum SettlementStatus {
+  PendingSettlement = 'PENDING_SETTLEMENT',
+  PsTransfersRecorded = 'PS_TRANSFERS_RECORDED',
+  PsTransfersReserved = 'PS_TRANSFERS_RESERVED',
+  PsTransfersCommitted = 'PS_TRANSFERS_COMMITTED',
+  Settling = 'SETTLING',
+  Settled = 'SETTLED',
+  Aborted = 'ABORTED',
+}
+
+export interface NetSettlementAmount {
+  amount: number;
+  currency: Currency;
+}
+
+export interface SettlementParticipantAccount {
+  id: number;
+  state: SettlementStatus;
+  reason: string;
+  netSettlementAmount: NetSettlementAmount;
+}
+
+export interface SettlementParticipant {
+  id: number;
+  accounts: SettlementParticipantAccount[];
+}
+
+export interface Settlement {
+  id: number;
+  state: SettlementStatus;
+  participants: SettlementParticipant[];
+  // `any` is terrible, but `settlementWindows` is a complex data structure that doesn't seem to be
+  // used anywhere in the code, and if it is, it's been untyped thus far. And at the time of
+  // writing, the cost-benefit analysis for writing a type for it does not pay off.
+  settlementWindows: any;
+  reason: string;
+  totalValue: number;
+  createdDate: string;
+  changedDate: string;
+}

@@ -19,7 +19,7 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onMount: () => dispatch(actions.requestSettlements()),
 
   onFinalizeButtonClick: (settlement: Settlement) => {
-    dispatch(actions.finalizeSettlement(settlement));
+    dispatch(actions.setFinalizingSettlement(settlement));
     dispatch(actions.showFinalizeSettlementModal());
   },
   onDateRangerFilterSelect: (payload: DateRanges) => dispatch(actions.selectSettlementsFilterDateRange(payload)),

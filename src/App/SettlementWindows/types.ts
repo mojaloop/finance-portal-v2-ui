@@ -1,5 +1,7 @@
 import { ErrorMessage } from 'App/types';
 
+export { Settlement, SettlementStatus } from 'App/types';
+
 export const RESET_SETTLEMENT_WINDOWS = 'Settlement Windows / Reset Settlement Windows';
 export const REQUEST_SETTLEMENT_WINDOWS = 'Settlement Windows / Request Settlement Windows';
 export const SET_SETTLEMENT_WINDOWS = 'Settlement Windows / Set Settlement Windows';
@@ -22,7 +24,7 @@ export const REQUEST_CLOSE_SETTLEMENT_WINDOW = 'Settlement Windows / Request Clo
 export const SET_CLOSE_SETTLEMENT_WINDOW_FINISHED = 'Settlement Windows / Set Close Settlement Window Finished';
 
 export interface SettlementWindow {
-  settlementWindowId: string;
+  settlementWindowId: number;
   state: SettlementWindowStatus;
   createdDate: string;
   changedDate: string;

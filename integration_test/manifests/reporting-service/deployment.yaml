@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting-service
+  labels:
+    app.kubernetes.io/name: reporting-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reporting-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reporting-service
+    spec:
+      securityContext:
+        {}
+      volumes:
+      - name: templates-volume
+        configMap:
+          name: reporting-service
+      containers:
+      - name: reporting-service
+        securityContext:
+          {}
+        image: "mojaloop/reporting:v10.5.0"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "80"
+        - name: DB_HOST
+          value: centralledger-mysql
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: reporting-service-db-auth
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: reporting-service-db-auth
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        resources:
+          {}
+        volumeMounts:
+        - name: templates-volume
+          mountPath: /opt/reporting/templates

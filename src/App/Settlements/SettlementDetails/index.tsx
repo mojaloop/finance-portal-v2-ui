@@ -1,67 +1,39 @@
+import { strict as assert } from 'assert';
 import React, { FC } from 'react';
-import { Led, Button, Column, DataLabel, DataList, ErrorBox, Modal, Row, Spinner } from 'components';
+import { Led, Column, DataLabel, DataList, Modal, Row } from 'components';
 import { DFSP } from 'App/DFSPs/types';
 import connector, { ConnectorProps } from './connectors';
 import * as helpers from '../helpers';
-import { SettlementDetail } from '../types';
-import SettlementDetailPositions from '../SettlementDetailPositions';
+import { SettlementParticipant } from '../types';
 import './SettlementDetails.css';
 
-const SettlementDetails: FC<ConnectorProps> = ({
-  dfsps,
-  selectedSettlement,
-  settlementDetails,
-  settlementDetailsError,
-  isSettlementDetailsPending,
-  selectedSettlementDetail,
-  onSelectSettlementDetail,
-  onModalCloseClick,
-}) => {
+const SettlementDetails: FC<ConnectorProps> = ({ dfsps, selectedSettlement, onModalCloseClick }) => {
   const detailsColumns = [
-    { label: 'DFSP', key: 'dfspId', func: (id: number) => dfsps.find((dfsp: DFSP) => dfsp.id === id)?.name },
+    { label: 'DFSP', key: 'dfsp' },
+    { label: 'State', key: 'state' },
+    { label: 'Currency', key: 'currency' },
     {
       label: 'Debit',
       key: 'debit',
-      func: (value: number) => helpers.formatNumber(helpers.zeroToDash(value)),
       className: 'settlement-details__list__debit',
     },
     {
       label: 'Credit',
       key: 'credit',
-      func: (value: number) => helpers.formatNumber(helpers.zeroToDash(value)),
       className: 'settlement-details__list__credit',
     },
-    {
-      label: '',
-      key: '',
-      func: (_: unknown, item: SettlementDetail) => (
-        /* eslint-disable */
-        <Button
-          label="View Net Positions"
-          size="s"
-          noFill
-          kind="secondary"
-          onClick={() => onSelectSettlementDetail(item)}
-        />
-        /* eslint-enable */
-      ),
-    },
   ];
-  let content = null;
-  if (isSettlementDetailsPending) {
-    content = (
-      <div className="settlement-details__loader">
-        <Spinner size={20} />
-      </div>
-    );
-  } else if (settlementDetailsError) {
-    content = <ErrorBox>Settlement Detail: Unable to load data</ErrorBox>;
-  } else
-    content = (
-      <>
-        <DataList flex columns={detailsColumns} list={settlementDetails} />
-      </>
-    );
+  assert(selectedSettlement !== null);
+  const rows = selectedSettlement.participants.flatMap((p: SettlementParticipant) =>
+    p.accounts.map((acc) => ({
+      dfsp: dfsps.find((dfsp: DFSP) => dfsp.id === p.id)?.name,
+      credit: acc.netSettlementAmount.amount > 0 ? acc.netSettlementAmount.amount : '-',
+      debit: acc.netSettlementAmount.amount < 0 ? acc.netSettlementAmount.amount : '-',
+      currency: acc.netSettlementAmount.currency,
+      accountId: acc.id,
+      state: acc.state,
+    })),
+  );
 
   const { color, label } = helpers.getStatusProperties(selectedSettlement.state);
   return (
@@ -107,8 +79,7 @@ const SettlementDetails: FC<ConnectorProps> = ({
           </div>
         </Column>
       </Row>
-      {content}
-      {selectedSettlementDetail && <SettlementDetailPositions />}
+      <DataList flex columns={detailsColumns} list={rows} />
     </Modal>
   );
 };

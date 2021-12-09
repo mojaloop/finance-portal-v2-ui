@@ -1,6 +1,12 @@
 name: Integration test
 
 on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
   push:
     branches:
     - '**'
@@ -81,21 +87,28 @@ jobs:
       run: kubectl port-forward --address 0.0.0.0 voodoo-doll 3030 &
 
     - name: Install test dependencies
-      working-directory: integration_test/tests
+      working-directory: integration_test/e2e-ui-tests
       run: |-
         npm ci
 
     - name: Run tests
-      working-directory: integration_test/tests
+      working-directory: integration_test/e2e-ui-tests
       run: |-
-        FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
+        INGRESS_PORT="3000" FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
 
-    - name: Archive test report
+    - name: Archive screenshots
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
-        name: test-report
-        path: integration_test/tests/report.html
+        name: failure-screenshots
+        path: 'integration_test/e2e-ui-tests/screenshots/'
+
+    - name: Archive settlement finalization reports
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: finalization-reports
+        path: '**/settlement-finalization-report*.xlsx'
 
     - name: Print docker containers to check any issues with the cluster
       if: ${{ failure() }}
@@ -119,6 +132,6 @@ jobs:
         kubectl get secrets -o json | jq -r '.items[] | { name: .metadata.name, data: .data | map_values(@base64d) }'
 
     - name: Setup tmate session
-      if: ${{ failure() }}
+      if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
       timeout-minutes: 10

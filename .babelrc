@@ -6,5 +6,7 @@
     "syntax-async-functions",
     "@babel/plugin-transform-runtime"
   ],
-  "browsers": "> 0.25%, not dead"
+  "targets": {
+    "browsers": "> 0.25%, not dead"
+  }
 }

@@ -10,22 +10,27 @@ import {
   SET_SETTLEMENTS_FILTER_VALUE,
   CLEAR_SETTLEMENTS_FILTERS,
   SELECT_SETTLEMENT,
-  SET_SETTLEMENT_DETAILS,
-  SET_SETTLEMENT_DETAILS_ERROR,
-  CLOSE_SETTLEMENT_DETAIL_MODAL,
-  SELECT_SETTLEMENT_DETAIL,
-  SET_SETTLEMENT_DETAIL_POSITIONS,
-  SET_SETTLEMENT_DETAIL_POSITIONS_ERROR,
-  CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL,
+  SET_SETTLEMENT_REPORT,
   HIDE_FINALIZE_SETTLEMENT_MODAL,
   SHOW_FINALIZE_SETTLEMENT_MODAL,
   FINALIZE_SETTLEMENT,
   FINALIZE_SETTLEMENT_ERROR,
+  SET_SETTLEMENT_REPORT_ERROR,
+  SET_FINALIZE_PROCESS_NDC_INCREASES,
+  SET_FINALIZE_PROCESS_NDC_DECREASES,
+  SET_FINALIZE_PROCESS_FUNDS_IN_OUT,
+  SET_FINALIZE_SETTLEMENT_IN_PROGRESS,
+  SET_SETTLEMENT_ADJUSTMENTS,
+  SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
+  SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS,
+  VALIDATE_SETTLEMENT_REPORT,
+  SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS,
   FINALIZING_SETTLEMENT,
   FinalizeSettlementError,
   Settlement,
-  SettlementDetail,
-  SettlementDetailPosition,
+  SettlementAdjustments,
+  SettlementReport,
+  SettlementReportValidation,
   DateRanges,
   FilterNameValue,
 } from './types';
@@ -44,17 +49,26 @@ export const clearSettlementsFilterState = createAction(CLEAR_SETTLEMENTS_FILTER
 export const setSettlementsFilterValue = createAction<FilterNameValue>(SET_SETTLEMENTS_FILTER_VALUE);
 export const clearSettlementsFilters = createAction(CLEAR_SETTLEMENTS_FILTERS);
 
-export const selectSettlement = createAction<Settlement>(SELECT_SETTLEMENT);
-export const setSettlementDetails = createAction<SettlementDetail[]>(SET_SETTLEMENT_DETAILS);
-export const setSettlementDetailsError = createAction<string>(SET_SETTLEMENT_DETAILS_ERROR);
-export const closeSettlementDetailsModal = createAction(CLOSE_SETTLEMENT_DETAIL_MODAL);
+export const selectSettlement = createAction<null | Settlement>(SELECT_SETTLEMENT);
 export const finalizeSettlement = createAction<Settlement>(FINALIZE_SETTLEMENT);
+export const setSettlementReport = createAction<null | SettlementReport>(SET_SETTLEMENT_REPORT);
 export const setFinalizeSettlementError = createAction<null | FinalizeSettlementError>(FINALIZE_SETTLEMENT_ERROR);
+export const setSettlementReportError = createAction<null | string>(SET_SETTLEMENT_REPORT_ERROR);
 export const setFinalizingSettlement = createAction<null | Settlement>(FINALIZING_SETTLEMENT);
 export const hideFinalizeSettlementModal = createAction(HIDE_FINALIZE_SETTLEMENT_MODAL);
 export const showFinalizeSettlementModal = createAction(SHOW_FINALIZE_SETTLEMENT_MODAL);
-
-export const selectSettlementDetail = createAction<SettlementDetail>(SELECT_SETTLEMENT_DETAIL);
-export const setSettlementDetailPositions = createAction<SettlementDetailPosition[]>(SET_SETTLEMENT_DETAIL_POSITIONS);
-export const setSettlementDetailPositionsError = createAction<string>(SET_SETTLEMENT_DETAIL_POSITIONS_ERROR);
-export const closeSettlementDetailPositionsModal = createAction(CLOSE_SETTLEMENT_DETAIL_POSITIONS_MODAL);
+export const setFinalizeProcessFundsInOut = createAction<boolean>(SET_FINALIZE_PROCESS_FUNDS_IN_OUT);
+export const setFinalizeProcessNdcIncreases = createAction<boolean>(SET_FINALIZE_PROCESS_NDC_INCREASES);
+export const setFinalizeProcessNdcDecreases = createAction<boolean>(SET_FINALIZE_PROCESS_NDC_DECREASES);
+export const setSettlementFinalizingInProgress = createAction<boolean>(SET_FINALIZE_SETTLEMENT_IN_PROGRESS);
+export const setSettlementAdjustments = createAction<null | SettlementAdjustments>(SET_SETTLEMENT_ADJUSTMENTS);
+export const setSettlementReportValidationWarnings = createAction<null | SettlementReportValidation[]>(
+  SET_SETTLEMENT_REPORT_VALIDATION_WARNINGS,
+);
+export const setSettlementReportValidationErrors = createAction<null | SettlementReportValidation[]>(
+  SET_SETTLEMENT_REPORT_VALIDATION_ERRORS,
+);
+export const validateSettlementReport = createAction(VALIDATE_SETTLEMENT_REPORT);
+export const setSettlementReportValidationInProgress = createAction<boolean>(
+  SET_SETTLEMENT_FINALIZATION_REPORT_VALIDATION_IN_PROGRESS,
+);
