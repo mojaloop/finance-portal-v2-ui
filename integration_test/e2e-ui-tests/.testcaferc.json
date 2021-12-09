@@ -1,5 +1,8 @@
 {
   "src": "src/tests/*.test.ts",
+  "screenshots": {
+    "takeOnFails": true
+  },
   "compilerOptions": {
     "typescript": {
       "customCompilerModulePath": "../ts4",

@@ -96,6 +96,13 @@ jobs:
       run: |-
         INGRESS_PORT="3000" FINANCE_PORTAL_ENDPOINT="http://localhost:3000" npm run test:headless
 
+    - name: Archive screenshots
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: failure-screenshots
+        path: 'integration_test/e2e-ui-tests/screenshots/'
+
     - name: Archive settlement finalization reports
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
