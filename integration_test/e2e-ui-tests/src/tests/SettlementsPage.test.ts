@@ -136,11 +136,12 @@ test.meta({
   while (ws.getCell(`A${firstEmptyDataRow}`).text !== '') {
     firstEmptyDataRow += 1;
   }
-  // TODO: somehow, sometimes, firstEmptyDataRow is not 9. How and why?
   const balanceInfo = ws.getRows(START_OF_DATA, firstEmptyDataRow - START_OF_DATA)?.map((row) => {
     const participantInfo = row.getCell(PARTICIPANT_INFO_COL);
     const name = extractParticipantName(participantInfo.text);
-    const balance = participantBalances.get(name);
+    // TODO: sometimes there might be extra participants in the settlement because of other tests.
+    // We'll generate data for them here also.
+    const balance = participantBalances.get(name) || Math.trunc(Math.random() * 5000);
     return {
       balance,
       participantInfo,
