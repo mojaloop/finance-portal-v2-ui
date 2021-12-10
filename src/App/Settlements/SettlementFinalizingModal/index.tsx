@@ -268,6 +268,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
           }
         }}
       />
+      {settlementReportValidationErrors?.length === 0 ? <>&nbsp;✅</> : <></>}
       <br />
       <Button
         pending={settlementFinalizingInProgress}
