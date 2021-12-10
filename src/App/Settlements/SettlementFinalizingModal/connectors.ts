@@ -45,7 +45,11 @@ const dispatchProps = (dispatch: Dispatch) => ({
     dispatch(actions.setSettlementFinalizingInProgress(true));
     dispatch(actions.finalizeSettlement(settlement));
   },
-  onSelectSettlementReport: (report: SettlementReport) => dispatch(actions.setSettlementReport(report || null)),
+  onSelectSettlementReport: (report: SettlementReport) => {
+    dispatch(actions.setSettlementReportValidationErrors(null));
+    dispatch(actions.setSettlementReportValidationWarnings(null));
+    dispatch(actions.setSettlementReport(report || null));
+  },
   onSettlementReportProcessingError: (err: string) => dispatch(actions.setSettlementReportError(err)),
   onSetFundsInOutChange: (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(actions.setFinalizeProcessFundsInOut(e.target.checked));
