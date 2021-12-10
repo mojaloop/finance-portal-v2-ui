@@ -464,12 +464,12 @@ export function generateSettlementReportValidationDetail(val: SettlementReportVa
       );
     case SettlementReportValidationKind.BalanceNotAsExpected:
       return (
-        `Row ${val.data.entry.row.rowNumber} of the report has a balance of ` +
+        `Row ${val.data.entry.row.rowNumber} of the report indicates a balance of ` +
         `${val.data.reportBalance} and a transfer amount of ${val.data.transferAmount}. ` +
         `${val.data.entry.participant.name} presently has a liquidity account balance of ` +
-        `${val.data.account.value}. Applying the transfer to this balance results in an ` +
-        `expected balance of ${val.data.expectedBalance}. The balance in the report is ` +
-        `${val.data.reportBalance}.`
+        `${Math.abs(val.data.account.value)}. Applying the transfer to this balance results in ` +
+        `an expected balance of ${val.data.expectedBalance}, not ${val.data.reportBalance} as ` +
+        `per the report.`
       );
     case SettlementReportValidationKind.AccountsNotPresentInReport: {
       // prettier-ignore
@@ -683,7 +683,9 @@ export const validationFunctions = {
       })
       .filter((e): e is { entry: SettlementReportEntry; settlementAccount: AccountWithPosition } => e !== undefined)
       .forEach(({ entry, settlementAccount }) => {
-        const expectedBalance = settlementAccount.value + entry.transferAmount;
+        // The switch uses negative numeric values to represent credit. The switch does not support
+        // debit settlement account balances. Therefore we use Math.abs here.
+        const expectedBalance = Math.abs(settlementAccount.value) + entry.transferAmount;
         const reportBalance = entry.balance;
         if (!equal(expectedBalance, reportBalance)) {
           result.add({
