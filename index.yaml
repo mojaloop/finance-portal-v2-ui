@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   finance-portal-v2-ui:
   - apiVersion: v1
+    appVersion: v3.0.2
+    created: "2021-12-17T12:26:23.728526133Z"
+    description: Mojaloop Finance Portal UI v2
+    digest: 866e9c648b85db85ce1b878fcf12d46784f54479ff96bba8f9273961115d55f2
+    name: finance-portal-v2-ui
+    urls:
+    - finance-portal-v2-ui-3.0.2.tgz
+    version: 3.0.2
+  - apiVersion: v1
     appVersion: v3.0.1
     created: "2021-12-10T13:49:56.047318757Z"
     description: Mojaloop Finance Portal UI v2
@@ -127,4 +136,4 @@ entries:
     urls:
     - finance-portal-v2-ui-2.0.6.tgz
     version: 2.0.6
-generated: "2021-12-10T13:49:56.046691244Z"
+generated: "2021-12-17T12:26:23.727739577Z"
