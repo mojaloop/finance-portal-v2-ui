@@ -683,10 +683,10 @@ export const validationFunctions = {
       })
       .filter((e): e is { entry: SettlementReportEntry; settlementAccount: AccountWithPosition } => e !== undefined)
       .forEach(({ entry, settlementAccount }) => {
-        // The switch uses negative numeric values to represent credit. The switch does not support
-        // debit settlement account balances. Therefore we use Math.abs here.
-        const expectedBalance = Math.abs(settlementAccount.value) + entry.transferAmount;
-        const reportBalance = entry.balance;
+        const expectedBalance = settlementAccount.value + entry.transferAmount;
+        // As the balances in the settlement finalization report are given in positive numbers
+        // We are making sure that we are converting it to negative value always
+        const reportBalance = -Math.abs(entry.balance);
         if (!equal(expectedBalance, reportBalance)) {
           result.add({
             kind: SettlementReportValidationKind.BalanceNotAsExpected,
