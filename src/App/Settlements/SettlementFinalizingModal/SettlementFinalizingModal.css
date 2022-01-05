@@ -26,8 +26,12 @@ table.finalize-error-list thead {
   border-color: black;
 }
 
-table.finalize-error-list tbody td {
+table.finalize-error-list tbody tr:nth-child(odd) {
   background-color: white;
+}
+
+table.finalize-error-list tbody tr:nth-child(even) {
+  background-color: #eee;
 }
 
 table.finalize-error-list th, table.finalize-error-list td {
