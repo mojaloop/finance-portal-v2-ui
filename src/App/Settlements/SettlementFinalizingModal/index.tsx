@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
 import React, { FC, useState } from 'react';
-import { Button, ErrorBox, Modal, Spinner, DataList } from 'components';
+import { Button, ErrorBox, Modal, Spinner } from 'components';
 import { MD5 as hash } from 'object-hash';
 import connector, { ConnectorProps } from './connectors';
 import {
@@ -67,51 +67,57 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       }
       case FinalizeSettlementErrorKind.SET_SETTLEMENT_PS_TRANSFERS_COMMITTED:
       case FinalizeSettlementErrorKind.SETTLE_ACCOUNTS: {
-        const columns = [
-          { key: 'participantName', label: 'Participant' },
-          { key: 'errorMessage', label: 'Error' },
-          { key: 'errorCode', label: 'Code' },
-          { key: 'currency', label: 'Currency' },
-          { key: 'amount', label: 'Amount' },
-          { key: 'state', label: 'State' },
-          { key: 'accountId', label: 'Account ID' },
-          { key: 'remediation', label: 'Remediation' },
-        ];
-        const list = err.value.map((v) => ({
-          participantName: v.participant.name,
-          errorMessage: v.apiResponse.errorDescription,
-          errorCode: v.apiResponse.errorCode,
-          currency: v.account.netSettlementAmount.currency,
-          amount: v.account.netSettlementAmount.amount,
-          state: v.account.state,
-          accountId: v.account.id,
-          remediation: 'TODO', // TODO
-        }));
+        const rows = err.value.map((v) => (
+          <tr key={hash(v)}>
+            <td>{v.participant.name}</td>
+            <td>{v.apiResponse.errorDescription}</td>
+            <td>{v.apiResponse.errorCode}</td>
+            <td>{v.account.netSettlementAmount.currency}</td>
+            <td>{v.account.netSettlementAmount.amount}</td>
+            <td>{v.account.state}</td>
+            <td>{v.account.id}</td>
+          </tr>
+        ));
         return (
-          <div>
-            <div>Errors in settlement state change</div>
-            <DataList columns={columns} list={list} sortColumn="Participant" sortAsc={true} />
-          </div>
+          <table className="finalize-error-list">
+            <caption>Errors in settlement state change</caption>
+            <thead>
+              <tr>
+                <th>Participant</th>
+                <th>Error</th>
+                <th>Code</th>
+                <th>Currency</th>
+                <th>Amount</th>
+                <th>State</th>
+                <th>Account ID</th>
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
         );
       }
       case FinalizeSettlementErrorKind.PROCESS_ADJUSTMENTS: {
-        const columns = [
-          { key: 'type', label: 'Message' },
-          { key: 'participantName', label: 'Participant' },
-          { key: 'positionAccountId', label: 'Position Account ID' },
-          { key: 'settlementAccountId', label: 'Settlement Account ID' },
-        ];
-        const list = err.value.map((v) => ({
-          participantName: v.value.adjustment.participant.name,
-          positionAccountId: v.value.adjustment.positionAccount.id,
-          settlementAccountId: v.value.adjustment.settlementAccount.id,
-          type: v.type,
-        }));
+        const rows = err.value.map((v) => (
+          <tr key={hash(v)}>
+            <td>{v.type}</td>
+            <td>{v.value.adjustment.participant.name}</td>
+            <td>{v.value.adjustment.positionAccount.id}</td>
+            <td>{v.value.adjustment.settlementAccount.id}</td>
+          </tr>
+        ));
         return (
-          <div>
-            <div>Error processing adjustments</div>
-            <DataList flex={true} columns={columns} list={list} sortColumn="Participant" sortAsc={true} />
-          </div>
+          <table className="finalize-error-list">
+            <caption>Errors during settlement finalization</caption>
+            <thead>
+              <tr>
+                <th>Message</th>
+                <th>Participant</th>
+                <th>Position Account ID</th>
+                <th>Settlement Account ID</th>
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
         );
       }
       default: {
@@ -293,7 +299,7 @@ const SettlementFinalizingModal: FC<ConnectorProps> = ({
       <table>
         <tbody>
           {orderedStates.map((s) => (
-            <tr key={s}>
+            <tr className="settlement-state-item" key={s}>
               <td>{computeStateCharacter(s, finalizingSettlement.state, settlementFinalizingInProgress)}</td>
               <td>{s}</td>
             </tr>
