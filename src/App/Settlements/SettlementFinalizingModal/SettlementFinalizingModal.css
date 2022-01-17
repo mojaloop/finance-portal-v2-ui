@@ -1,9 +1,51 @@
-tr {
+tr.settlement-state-item {
   height: 30px;
 }
 
-td:nth-child(1) {
+tr.settlement-state-item td:nth-child(1) {
   width: 30px;
+}
+
+table.finalize-error-list {
+  color: #3e3e3e;
+}
+
+table.finalize-error-list caption {
+  text-align: left;
+  font-weight: bold;
+  font-size: 18px;
+  padding-bottom: 8px;
+  text-transform: capitalize;
+}
+
+table.finalize-error-list thead {
+  background-color: #3e3e3e;
+  color: #eeeeee;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: black;
+}
+
+table.finalize-error-list tbody tr:nth-child(odd) {
+  background-color: white;
+}
+
+table.finalize-error-list tbody tr:nth-child(even) {
+  background-color: #eee;
+}
+
+table.finalize-error-list th, table.finalize-error-list td {
+  border-color: black;
+  border-width: 0 1px 0 1px;
+  border-style: solid;
+  padding: 8px;
+  text-align: left;
+}
+
+table.finalize-error-list {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid black;
 }
 
 br {

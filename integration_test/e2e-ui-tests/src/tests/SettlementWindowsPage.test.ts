@@ -162,10 +162,12 @@ test.meta({
   await cli.completeTransfers(transfers1);
   const openWindows1 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows1.length).eql(1, 'Expected only a single open window');
-  const closedSettlementWindowId1 = await cli.closeSettlementWindow({
-    id: openWindows1[0].settlementWindowId,
-    reason: 'Integration test',
-  });
+  const closedSettlementWindowId1 = openWindows1[0].settlementWindowId;
+  await settlementApi.closeSettlementWindow(
+    settlementsBasePath,
+    closedSettlementWindowId1,
+    'Integration test',
+  );
 
   // Run a transfer so the settlement window can be closed
   const transfers2: protocol.TransferMessage[] = [{
@@ -178,10 +180,12 @@ test.meta({
   await cli.completeTransfers(transfers2);
   const openWindows2 = await cli.getSettlementWindows({ state: "OPEN" });
   await t.expect(openWindows2.length).eql(1, 'Expected only a single open window');
-  const closedSettlementWindowId2 = await cli.closeSettlementWindow({
-    id: openWindows2[0].settlementWindowId,
-    reason: 'Integration test',
-  });
+  const closedSettlementWindowId2 = openWindows2[0].settlementWindowId;
+  await settlementApi.closeSettlementWindow(
+    settlementsBasePath,
+    closedSettlementWindowId2,
+    'Integration test',
+  );
 
   const settlementWindowIds = [
     closedSettlementWindowId1,
