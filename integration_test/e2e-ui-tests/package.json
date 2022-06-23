@@ -10,7 +10,7 @@
     "@types/ws": "^6.0.4",
     "dotenv": "^10.0.0",
     "exceljs": "^4.3.0",
-    "got": "^11.8.3",
+    "got": "^11.8.5",
     "mojaloop-ts": "v0.1.0-git-ca05c40b2ad8740790107b293bf3bcebbb95ef33",
     "mojaloop-voodoo-client": "0.7.0",
     "testcafe": "^1.17.1",
