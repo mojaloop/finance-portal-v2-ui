@@ -51,7 +51,7 @@ the same shell instance (normally you can just use the same terminal window).
       --network=portal-net \
       --rm \
       --detach \
-      --volume=$PWD/integration_test/shared/manifests/wso2/identity.xml:/home/wso2carbon/wso2is-km-5.7.0/repository/conf/identity/identity.xml \
+      --volume=$PWD/integration_test/shared/manifests/wso2/:/home/wso2carbon/wso2is-km-5.7.0/repository/conf/identity/ \
       wso2/wso2is-km:5.7.0
     ```
 
